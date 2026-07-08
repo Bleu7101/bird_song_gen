@@ -2,7 +2,7 @@
 **/.DS_Store
 
 # Local notebooks are kept out of the pushed structure for now.
-*.ipynb
+# *.ipynb
 
 # Local dataset files. Teammates should place their own copy here.
 bird_songs_dataset/
@@ -13,6 +13,7 @@ __pycache__/
 .ipynb_checkpoints/
 
 # Generated preprocessing/training outputs
+preview_specs_128/
 spectrograms/
 models/
 checkpoints/
