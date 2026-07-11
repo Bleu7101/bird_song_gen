@@ -19,6 +19,10 @@ The target species are American Robin, Northern Cardinal, and Song Sparrow.
 configs/
 `-- spectrogram.json                         Shared representation for Stages 2-6
 
+notebooks/
+|-- 01_dataset_audit.ipynb                   Stage 1 data audit and split exploration
+`-- 02_preprocess_logmel.ipynb               Stage 2 log-mel exploration and visual checks
+
 scripts/
 |-- 01_create_splits.py                      Reproduce recording-safe manifests
 |-- 02_build_spectrograms.py                 Build the optional full NPY cache
@@ -39,7 +43,6 @@ classifier_artifacts/Harvey_classifier/
 `-- README.md                                Model card and evaluation results
 
 manifests/                                   Stage 1 outputs
-01_dataset_audit.ipynb                       Original data audit and visual exploration
 ```
 
 ## Stage 1: dataset splits
@@ -62,7 +65,7 @@ Build the complete cache when needed by the VAE/diffusion stages:
 python scripts/02_build_spectrograms.py
 ```
 
-The classifier preprocesses WAV files on demand, so a cache is not required to train or evaluate it.
+The classifier preprocesses WAV files on demand, so a cache is not required to train or evaluate it. Use `notebooks/02_preprocess_logmel.ipynb` for exploration and visual checks; use the Stage 2 script for the shared cache consumed by later stages.
 
 ## Stage 3: species classifier
 
