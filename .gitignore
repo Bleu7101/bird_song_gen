@@ -14,6 +14,7 @@ __pycache__/
 
 # Generated preprocessing/training outputs
 preview_specs_128/
+processed/
 spectrograms/
 models/
 checkpoints/
