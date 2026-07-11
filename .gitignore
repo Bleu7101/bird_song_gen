@@ -1,20 +1,32 @@
 .DS_Store
 **/.DS_Store
 
+# Local Codex agent configuration.
+.agents/
+.codex/
+
 # Local notebooks are kept out of the pushed structure for now.
 # *.ipynb
 
-# Local dataset files. Teammates should place their own copy here.
+# Local dataset files.
 bird_songs_dataset/
 
 # Python cache files
 __pycache__/
 *.py[cod]
+*.egg-info/
 .ipynb_checkpoints/
+.pytest_cache/
+.ruff_cache/
+
+# Virtual environments (the Windows setup uses ../bird_song_venv).
+.venv/
+bird_song_venv/
 
 # Generated preprocessing/training outputs
 preview_specs_128/
 spectrograms/
+artifacts/
 models/
 checkpoints/
 runs/
