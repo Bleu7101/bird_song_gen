@@ -1,6 +1,6 @@
 # Bird Song Generation
 
-This branch contains Harvey's trained species classifier and the reusable scripts needed by the team's six-stage bird-song generation pipeline.
+A six-stage pipeline for bird-song generation and evaluation.
 
 ## Pipeline
 
@@ -13,7 +13,7 @@ This branch contains Harvey's trained species classifier and the reusable script
 
 The target species are American Robin, Northern Cardinal, and Song Sparrow.
 
-## Branch structure
+## Project structure
 
 ```text
 configs/
@@ -31,28 +31,20 @@ src/bird_song/
 |-- audio.py                                 Shared WAV/log-mel preprocessing
 |-- config.py                                Spectrogram configuration loader
 |-- data.py                                  Dataset and DataLoader code
-|-- runtime.py                               Device and atomic-checkpoint helpers
+|-- runtime.py                               Device and checkpoint helpers
 `-- classifier/                              Model and Stage 3/6 workflows
 
 classifier_artifacts/Harvey_classifier/
-|-- best.pt                                  Corrected trained checkpoint
+|-- best.pt                                  Trained checkpoint
 `-- README.md                                Model card and evaluation results
 
-manifests/                                   Checked-in Stage 1 outputs
+manifests/                                   Stage 1 outputs
 01_dataset_audit.ipynb                       Original data audit and visual exploration
-requirements.txt                             Dependency record
-pyproject.toml                               Editable src-package metadata
-```
-
-Local datasets, cached spectrograms, `runs/`, `.agents/`, and `.codex/` are ignored. The repository assumes teammates already have a working Python/PyTorch environment. To expose the local `src/bird_song` package to that environment, run once from the repository root:
-
-```powershell
-python -m pip install -e . --no-deps
 ```
 
 ## Stage 1: dataset splits
 
-The checked-in manifests contain 2,339 training, 519 validation, and 489 test clips. All segments from one original recording ID remain in one split to reduce leakage.
+The manifests contain 2,339 training, 519 validation, and 489 test clips. All segments from one original recording ID remain in one split to reduce leakage.
 
 Check deterministic regeneration without changing files:
 
@@ -82,13 +74,13 @@ Train a new run:
 python scripts/03_train_classifier.py --epochs 40 --batch-size 64 --workers 4
 ```
 
-Evaluate the packaged checkpoint on the real held-out test split:
+Evaluate the trained checkpoint on the real held-out test split:
 
 ```powershell
 python scripts/03_evaluate_classifier.py --checkpoint classifier_artifacts/Harvey_classifier/best.pt --output-dir runs/harvey_classifier/test
 ```
 
-### Packaged checkpoint results
+### Classifier results
 
 | Metric | Result |
 |---|---:|
