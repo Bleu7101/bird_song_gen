@@ -26,6 +26,8 @@ bird_song_venv/
 # Generated preprocessing/training outputs
 preview_specs_128/
 spectrograms/
+outputs/conditional_vae/generated_npy/
+processed/
 artifacts/
 models/
 checkpoints/
