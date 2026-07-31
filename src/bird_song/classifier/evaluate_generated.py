@@ -21,7 +21,7 @@ def slug(value: str) -> str:
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Step 6: evaluate generated audio or generated log-mel .npy files.")
+    parser = argparse.ArgumentParser(description="Stage 7: evaluate generated audio or generated log-mel .npy files.")
     parser.add_argument("--checkpoint", type=Path, required=True)
     parser.add_argument("--input", type=Path, required=True, help="One file or a directory searched recursively.")
     parser.add_argument("--output", type=Path, default=PROJECT_ROOT / "runs/evaluation/generated_classifier_scores.csv")

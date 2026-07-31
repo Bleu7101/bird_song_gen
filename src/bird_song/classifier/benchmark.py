@@ -9,7 +9,7 @@ import torch
 
 from bird_song.config import DEFAULT_CLASSES, SpectrogramConfig
 from bird_song.data import ManifestDataset, make_loader, resolve_dataset_root
-from bird_song.classifier.model import BirdSongCNN
+from bird_song.classifier.model import ARCHITECTURES, build_classifier
 from bird_song.runtime import choose_device, load_checkpoint
 
 
@@ -19,6 +19,9 @@ PROJECT_ROOT = Path(__file__).resolve().parents[3]
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Short, non-training throughput benchmark for the classifier.")
     parser.add_argument("--checkpoint", type=Path, default=None)
+    parser.add_argument("--architecture", choices=ARCHITECTURES, default="residual_cnn")
+    parser.add_argument("--width", type=int, default=32)
+    parser.add_argument("--dropout", type=float, default=0.30)
     parser.add_argument("--spectrogram-config", type=Path, default=PROJECT_ROOT / "configs/spectrogram.json")
     parser.add_argument("--batch-sizes", type=int, nargs="+", default=[1, 16, 64, 128])
     parser.add_argument("--warmup", type=int, default=10)
@@ -45,7 +48,7 @@ def main() -> None:
         model, classes, config, _ = load_checkpoint(args.checkpoint, device)
     else:
         classes, config = DEFAULT_CLASSES, SpectrogramConfig.from_json(args.spectrogram_config)
-        model = BirdSongCNN(len(classes)).to(device)
+        model = build_classifier(args.architecture, len(classes), args.dropout, args.width).to(device)
     model.eval()
     rows = []
     with torch.inference_mode():

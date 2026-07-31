@@ -7,9 +7,10 @@ from typing import Any
 
 import numpy as np
 import torch
+from torch import nn
 
 from .config import SpectrogramConfig
-from .classifier.model import BirdSongCNN
+from .classifier.model import build_classifier
 
 
 def seed_everything(seed: int) -> None:
@@ -29,12 +30,14 @@ def choose_device(requested: str) -> torch.device:
     return device
 
 
-def load_checkpoint(path: Path, device: torch.device) -> tuple[BirdSongCNN, tuple[str, ...], SpectrogramConfig, dict[str, Any]]:
+def load_checkpoint(path: Path, device: torch.device) -> tuple[nn.Module, tuple[str, ...], SpectrogramConfig, dict[str, Any]]:
     checkpoint = torch.load(path, map_location=device, weights_only=True)
     classes = tuple(checkpoint["classes"])
     config = SpectrogramConfig.from_dict(checkpoint["spectrogram_config"])
-    model_config = checkpoint["model_config"]
-    model = BirdSongCNN(**model_config)
+    model_config = dict(checkpoint["model_config"])
+    # Version-1 checkpoints predate architecture selection and are residual CNNs.
+    architecture = model_config.pop("architecture", checkpoint.get("architecture", "residual_cnn"))
+    model = build_classifier(architecture=architecture, **model_config)
     model.load_state_dict(checkpoint["model_state"])
     model.to(device)
     return model, classes, config, checkpoint

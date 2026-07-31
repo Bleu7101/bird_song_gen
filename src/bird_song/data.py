@@ -90,23 +90,34 @@ def make_loader(
     workers: int,
     training: bool = False,
     balanced: bool = False,
+    seed: int | None = None,
 ) -> DataLoader:
     if batch_size < 1:
         raise ValueError("batch_size must be at least 1")
     if workers < 0:
         raise ValueError("workers cannot be negative")
+    generator = None
+    if seed is not None:
+        generator = torch.Generator()
+        generator.manual_seed(seed)
     sampler = None
     shuffle = training
     if balanced:
         if not isinstance(dataset, ManifestDataset):
             raise TypeError("Balanced sampling requires ManifestDataset")
-        sampler = WeightedRandomSampler(dataset.sample_weights(), len(dataset), replacement=True)
+        sampler = WeightedRandomSampler(
+            dataset.sample_weights(),
+            len(dataset),
+            replacement=True,
+            generator=generator,
+        )
         shuffle = False
     return DataLoader(
         dataset,
         batch_size=batch_size,
         shuffle=shuffle,
         sampler=sampler,
+        generator=generator,
         num_workers=workers,
         pin_memory=torch.cuda.is_available(),
         persistent_workers=workers > 0,

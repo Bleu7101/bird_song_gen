@@ -1,6 +1,6 @@
 # Bird Song Generation
 
-A six-stage pipeline for bird-song generation and evaluation.
+A seven-stage pipeline for bird-song generation and evaluation.
 
 ## Pipeline
 
@@ -9,7 +9,8 @@ A six-stage pipeline for bird-song generation and evaluation.
 3. Train and validate a supervised species classifier.
 4. Train a VAE on the shared spectrogram representation.
 5. Train a diffusion model on the shared spectrogram representation.
-6. Evaluate generated samples with classifier scores, listening tests, and spectrogram inspection.
+6. Train a conditional autoregressive transformer that generates log-mel images patch by patch.
+7. Evaluate generated samples with classifier scores, listening tests, and spectrogram inspection.
 
 The target species are American Robin, Northern Cardinal, and Song Sparrow.
 
@@ -17,26 +18,35 @@ The target species are American Robin, Northern Cardinal, and Song Sparrow.
 
 ```text
 configs/
-`-- spectrogram.json                         Shared representation for Stages 2-6
+|-- spectrogram.json                         Shared representation for Stages 2-7
+`-- transformer.json                         Autoregressive generator architecture
 
 notebooks/
 |-- 01_dataset_audit.ipynb                   Stage 1 data audit and split exploration
-`-- 02_preprocess_logmel.ipynb               Stage 2 log-mel exploration and visual checks
+|-- 02_preprocess_logmel.ipynb               Stage 2 log-mel exploration and visual checks
+|-- 03_classifier.ipynb                      Stage 3 architecture experiment and visual analysis
+|-- 04_conditional_vae.ipynb                 Stage 4 conditional VAE experiment
+`-- 06_autoregressive_transformer.ipynb      Stage 6 transformer generation experiment
 
 scripts/
 |-- 01_create_splits.py                      Reproduce recording-safe manifests
 |-- 02_build_spectrograms.py                 Build the optional full NPY cache
-|-- 03_train_classifier.py                   Train the residual CNN
+|-- 03_train_classifier.py                   Train a selected classifier architecture
+|-- 03_compare_classifier_architectures.py   Run a controlled architecture comparison
 |-- 03_evaluate_classifier.py                Evaluate the classifier on real held-out audio
 |-- 03_benchmark_classifier.py               Benchmark GPU/preprocessing throughput
-`-- 06_evaluate_generated.py                 Score generated audio and summarize results
+|-- 06_train_transformer.py                  Train the autoregressive transformer generator
+|-- 06_generate_transformer.py               Generate conditional log-mel images
+|-- 06_evaluate_generated.py                 Legacy generated-sample evaluation entry point
+`-- 07_evaluate_generated.py                 Score generated samples and summarize results
 
 src/bird_song/
 |-- audio.py                                 Shared WAV/log-mel preprocessing
 |-- config.py                                Spectrogram configuration loader
 |-- data.py                                  Dataset and DataLoader code
 |-- runtime.py                               Device and checkpoint helpers
-`-- classifier/                              Model and Stage 3/6 workflows
+|-- classifier/                              Model and classifier-evaluation workflows
+`-- transformer/                             Stage 6 model, cache loader, training, and generation
 
 classifier_artifacts/Harvey_classifier/
 |-- best.pt                                  Trained checkpoint
@@ -59,7 +69,7 @@ python scripts/01_create_splits.py --dry-run
 
 `configs/spectrogram.json` specifies mono 22.05 kHz audio, three-second clips, 128 mel bins, a 1,024-sample FFT, a 512-sample hop, and normalized 128 x 128 outputs in `[-1, 1]`.
 
-Build the complete cache when needed by the VAE/diffusion stages:
+Build the complete cache when needed by the VAE, diffusion, and transformer stages:
 
 ```powershell
 python scripts/02_build_spectrograms.py
@@ -69,13 +79,30 @@ The classifier preprocesses WAV files on demand, so a cache is not required to t
 
 ## Stage 3: species classifier
 
-`BirdSongCNN` is a residual CNN with approximately 1.66 million trainable parameters. It uses a convolutional stem, six residual blocks, global average/maximum pooling, and a two-layer classification head.
+The original `BirdSongCNN` is a residual CNN with approximately 1.66 million trainable parameters. It uses a convolutional stem, six residual blocks, global average/maximum pooling, and a two-layer classification head.
 
 Train a new run:
 
 ```powershell
 python scripts/03_train_classifier.py --epochs 40 --batch-size 64 --workers 4
 ```
+
+Choose an individual architecture with `--architecture`. The implemented alternatives test different inductive biases and model sizes:
+
+| Architecture | Main idea | Parameters at width 32 |
+|---|---|---:|
+| `residual_cnn` | Six residual convolution blocks | 1,661,795 |
+| `plain_cnn` | VGG-style convolution stack without skip connections | 1,238,691 |
+| `crnn` | Convolutions followed by a bidirectional GRU over time | 404,451 |
+| `depthwise_cnn` | MobileNet-style depthwise-separable convolutions | 137,699 |
+
+Run the controlled comparison with three seeds per architecture:
+
+```powershell
+python scripts/03_compare_classifier_architectures.py --epochs 40 --patience 8 --seeds 42 123 777
+```
+
+The comparison holds the data splits, preprocessing, seeded data order, width, dropout, optimizer, learning rate, and early-stopping rule fixed. It writes every run separately plus `protocol.json`, `runs.csv`, `summary.csv`, and a presentation-ready `comparison.md` containing mean and sample standard deviation for validation accuracy and macro F1. Parameter counts are reported because the architectures deliberately span high- and low-capacity models. Use validation results to select the architecture, then evaluate only the selected checkpoint on the test split; repeatedly choosing models on test accuracy would leak test information.
 
 Evaluate the trained checkpoint on the real held-out test split:
 
@@ -94,11 +121,25 @@ python scripts/03_evaluate_classifier.py --checkpoint classifier_artifacts/Harve
 
 Per-species test F1 is 91.23% for American Robin, 90.16% for Northern Cardinal, and 89.95% for Song Sparrow. Full results, limitations, checksum, and the confusion matrix are in `classifier_artifacts/Harvey_classifier/README.md`.
 
-## Stages 4 and 5: generation
+## Stages 4-6: generation
 
-The VAE and diffusion implementations should import `bird_song.audio` and use `configs/spectrogram.json`. They should not copy preprocessing code from the audit notebook or introduce another normalization convention.
+The VAE, diffusion, and transformer use the same normalized representation from `configs/spectrogram.json`. The transformer is a species-conditional autoregressive image generator, not a classifier: it converts each 128 x 128 spectrogram into 64 time-major 16 x 16 patches and predicts a Gaussian distribution for each next patch using causal self-attention.
 
-## Stage 6: generated-audio evaluation
+Train the transformer on the Stage 2 cache:
+
+```powershell
+python scripts/06_train_transformer.py --epochs 60 --batch-size 32 --workers 4 --device cuda
+```
+
+Generate eight log-mel images per species from the selected checkpoint:
+
+```powershell
+python scripts/06_generate_transformer.py --checkpoint runs/transformer_generator/best.pt --samples-per-species 8 --temperature 0.8 --device cuda
+```
+
+The generator writes normalized `.npy` images under species-named directories, a `generated_manifest.csv`, and a visual `conditional_samples.png`. Use `notebooks/06_autoregressive_transformer.ipynb` for patch-order visualization, gated training and generation, loss curves, real-versus-generated comparisons, and diversity diagnostics.
+
+## Stage 7: generated-sample evaluation
 
 Organize labeled generated samples by their intended species:
 
@@ -112,7 +153,7 @@ generated_samples/
 Run:
 
 ```powershell
-python scripts/06_evaluate_generated.py --checkpoint classifier_artifacts/Harvey_classifier/best.pt --input generated_samples --labels-from-parent
+python scripts/07_evaluate_generated.py --checkpoint classifier_artifacts/Harvey_classifier/best.pt --input generated_samples --labels-from-parent
 ```
 
 This writes:
@@ -120,4 +161,4 @@ This writes:
 - Per-file predictions, confidence, and class probabilities in CSV format.
 - A JSON summary containing sample count, mean confidence, predicted-class counts, overall target-label accuracy, and per-target accuracy.
 
-Classifier scores are not a complete realism metric. Generated audio is out-of-distribution, and this closed-set model must choose one of its three classes even for noise. The final report should combine Step 6 classifier results with blind listening and spectrogram inspection.
+Classifier scores are not a complete realism metric. Generated audio is out-of-distribution, and this closed-set model must choose one of its three classes even for noise. The final report should combine Stage 7 classifier results with blind listening and spectrogram inspection.

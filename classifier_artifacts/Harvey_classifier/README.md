@@ -2,7 +2,7 @@
 
 ## Intended use
 
-Classify real or generated three-second samples as American Robin, Northern Cardinal, or Song Sparrow. In Step 6, use the output as one generated-audio evaluation signal, not as a standalone realism score.
+Classify real or generated three-second samples as American Robin, Northern Cardinal, or Song Sparrow. In Stage 7, use the output as one generated-audio evaluation signal, not as a standalone realism score.
 
 ## Checkpoint
 
@@ -45,10 +45,10 @@ Confusion matrix, with rows as true labels and columns as predictions:
 - The classifier cannot reject noise or unknown bird species.
 - Target-label rate should be reported alongside listening tests and spectrogram inspection.
 
-## Step 6 command
+## Stage 7 command
 
 ```powershell
-python scripts/06_evaluate_generated.py --checkpoint classifier_artifacts/Harvey_classifier/best.pt --input generated_samples --labels-from-parent
+python scripts/07_evaluate_generated.py --checkpoint classifier_artifacts/Harvey_classifier/best.pt --input generated_samples --labels-from-parent
 ```
 
 The command writes per-file probabilities to CSV and an aggregate JSON summary containing sample count, mean confidence, predicted-class counts, and target-label accuracy when generated samples are stored in species-named parent directories.

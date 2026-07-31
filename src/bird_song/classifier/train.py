@@ -11,7 +11,7 @@ from torch import nn
 
 from bird_song.config import SpectrogramConfig
 from bird_song.data import ManifestDataset, make_loader, resolve_dataset_root
-from bird_song.classifier.model import BirdSongCNN
+from bird_song.classifier.model import ARCHITECTURES, build_classifier, count_trainable_parameters
 from bird_song.runtime import atomic_torch_save, choose_device, save_json, seed_everything
 
 
@@ -25,6 +25,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--train-manifest", type=Path, default=PROJECT_ROOT / "manifests/full_dataset_train.csv")
     parser.add_argument("--val-manifest", type=Path, default=PROJECT_ROOT / "manifests/full_dataset_validation.csv")
     parser.add_argument("--output-dir", type=Path, default=PROJECT_ROOT / "runs/classifier")
+    parser.add_argument("--architecture", choices=ARCHITECTURES, default="residual_cnn")
+    parser.add_argument("--width", type=int, default=32, help="Base convolution width used by every architecture.")
+    parser.add_argument("--dropout", type=float, default=0.30)
     parser.add_argument("--epochs", type=int, default=40)
     parser.add_argument("--batch-size", type=int, default=64)
     parser.add_argument("--workers", type=int, default=4)
@@ -42,17 +45,33 @@ def parse_args() -> argparse.Namespace:
 
 
 @torch.inference_mode()
-def evaluate(model: nn.Module, loader, criterion: nn.Module, device: torch.device) -> tuple[float, float]:
+def evaluate(
+    model: nn.Module,
+    loader,
+    criterion: nn.Module,
+    device: torch.device,
+    num_classes: int,
+) -> tuple[float, float, float]:
     model.eval()
     total_loss = total_correct = total_items = 0
+    confusion = torch.zeros((num_classes, num_classes), dtype=torch.long, device=device)
     for specs, labels, _ in loader:
         specs = specs.to(device, non_blocking=True)
         labels = labels.to(device, non_blocking=True)
         logits = model(specs)
+        predictions = logits.argmax(1)
         total_loss += float(criterion(logits, labels)) * labels.numel()
-        total_correct += int((logits.argmax(1) == labels).sum())
+        total_correct += int((predictions == labels).sum())
         total_items += labels.numel()
-    return total_loss / total_items, total_correct / total_items
+        confusion += torch.bincount(
+            labels * num_classes + predictions,
+            minlength=num_classes * num_classes,
+        ).reshape(num_classes, num_classes)
+    true_positives = confusion.diag().float()
+    precision = true_positives / confusion.sum(dim=0).clamp_min(1)
+    recall = true_positives / confusion.sum(dim=1).clamp_min(1)
+    macro_f1 = (2 * precision * recall / (precision + recall).clamp_min(1e-12)).mean()
+    return total_loss / total_items, total_correct / total_items, float(macro_f1)
 
 
 def main() -> None:
@@ -68,15 +87,32 @@ def main() -> None:
     dataset_root = resolve_dataset_root(PROJECT_ROOT, args.dataset_root)
     train_set = ManifestDataset(args.train_manifest, dataset_root, classes, config, training=True)
     val_set = ManifestDataset(args.val_manifest, dataset_root, classes, config, training=False)
-    train_loader = make_loader(train_set, args.batch_size, args.workers, training=True, balanced=args.balanced_sampler)
+    train_loader = make_loader(
+        train_set,
+        args.batch_size,
+        args.workers,
+        training=True,
+        balanced=args.balanced_sampler,
+        seed=args.seed,
+    )
     val_loader = make_loader(val_set, args.batch_size, args.workers)
 
-    model = BirdSongCNN(num_classes=len(classes)).to(device)
+    model = build_classifier(
+        architecture=args.architecture,
+        num_classes=len(classes),
+        dropout=args.dropout,
+        width=args.width,
+    ).to(device)
+    model_config = model.metadata()
+    trainable_parameters = count_trainable_parameters(model)
     if args.dry_run:
         specs, labels, paths = next(iter(train_loader))
         with torch.inference_mode():
             logits = model(specs.to(device))
-        print(f"device={device} batch={tuple(specs.shape)} logits={tuple(logits.shape)}")
+        print(
+            f"device={device} architecture={args.architecture} parameters={trainable_parameters:,} "
+            f"batch={tuple(specs.shape)} logits={tuple(logits.shape)}"
+        )
         print(f"classes={classes}")
         print(f"first_file={paths[0]}")
         print("Dry run complete; no optimizer step was performed.")
@@ -93,7 +129,14 @@ def main() -> None:
     args.output_dir.mkdir(parents=True, exist_ok=True)
     save_json(
         args.output_dir / "config.json",
-        {**vars(args), "dataset_root": str(dataset_root), "classes": classes, "spectrogram": config.to_dict()},
+        {
+            **vars(args),
+            "dataset_root": str(dataset_root),
+            "classes": classes,
+            "spectrogram": config.to_dict(),
+            "model_config": model_config,
+            "trainable_parameters": trainable_parameters,
+        },
     )
     raw_model = model
     if args.compile_model:
@@ -108,7 +151,10 @@ def main() -> None:
     epochs_without_improvement = 0
 
     with log_path.open("w", newline="", encoding="utf-8") as log_file:
-        writer = csv.DictWriter(log_file, fieldnames=["epoch", "train_loss", "val_loss", "val_accuracy", "lr", "seconds"])
+        writer = csv.DictWriter(
+            log_file,
+            fieldnames=["epoch", "train_loss", "val_loss", "val_accuracy", "val_macro_f1", "lr", "seconds"],
+        )
         writer.writeheader()
         for epoch in range(1, args.epochs + 1):
             started = time.perf_counter()
@@ -128,12 +174,13 @@ def main() -> None:
                 running_loss += float(loss.detach()) * labels.numel()
                 item_count += labels.numel()
 
-            val_loss, val_accuracy = evaluate(model, val_loader, criterion, device)
+            val_loss, val_accuracy, val_macro_f1 = evaluate(model, val_loader, criterion, device, len(classes))
             row = {
                 "epoch": epoch,
                 "train_loss": running_loss / item_count,
                 "val_loss": val_loss,
                 "val_accuracy": val_accuracy,
+                "val_macro_f1": val_macro_f1,
                 "lr": optimizer.param_groups[0]["lr"],
                 "seconds": time.perf_counter() - started,
             }
@@ -146,13 +193,17 @@ def main() -> None:
                 epochs_without_improvement = 0
                 atomic_torch_save(
                     {
-                        "format_version": 1,
+                        "format_version": 2,
                         "model_state": raw_model.state_dict(),
-                        "model_config": raw_model.metadata(),
+                        "model_config": model_config,
+                        "architecture": args.architecture,
+                        "trainable_parameters": trainable_parameters,
                         "classes": list(classes),
                         "spectrogram_config": config.to_dict(),
+                        "seed": args.seed,
                         "epoch": epoch,
                         "best_validation_accuracy": best_accuracy,
+                        "validation_macro_f1": val_macro_f1,
                     },
                     args.output_dir / "best.pt",
                 )
