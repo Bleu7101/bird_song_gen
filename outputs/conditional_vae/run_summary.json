@@ -1,0 +1,42 @@
+{
+  "model": "class_conditional_vae",
+  "trained_from_scratch": true,
+  "target_species": [
+    "Northern Cardinal",
+    "Song Sparrow",
+    "American Robin"
+  ],
+  "label_to_id": {
+    "Northern Cardinal": 0,
+    "Song Sparrow": 1,
+    "American Robin": 2
+  },
+  "input_shape": [
+    1,
+    128,
+    128
+  ],
+  "latent_dim": 128,
+  "class_embed_dim": 16,
+  "base_channels": 32,
+  "total_parameters": 5136945,
+  "trainable_parameters": 5136945,
+  "batch_size": 32,
+  "learning_rate": 0.0002,
+  "beta_kl": 0.001,
+  "kl_warmup_epochs": 10,
+  "completed_epochs": 22,
+  "best_epoch": 22,
+  "best_validation_loss": 0.14671335353557316,
+  "test_metrics": {
+    "loss": 0.15620611736013845,
+    "recon": 0.15333030471894396,
+    "kl": 2.8758137460135242
+  },
+  "training_section_seconds": 74.4512063000002,
+  "mean_epoch_seconds": 2.278575472732138,
+  "peak_allocated_cuda_gb": 0.3807058334350586,
+  "device": "cuda",
+  "smoke_test": false,
+  "best_checkpoint": "C:\\Users\\sheng\\Documents\\1508_project\\bird_song_gen\\checkpoints\\conditional_vae\\conditional_vae_best.pt"
+}
