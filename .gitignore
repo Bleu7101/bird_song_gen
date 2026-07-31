@@ -27,6 +27,9 @@ bird_song_venv/
 preview_specs_128/
 spectrograms/
 outputs/conditional_vae/generated_npy/
+outputs/conditional_vae/classifier_input/
+outputs/conditional_vae_v2/generated_npy/
+outputs/conditional_vae_v2/classifier_input/
 processed/
 artifacts/
 models/
