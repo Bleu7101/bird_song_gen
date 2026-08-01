@@ -1,0 +1,4 @@
+model,species,label_id,sample_index,relative_path,temperature,seed
+conditional_autoregressive_spectrogram_transformer,American Robin,0,0,american_robin/sample_000.npy,0.8,42
+conditional_autoregressive_spectrogram_transformer,Northern Cardinal,1,0,northern_cardinal/sample_000.npy,0.8,42
+conditional_autoregressive_spectrogram_transformer,Song Sparrow,2,0,song_sparrow/sample_000.npy,0.8,42

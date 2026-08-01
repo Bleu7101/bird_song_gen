@@ -143,6 +143,8 @@ python scripts/06_generate_transformer.py --checkpoint runs/transformer_generato
 
 The generator writes normalized `.npy` images under species-named directories, a `generated_manifest.csv`, and a visual `conditional_samples.png`. Use `notebooks/06_autoregressive_transformer.ipynb` for patch-order visualization, gated training and generation, loss curves, real-versus-generated comparisons, and diversity diagnostics.
 
+The completed 4.95M-parameter transformer run, checkpoint, temperature sweep, classifier interoperability evaluation, previews, and technical verdict are documented in [`runs/transformer_generator/README.md`](runs/transformer_generator/README.md). The model trained cleanly and produces classifier-readable spectrograms, but the generated images remain blurrier and less structured than real bird calls; treat it as a working baseline rather than a realism-ready generator.
+
 ## Stage 7: generated-sample evaluation
 
 Organize labeled generated samples by their intended species:
