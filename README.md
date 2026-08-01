@@ -46,11 +46,13 @@ src/bird_song/
 |-- data.py                                  Dataset and DataLoader code
 |-- runtime.py                               Device and checkpoint helpers
 |-- classifier/                              Model and classifier-evaluation workflows
+|-- vae/                                     Stage 4 package boundary
+|-- diffusion/                               Stage 5 package boundary
 `-- transformer/                             Stage 6 model, cache loader, training, and generation
 
-classifier_artifacts/Harvey_classifier/
-|-- best.pt                                  Trained checkpoint
-`-- README.md                                Model card and evaluation results
+classifier_artifacts/
+|-- Harvey_classifier/                       Published residual model and held-out results
+`-- architecture_comparison/                 Complete 4-architecture x 3-seed validation sweep
 
 manifests/                                   Stage 1 outputs
 ```
@@ -103,6 +105,8 @@ python scripts/03_compare_classifier_architectures.py --epochs 40 --patience 8 -
 ```
 
 The comparison holds the data splits, preprocessing, seeded data order, width, dropout, optimizer, learning rate, and early-stopping rule fixed. It writes every run separately plus `protocol.json`, `runs.csv`, `summary.csv`, and a presentation-ready `comparison.md` containing mean and sample standard deviation for validation accuracy and macro F1. Parameter counts are reported because the architectures deliberately span high- and low-capacity models. Use validation results to select the architecture, then evaluate only the selected checkpoint on the test split; repeatedly choosing models on test accuracy would leak test information.
+
+The completed 12-run sweep ranked CRNN first at **90.56% +/- 1.39% validation accuracy** and **90.45% +/- 1.45% validation macro F1**, narrowly ahead of Plain CNN at 90.43% +/- 1.74% accuracy. That quality gap is smaller than seed variation, so CRNN is the practical candidate based on its substantially smaller model and faster measured inference. All checkpoints, histories, portable configs, aggregate results, and integrity hashes are preserved in [`classifier_artifacts/architecture_comparison`](classifier_artifacts/architecture_comparison/README.md). These alternative checkpoints have not been evaluated on the held-out test split.
 
 Evaluate the trained checkpoint on the real held-out test split:
 

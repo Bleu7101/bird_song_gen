@@ -1,0 +1,31 @@
+{
+  "architectures": [
+    "residual_cnn",
+    "plain_cnn",
+    "depthwise_cnn",
+    "crnn"
+  ],
+  "seeds": [
+    42,
+    123,
+    777
+  ],
+  "dataset_root": "bird_songs_dataset",
+  "spectrogram_config": "configs/spectrogram.json",
+  "train_manifest": "manifests/full_dataset_train.csv",
+  "val_manifest": "manifests/full_dataset_validation.csv",
+  "output_dir": "classifier_artifacts/architecture_comparison",
+  "epochs": 40,
+  "batch_size": 64,
+  "workers": 4,
+  "learning_rate": 0.0003,
+  "weight_decay": 0.0001,
+  "label_smoothing": 0.05,
+  "patience": 8,
+  "width": 32,
+  "dropout": 0.3,
+  "device": "cuda",
+  "balanced_sampler": false,
+  "compile_model": false,
+  "project_root": "."
+}
