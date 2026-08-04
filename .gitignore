@@ -22,6 +22,7 @@ __pycache__/
 # Virtual environments (the Windows setup uses ../bird_song_venv).
 .venv/
 bird_song_venv/
+external/
 
 # Generated preprocessing/training outputs
 preview_specs_128/
@@ -30,6 +31,7 @@ outputs/conditional_vae/generated_npy/
 outputs/conditional_vae/classifier_input/
 outputs/conditional_vae_v2/generated_npy/
 outputs/conditional_vae_v2/classifier_input/
+outputs/vocoder_vae/
 processed/
 artifacts/
 models/

@@ -1,0 +1,10 @@
+{
+  "image_height": 80,
+  "image_width": 256,
+  "input_channels": 1,
+  "latent_channels": 16,
+  "class_embed_dim": 64,
+  "base_channels": 32,
+  "num_classes": 3,
+  "downsample_stages": 4
+}

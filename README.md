@@ -18,8 +18,11 @@ The target species are American Robin, Northern Cardinal, and Song Sparrow.
 
 ```text
 configs/
-|-- spectrogram.json                         Shared representation for Stages 2-7
-`-- transformer.json                         Autoregressive generator architecture
+|-- spectrogram.json                         Protected 128 x 128 classifier representation
+|-- transformer.json                         Autoregressive generator architecture
+|-- vocoder_spectrogram.json                 Exact full-band BigVGAN mel contract
+|-- vocoder_spectrogram_fmax8k.json          One allowed fallback vocoder contract
+`-- vocoder_vae.json                         Rectangular spatial VAE v2 architecture
 
 notebooks/
 |-- 01_dataset_audit.ipynb                   Stage 1 data audit and split exploration
@@ -38,7 +41,15 @@ scripts/
 |-- 06_train_transformer.py                  Train the autoregressive transformer generator
 |-- 06_generate_transformer.py               Generate conditional log-mel images
 |-- 06_evaluate_generated.py                 Legacy generated-sample evaluation entry point
-`-- 07_evaluate_generated.py                 Score generated samples and summarize results
+|-- 07_evaluate_generated.py                 Score generated samples and summarize results
+|-- 08_fetch_bigvgan.py                      Fetch only the frozen generator and source
+|-- 08_evaluate_vocoder_gate.py              Run the real-audio reconstruction gate
+|-- 08_build_vocoder_spectrograms.py         Build isolated raw 80 x 256 log-mels
+|-- 09_train_vocoder_vae.py                  Train the rectangular spatial VAE v2
+|-- 09_generate_vocoder_vae.py               Fit priors and generate 64 WAVs per species
+|-- 10_evaluate_vocoder_vae.py               Run the final VAE audio gate
+|-- 10_prepare_listening_study.py            Build a blinded, balanced listening pack
+`-- 10_score_listening_study.py              Validate and summarize listener ratings
 
 src/bird_song/
 |-- audio.py                                 Shared WAV/log-mel preprocessing
@@ -168,3 +179,107 @@ This writes:
 - A JSON summary containing sample count, mean confidence, predicted-class counts, overall target-label accuracy, and per-target accuracy.
 
 Classifier scores are not a complete realism metric. Generated audio is out-of-distribution, and this closed-set model must choose one of its three classes even for noise. The final report should combine Stage 7 classifier results with blind listening and spectrogram inspection.
+
+## Vocoder-first audio branch
+
+This branch is deliberately separate from the protected `128 x 128` classifier/generation branch. It never resizes old generated arrays or changes `configs/spectrogram.json`, the classifier checkpoint, published metrics, or existing generated samples. Its representation exactly matches `nvidia/bigvgan_v2_22khz_80band_256x`: mono 22,050 Hz, 65,536 samples, a 1,024-sample FFT/window, a 256-sample hop, 80 Slaney mel bands from 0 Hz to Nyquist, and 256 frames. The frozen vocoder uses `use_cuda_kernel=False`; preprocessing and inference prefer CUDA automatically when it is available.
+
+Install dependencies and fetch only the official frozen generator plus inference source:
+
+```powershell
+python -m pip install -r requirements.txt
+python scripts/08_fetch_bigvgan.py
+```
+
+### Gate 1: prove the representation can be heard
+
+Run 30 held-out clips per species through the original-audio control, a Griffin-Lim baseline, and the full-band BigVGAN reconstruction:
+
+```powershell
+python scripts/08_evaluate_vocoder_gate.py --device cuda
+```
+
+The automatic gate requires finite length-correct waveforms, no material clipping, and BigVGAN classifier accuracy within five percentage points of the original-WAV control. `runs/vocoder_gate/gate_summary.json` remains `awaiting_listening` until the group supplies pilot ratings with median BigVGAN bird-likeness at least 3/5. To prepare and score a blinded pilot:
+
+```powershell
+python scripts/10_prepare_listening_study.py `
+  --condition original=runs/vocoder_gate/audio/original `
+  --condition griffin_lim=runs/vocoder_gate/audio/griffin_lim `
+  --condition bigvgan=runs/vocoder_gate/audio/bigvgan `
+  --output-dir runs/vocoder_gate/listening
+
+python scripts/10_score_listening_study.py `
+  --key runs/vocoder_gate/listening/blind_key.csv `
+  --responses runs/vocoder_gate/listening/responses/*.csv `
+  --output-dir runs/vocoder_gate/listening/results
+
+python scripts/08_evaluate_vocoder_gate.py `
+  --device cuda --overwrite `
+  --listening-ratings runs/vocoder_gate/listening/results/combined_listening_ratings.csv
+```
+
+If the full-band automatic or listening gate fails, run the allowed 8 kHz fallback once on the same clips:
+
+```powershell
+python scripts/08_fetch_bigvgan.py `
+  --model-id nvidia/bigvgan_v2_22khz_80band_fmax8k_256x
+
+python scripts/08_evaluate_vocoder_gate.py `
+  --device cuda `
+  --vocoder-config configs/vocoder_spectrogram_fmax8k.json `
+  --output-dir runs/vocoder_gate_fmax8k
+```
+
+If neither checkpoint passes, stop here and report the reconstruction ceiling alongside the existing classifier-readable fallback. Do not train or fine-tune a vocoder in this cycle.
+
+### Train only after Gate 1 passes
+
+The cache stores raw, unclipped BigVGAN log-mels. Its global mean and standard deviation are fitted from training examples only and are embedded in the VAE checkpoint so inference can reverse normalization exactly:
+
+```powershell
+python scripts/08_build_vocoder_spectrograms.py --device cuda
+python scripts/09_train_vocoder_vae.py --device cuda --epochs 60 --batch-size 32 --workers 4
+python scripts/09_generate_vocoder_vae.py `
+  --device cuda --samples-per-species 64 --temperature 0.7
+```
+
+Training uses seed 42, a 15-epoch KL warmup, early stopping, and the ported detail-aware spatial VAE v2. Four factor-two stages map `[1, 80, 256]` to a `[16, 5, 16]` latent map. Generation fits a per-species aggregated posterior prior on the training split before sampling.
+
+### Gate 2: determine whether the VAE is audio-ready
+
+Run the classifier through its normal WAV preprocessing path for the original, vocoder ceiling, deterministic VAE reconstruction, and generated-waveform conditions:
+
+```powershell
+python scripts/10_evaluate_vocoder_vae.py --device cuda
+```
+
+The automatic VAE gate requires deterministic reconstruction accuracy within ten points of the BigVGAN ceiling and generated-waveform target accuracy above 50%. Prepare the requested 24-clip balanced study with two clips per species per condition, collect approximately 8-12 complete responses, and score them:
+
+```powershell
+python scripts/10_prepare_listening_study.py `
+  --condition original=runs/vocoder_vae/evaluation/audio/original `
+  --condition bigvgan=runs/vocoder_vae/evaluation/audio/bigvgan `
+  --condition vae_reconstruction=runs/vocoder_vae/evaluation/audio/vae_reconstruction `
+  --condition vae_generated=outputs/vocoder_vae/generated_audio
+
+python scripts/10_score_listening_study.py `
+  --responses runs/listening_study/responses/*.csv
+
+python scripts/10_evaluate_vocoder_vae.py `
+  --device cuda --overwrite `
+  --listening-ratings runs/listening_study/results/combined_listening_ratings.csv
+```
+
+Only a median generated bird-likeness score of at least 3/5 changes the final status to `audio_ready`. The reports also include paired multi-resolution STFT error and Gaussian Frechet distance in the published residual-classifier embedding space. That latter value is explicitly a domain-specific, FAD-style diagnostic, not standard VGGish FAD, and is never used alone. Direct classification of the old 128 x 128 generated images remains available as a secondary diagnostic in Stage 7; it is not applied to the incompatible 80 x 256 vocoder representation.
+
+### Twelve-day ownership handoff
+
+Assign one person to each owner role before starting the next gate-dependent step:
+
+| Days | Owner role | Deliverable |
+|---|---|---|
+| 1-2 | Vocoder/cache owner | Frozen adapter, 90-clip reconstruction gate, and pilot listening pack |
+| 3-4 | Vocoder/cache owner | Raw 80 x 256 cache plus training-only normalization metadata and contract checks |
+| 5-8 | VAE owner | Gated 60-epoch-maximum spatial VAE run and selected checkpoint |
+| 9-10 | Evaluation/report owner | 64 decoded samples per species, WAV-path classifier results, paired STFT errors, and real-vs-real-calibrated embedding distances |
+| 11-12 | Evaluation/report owner | Blinded 24-clip study, scored ratings, final gate status, and fallback conclusion |

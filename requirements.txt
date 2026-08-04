@@ -9,3 +9,4 @@ torchaudio>=2.7
 tqdm>=4.66
 jupyter>=1.0
 pytest>=8.0
+huggingface-hub>=0.24
