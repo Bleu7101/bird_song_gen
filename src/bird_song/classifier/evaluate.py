@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 from pathlib import Path
 
@@ -15,6 +16,14 @@ from bird_song.runtime import choose_device, load_checkpoint
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
+
+
+def sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest().upper()
 
 
 def parse_args() -> argparse.Namespace:
@@ -32,8 +41,11 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     args = parse_args()
     device = choose_device(args.device)
-    model, classes, config, checkpoint = load_checkpoint(args.checkpoint, device)
-    dataset = ManifestDataset(args.manifest, resolve_dataset_root(PROJECT_ROOT, args.dataset_root), classes, config)
+    checkpoint_path = args.checkpoint.resolve()
+    manifest_path = args.manifest.resolve()
+    dataset_root = resolve_dataset_root(PROJECT_ROOT, args.dataset_root)
+    model, classes, config, checkpoint = load_checkpoint(checkpoint_path, device)
+    dataset = ManifestDataset(manifest_path, dataset_root, classes, config)
     loader = make_loader(dataset, args.batch_size, args.workers)
     model.eval()
     predictions: list[int] = []
@@ -51,13 +63,52 @@ def main() -> None:
     report = classification_report(targets, predictions, target_names=classes, output_dict=True, zero_division=0)
     matrix = confusion_matrix(targets, predictions, labels=range(len(classes)))
     args.output_dir.mkdir(parents=True, exist_ok=True)
+    model_config = dict(checkpoint.get("model_config", {}))
+    architecture = checkpoint.get("architecture") or model_config.get("architecture", "residual_cnn")
+    checkpoint_metadata = {
+        "path": checkpoint_path.relative_to(PROJECT_ROOT).as_posix()
+        if checkpoint_path.is_relative_to(PROJECT_ROOT)
+        else checkpoint_path.as_posix(),
+        "sha256": sha256_file(checkpoint_path),
+        "architecture": architecture,
+        "seed": checkpoint.get("seed"),
+        "epoch": checkpoint.get("epoch"),
+        "trainable_parameters": checkpoint.get("trainable_parameters"),
+    }
+    manifest_metadata = {
+        "path": manifest_path.relative_to(PROJECT_ROOT).as_posix()
+        if manifest_path.is_relative_to(PROJECT_ROOT)
+        else manifest_path.as_posix(),
+        "sha256": sha256_file(manifest_path),
+        "sample_count": len(dataset),
+    }
     (args.output_dir / "metrics.json").write_text(
-        json.dumps({"checkpoint_epoch": checkpoint.get("epoch"), "report": report}, indent=2) + "\n",
+        json.dumps(
+            {
+                "checkpoint_epoch": checkpoint.get("epoch"),
+                "checkpoint": checkpoint_metadata,
+                "manifest": manifest_metadata,
+                "sample_count": len(targets),
+                "report": report,
+            },
+            indent=2,
+        )
+        + "\n",
         encoding="utf-8",
     )
     rows = []
     for path, target, prediction, probs in zip(paths, targets, predictions, probabilities):
-        row = {"path": path, "target": classes[target], "prediction": classes[prediction], "confidence": float(probs[prediction])}
+        absolute_path = Path(path).resolve()
+        try:
+            portable_path = absolute_path.relative_to(dataset_root.resolve()).as_posix()
+        except ValueError:
+            portable_path = absolute_path.as_posix()
+        row = {
+            "path": portable_path,
+            "target": classes[target],
+            "prediction": classes[prediction],
+            "confidence": float(probs[prediction]),
+        }
         row.update({f"p_{name}": float(probs[index]) for index, name in enumerate(classes)})
         rows.append(row)
     pd.DataFrame(rows).to_csv(args.output_dir / "predictions.csv", index=False)

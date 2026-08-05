@@ -17,7 +17,7 @@ The CRNN seed-777 checkpoint achieved the strongest selected-run validation resu
 
 ## Important evaluation boundary
 
-These are validation results. The held-out test split was not used to select an architecture, and none of the new CRNN, Plain CNN, or Depthwise CNN checkpoints in this folder has a final test score. Evaluate only the selected candidate once on the held-out test split; do not compare every checkpoint on test data.
+These are validation results. The held-out test split was not used to select an architecture. The CRNN seed-777 checkpoint was preselected from this evidence and evaluated exactly once; its packaged report is in [`../selected_crnn`](../selected_crnn/README.md). Do not compare every checkpoint on test data.
 
 The separately published [`Harvey_classifier`](../Harvey_classifier/README.md) residual checkpoint remains the model with the recorded 90.39% held-out test accuracy.
 

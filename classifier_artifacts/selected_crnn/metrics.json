@@ -1,0 +1,50 @@
+{
+  "checkpoint_epoch": 19,
+  "checkpoint": {
+    "path": "classifier_artifacts/selected_crnn/best.pt",
+    "sha256": "60525C2AB3EE2B9FC24D12DB6F591010BFA36FAC2D2804D6946C7A6021121806",
+    "architecture": "crnn",
+    "seed": 777,
+    "epoch": 19,
+    "trainable_parameters": 404451
+  },
+  "manifest": {
+    "path": "manifests/full_dataset_test.csv",
+    "sha256": "9B33E5283045D5CAACADFE7A01E4B7C21F8A0779B0780EA5F5993078C8B3EA10",
+    "sample_count": 489
+  },
+  "sample_count": 489,
+  "report": {
+    "American Robin": {
+      "precision": 0.92,
+      "recall": 0.9517241379310345,
+      "f1-score": 0.9355932203389831,
+      "support": 145.0
+    },
+    "Northern Cardinal": {
+      "precision": 0.9205298013245033,
+      "recall": 0.8580246913580247,
+      "f1-score": 0.8881789137380192,
+      "support": 162.0
+    },
+    "Song Sparrow": {
+      "precision": 0.8670212765957447,
+      "recall": 0.8956043956043956,
+      "f1-score": 0.8810810810810811,
+      "support": 182.0
+    },
+    "accuracy": 0.8997955010224948,
+    "macro avg": {
+      "precision": 0.902517025973416,
+      "recall": 0.9017844082978183,
+      "f1-score": 0.9016177383860278,
+      "support": 489.0
+    },
+    "weighted avg": {
+      "precision": 0.9004574645296424,
+      "recall": 0.8997955010224948,
+      "f1-score": 0.8995966415776451,
+      "support": 489.0
+    }
+  }
+}

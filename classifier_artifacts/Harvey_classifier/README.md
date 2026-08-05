@@ -1,4 +1,9 @@
-# Harvey Classifier Model Card
+# Legacy Residual CNN Baseline Model Card
+
+This is the original held-out-tested residual CNN checkpoint. It remains in
+the repository so earlier transformer and generator evaluations stay exactly
+reproducible. The validation-selected CRNN is now packaged separately under
+`../selected_crnn/`.
 
 ## Intended use
 
@@ -6,7 +11,7 @@ Classify real or generated three-second samples as American Robin, Northern Card
 
 ## Checkpoint
 
-- File: `best.pt`
+- File: `best.pt` (legacy baseline; not the current selected classifier)
 - SHA-256: `7BE034908A80EF23EC83BF6B1B731B803EE13D6DF1CC548429B35C2DD3E35718`
 - Architecture: residual CNN, approximately 1.66 million trainable parameters
 - Selected epoch: 8

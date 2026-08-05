@@ -1,193 +1,141 @@
 # Bird Song Generation
 
-A seven-stage pipeline for bird-song generation and evaluation.
+This repository studies conditional generation of three-second bird-song
+log-mel spectrograms for American Robin, Northern Cardinal, and Song Sparrow.
+The shared representation is a normalized `1 x 128 x 128` log-mel tensor.
 
-## Pipeline
+## Harvey_classifier review snapshot
 
-1. Read the dataset and create recording-safe train/validation/test splits.
-2. Convert WAV clips to a shared normalized log-mel representation.
-3. Train and validate a supervised species classifier.
-4. Train a VAE on the shared spectrogram representation.
-5. Train a diffusion model on the shared spectrogram representation.
-6. Train a conditional autoregressive transformer that generates log-mel images patch by patch.
-7. Evaluate generated samples with classifier scores, listening tests, and spectrogram inspection.
+This branch contains Harvey's classifier work, the continuous transformer
+baseline, and the later generator pilots. The branch is intentionally not a
+merge of the separate `Diffusion` branch; that branch remains notebook-based
+and is being developed independently.
 
-The target species are American Robin, Northern Cardinal, and Song Sparrow.
+| Area | Canonical implementation | Evidence/status |
+|---|---|---|
+| Dataset and splits | `scripts/01_create_splits.py` and `manifests/` | 2,339 train, 519 validation, 489 test clips; recording-safe splits |
+| Shared preprocessing | `scripts/02_build_spectrograms.py` and `configs/spectrogram.json` | Reproducible cache under local `artifacts/spectrograms/` |
+| Classifier | `src/bird_song/classifier/` and `scripts/03_*.py` | Four architectures, three seeds each; CRNN selected from validation evidence |
+| VAE | `notebooks/04_conditional_vae.ipynb` | Notebook experiment and recorded outputs; no claim of a reusable `src` implementation on this branch |
+| Diffusion | `Diffusion` branch notebook | Not merged here; its checkpoint is not part of this branch's reproducible artifacts |
+| Transformer | `src/bird_song/transformer/` and `scripts/06_*.py` | Working baseline with a documented caveated verdict |
+| Generator pilots | `src/bird_song/generation/` and `scripts/08_*.py` through `scripts/12_*.py` | WGAN, VQGAN/token, latent-diffusion wiring and recorded pilot evidence |
 
-## Project structure
+## Setup and smoke test
 
-```text
-configs/
-|-- spectrogram.json                         Shared representation for Stages 2-7
-|-- transformer.json                         Continuous autoregressive baseline
-|-- wgan_gp.json                             Conditional WGAN-GP
-|-- vqgan.json                               Adversarial tokenizer/decoder
-|-- token_transformer.json                   Transformer over VQGAN tokens
-`-- latent_diffusion.json                    Diffusion over VQGAN latents
-
-notebooks/
-|-- 01_dataset_audit.ipynb                   Stage 1 data audit and split exploration
-|-- 02_preprocess_logmel.ipynb               Stage 2 log-mel exploration and visual checks
-|-- 03_classifier.ipynb                      Stage 3 architecture experiment and visual analysis
-|-- 04_conditional_vae.ipynb                 Stage 4 conditional VAE experiment
-`-- 06_autoregressive_transformer.ipynb      Stage 6 transformer generation experiment
-
-scripts/
-|-- 01_create_splits.py                      Reproduce recording-safe manifests
-|-- 02_build_spectrograms.py                 Build the optional full NPY cache
-|-- 03_train_classifier.py                   Train a selected classifier architecture
-|-- 03_compare_classifier_architectures.py   Run a controlled architecture comparison
-|-- 03_evaluate_classifier.py                Evaluate the classifier on real held-out audio
-|-- 03_benchmark_classifier.py               Benchmark GPU/preprocessing throughput
-|-- 06_train_transformer.py                  Train the autoregressive transformer generator
-|-- 06_generate_transformer.py               Generate conditional log-mel images
-|-- 06_evaluate_generated.py                 Legacy generated-sample evaluation entry point
-|-- 07_evaluate_generated.py                 Score generated samples and summarize results
-|-- 08_train_wgan_gp.py                      Train the sharp direct-GAN baseline
-|-- 09_train_vqgan.py                        Train the adversarial tokenizer/decoder
-|-- 09_train_token_transformer.py            Train a transformer over discrete tokens
-|-- 10_train_latent_diffusion.py             Train diffusion over VQGAN latents
-|-- 11_evaluate_generators.py                Compare detail, validity, and diversity
-`-- 12_decode_generated_audio.py             Fixed Griffin-Lim listening decoder
-
-src/bird_song/
-|-- audio.py                                 Shared WAV/log-mel preprocessing
-|-- config.py                                Spectrogram configuration loader
-|-- data.py                                  Dataset and DataLoader code
-|-- runtime.py                               Device and checkpoint helpers
-|-- classifier/                              Model and classifier-evaluation workflows
-|-- vae/                                     Stage 4 package boundary
-|-- diffusion/                               Stage 5 package boundary
-|-- transformer/                             Stage 6 continuous-patch baseline
-`-- generation/                              WGAN, VQGAN/token, diffusion, audio, and metrics
-
-classifier_artifacts/
-|-- Harvey_classifier/                       Published residual model and held-out results
-`-- architecture_comparison/                 Complete 4-architecture x 3-seed validation sweep
-
-manifests/                                   Stage 1 outputs
-```
-
-## Stage 1: dataset splits
-
-The manifests contain 2,339 training, 519 validation, and 489 test clips. All segments from one original recording ID remain in one split to reduce leakage.
-
-Check deterministic regeneration without changing files:
+The dataset is intentionally not committed. Place the supplied dataset at
+`bird_songs_dataset/` with `wavfiles/` and `bird_songs_metadata.csv`, then run
+from the repository root in PowerShell:
 
 ```powershell
-python scripts/01_create_splits.py --dry-run
+$py = "..\bird_song_venv\Scripts\python.exe"
+& $py -m pip install -r requirements.txt
+& $py -m pip install -e .
+& $py -m pytest
+& $py scripts/03_train_classifier.py --architecture crnn --dry-run --workers 0 --device auto
 ```
 
-## Stage 2: shared spectrograms
+The smoke test loads one batch, checks the `(batch, 1, 128, 128)` input shape,
+and performs no optimizer step. Training and evaluation commands refuse to
+silently overwrite existing run files.
 
-`configs/spectrogram.json` specifies mono 22.05 kHz audio, three-second clips, 128 mel bins, a 1,024-sample FFT, a 512-sample hop, and normalized 128 x 128 outputs in `[-1, 1]`.
+## Repository roles
 
-Build the complete cache when needed by the VAE, diffusion, and transformer stages:
+- `src/bird_song/` is the importable source of truth.
+- `scripts/` contains thin command-line entry points for reproducible runs.
+- `notebooks/` contains visual, gated companions that import the `src` code;
+  notebooks are not a second classifier implementation.
+- The merged legacy preprocessing notebook is retained as
+  `notebooks/02_preprocess_logmel_legacy_processed.ipynb`; the canonical
+  preprocessing companion is `notebooks/02_preprocess_logmel.ipynb`.
+- `classifier_artifacts/` contains versioned model weights and evaluation
+  evidence. Its index explains the validation-versus-held-out boundary.
+- `reports/` contains curated generator evidence. Bulk generated arrays remain
+  local and are ignored.
 
-```powershell
-python scripts/02_build_spectrograms.py
-```
+## Classifier: selection and recorded results
 
-The classifier preprocesses WAV files on demand, so a cache is not required to train or evaluate it. Use `notebooks/02_preprocess_logmel.ipynb` for exploration and visual checks; use the Stage 2 script for the shared cache consumed by later stages.
+The controlled comparison used the same recording-safe splits, preprocessing,
+optimizer, width, dropout, early-stopping rule, and seeds for every architecture.
 
-## Stage 3: species classifier
+| Architecture | Parameters | Validation accuracy | Validation macro F1 |
+|---|---:|---:|---:|
+| CRNN (CNN-GRU) | 404,451 | **90.56% +/- 1.39%** | **90.45% +/- 1.45%** |
+| Plain CNN | 1,238,691 | 90.43% +/- 1.74% | 90.33% +/- 1.76% |
+| Residual CNN | 1,661,795 | 87.54% +/- 0.99% | 87.44% +/- 0.97% |
+| Depthwise CNN | 137,699 | 81.63% +/- 2.70% | 81.67% +/- 2.94% |
 
-The original `BirdSongCNN` is a residual CNN with approximately 1.66 million trainable parameters. It uses a convolutional stem, six residual blocks, global average/maximum pooling, and a two-layer classification head.
+The CRNN seed-777 checkpoint was preselected because it had the strongest
+selected-run validation result: 92.10% accuracy and 92.06% macro F1 at epoch
+19. It was then evaluated once on the held-out test split:
 
-Train a new run:
-
-```powershell
-python scripts/03_train_classifier.py --epochs 40 --batch-size 64 --workers 4
-```
-
-Choose an individual architecture with `--architecture`. The implemented alternatives test different inductive biases and model sizes:
-
-| Architecture | Main idea | Parameters at width 32 |
-|---|---|---:|
-| `residual_cnn` | Six residual convolution blocks | 1,661,795 |
-| `plain_cnn` | VGG-style convolution stack without skip connections | 1,238,691 |
-| `crnn` | Convolutions followed by a bidirectional GRU over time | 404,451 |
-| `depthwise_cnn` | MobileNet-style depthwise-separable convolutions | 137,699 |
-
-Run the controlled comparison with three seeds per architecture:
-
-```powershell
-python scripts/03_compare_classifier_architectures.py --epochs 40 --patience 8 --seeds 42 123 777
-```
-
-The comparison holds the data splits, preprocessing, seeded data order, width, dropout, optimizer, learning rate, and early-stopping rule fixed. It writes every run separately plus `protocol.json`, `runs.csv`, `summary.csv`, and a presentation-ready `comparison.md` containing mean and sample standard deviation for validation accuracy and macro F1. Parameter counts are reported because the architectures deliberately span high- and low-capacity models. Use validation results to select the architecture, then evaluate only the selected checkpoint on the test split; repeatedly choosing models on test accuracy would leak test information.
-
-The completed 12-run sweep ranked CRNN first at **90.56% +/- 1.39% validation accuracy** and **90.45% +/- 1.45% validation macro F1**, narrowly ahead of Plain CNN at 90.43% +/- 1.74% accuracy. That quality gap is smaller than seed variation, so CRNN is the practical candidate based on its substantially smaller model and faster measured inference. All checkpoints, histories, portable configs, aggregate results, and integrity hashes are preserved in [`classifier_artifacts/architecture_comparison`](classifier_artifacts/architecture_comparison/README.md). These alternative checkpoints have not been evaluated on the held-out test split.
-
-Evaluate the trained checkpoint on the real held-out test split:
-
-```powershell
-python scripts/03_evaluate_classifier.py --checkpoint classifier_artifacts/Harvey_classifier/best.pt --output-dir runs/harvey_classifier/test
-```
-
-### Classifier results
-
-| Metric | Result |
+| Metric | CRNN selected checkpoint |
 |---|---:|
-| Best epoch | 8 |
-| Validation accuracy | 88.25% |
-| Test accuracy | 90.39% |
-| Test macro F1 | 90.44% |
+| Accuracy | **89.98%** |
+| Macro precision | 90.25% |
+| Macro recall | 90.18% |
+| Macro F1 | **90.16%** |
 
-Per-species test F1 is 91.23% for American Robin, 90.16% for Northern Cardinal, and 89.95% for Song Sparrow. Full results, limitations, checksum, and the confusion matrix are in `classifier_artifacts/Harvey_classifier/README.md`.
+The earlier residual CNN remains available as a legacy held-out baseline with
+90.39% accuracy and 90.44% macro F1. It is retained because the earlier
+transformer and generator reports explicitly used that checkpoint. These are
+real-audio held-out metrics; they are not generated-sample realism scores.
 
-## Stages 4-6: generation
+The selected model package is [`classifier_artifacts/selected_crnn`](classifier_artifacts/selected_crnn/README.md).
+The complete sweep is documented in
+[`classifier_artifacts/architecture_comparison`](classifier_artifacts/architecture_comparison/README.md),
+and the legacy checkpoint is described in
+[`classifier_artifacts/Harvey_classifier`](classifier_artifacts/Harvey_classifier/README.md).
 
-The VAE, diffusion, and transformer use the same normalized representation from `configs/spectrogram.json`. The transformer is a species-conditional autoregressive image generator, not a classifier: it converts each 128 x 128 spectrogram into 64 time-major 16 x 16 patches and predicts a Gaussian distribution for each next patch using causal self-attention.
-
-Train the transformer on the Stage 2 cache:
-
-```powershell
-python scripts/06_train_transformer.py --epochs 60 --batch-size 32 --workers 4 --device cuda
-```
-
-Generate eight log-mel images per species from the selected checkpoint:
-
-```powershell
-python scripts/06_generate_transformer.py --checkpoint runs/transformer_generator/best.pt --samples-per-species 8 --temperature 0.8 --device cuda
-```
-
-The generator writes normalized `.npy` images under species-named directories, a `generated_manifest.csv`, and a visual `conditional_samples.png`. Use `notebooks/06_autoregressive_transformer.ipynb` for patch-order visualization, gated training and generation, loss curves, real-versus-generated comparisons, and diversity diagnostics.
-
-The completed 4.95M-parameter transformer run, checkpoint, temperature sweep, classifier interoperability evaluation, previews, and technical verdict are documented in [`runs/transformer_generator/README.md`](runs/transformer_generator/README.md). The model trained cleanly and produces classifier-readable spectrograms, but the generated images remain blurrier and less structured than real bird calls; treat it as a working baseline rather than a realism-ready generator.
-
-The generator recovery branch adds a conditional WGAN-GP, a VQGAN/token
-transformer path, and latent diffusion without changing the classifier. The
-first full-data WGAN pilot produced sharper, diverse spectrograms and 84.90%
-target agreement with the residual classifier, but only 40.63% with the CRNN.
-The evidence, histories, curated audio, and next-step verdict are in
-[`reports/generator_pilot_2026-08-04`](reports/generator_pilot_2026-08-04/README.md).
-
-The recommended next experiment is WGAN-GP v2 with limited-data discriminator
-augmentation and checkpoint selection based on realistic detail, diversity,
-and cross-classifier consistency. The current rule favors maximum detail and
-can select noisy over-sharp checkpoints.
-
-## Stage 7: generated-sample evaluation
-
-Organize labeled generated samples by their intended species:
-
-```text
-generated_samples/
-|-- american_robin/
-|-- northern_cardinal/
-`-- song_sparrow/
-```
-
-Run:
+Evaluate the selected checkpoint on a new labeled manifest with:
 
 ```powershell
-python scripts/07_evaluate_generated.py --checkpoint classifier_artifacts/Harvey_classifier/best.pt --input generated_samples --labels-from-parent
+$env:PYTHONPATH = "src"
+& $py scripts/03_evaluate_classifier.py `
+  --checkpoint classifier_artifacts/selected_crnn/best.pt `
+  --output-dir runs/selected_crnn_test `
+  --workers 0 --device auto
 ```
 
-This writes:
+For architecture comparison, use the controlled sweep command in the
+architecture-comparison README. Do not select architectures by repeatedly
+checking the held-out test split.
 
-- Per-file predictions, confidence, and class probabilities in CSV format.
-- A JSON summary containing sample count, mean confidence, predicted-class counts, overall target-label accuracy, and per-target accuracy.
+## Generation baselines and evaluation boundary
 
-Classifier scores are not a complete realism metric. Generated audio is out-of-distribution, and this closed-set model must choose one of its three classes even for noise. The final report should combine Stage 7 classifier results with blind listening and spectrogram inspection.
+The continuous autoregressive transformer is documented in
+[`runs/transformer_generator/README.md`](runs/transformer_generator/README.md).
+Its best tested temperature-1.0 run achieved 80.73% target-label agreement
+with the legacy residual classifier but only 39.58% with the independent CRNN.
+Classifier agreement is a diagnostic for generated samples, not proof of
+acoustic realism; the model card records the visual and conditioning caveats.
+
+The WGAN-GP pilot and quick VQGAN/token/diffusion pilots are summarized in
+[`reports/generator_pilot_2026-08-04/README.md`](reports/generator_pilot_2026-08-04/README.md).
+That report likewise separates residual-classifier agreement (84.90%) from
+CRNN agreement (40.63%), detail ratios, listening, and visual inspection.
+
+Generated-sample evaluation is run with species-named parent directories:
+
+```powershell
+$env:PYTHONPATH = "src"
+& $py scripts/07_evaluate_generated.py `
+  --checkpoint classifier_artifacts/selected_crnn/best.pt `
+  --input generated_samples --labels-from-parent
+```
+
+The classifier is closed-set and cannot reject noise or unknown species, so
+generated-audio conclusions must include listening and spectrogram review.
+
+## Reproducible pipeline commands
+
+```powershell
+& $py scripts/01_create_splits.py --dry-run
+& $py scripts/02_build_spectrograms.py --limit 8 --output-dir artifacts/spectrograms_smoke
+& $py scripts/03_train_classifier.py --architecture crnn --epochs 40 --batch-size 64 --workers 4 --device cuda
+& $py scripts/06_train_transformer.py --epochs 60 --batch-size 32 --workers 4 --device cuda
+```
+
+The VAE notebook and the separate Diffusion notebook should be treated as
+interactive experiments until their owners publish portable source,
+checkpoints, and evidence on their respective branches.

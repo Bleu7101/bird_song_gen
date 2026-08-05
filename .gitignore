@@ -34,7 +34,6 @@ outputs/conditional_vae/generated_npy/
 outputs/conditional_vae/classifier_input/
 outputs/conditional_vae_v2/generated_npy/
 outputs/conditional_vae_v2/classifier_input/
-processed/
 artifacts/
 models/
 checkpoints/
@@ -45,9 +44,14 @@ runs/
 
 # Bulk generator samples and listening exports. Curated evidence lives under
 # reports/generator_pilot_2026-08-04 instead.
+outputs/**/*.npy
 outputs/wgan_gp_real/
 outputs/wgan_gp_real_audio/
 outputs/token_transformer_quick/
 outputs/token_transformer_quick_audio/
 outputs/latent_diffusion_quick/
 outputs/latent_diffusion_quick_audio/
+
+# The selected classifier checkpoint is intentionally versioned despite the
+# general local-checkpoint rule above.
+!classifier_artifacts/selected_crnn/best.pt

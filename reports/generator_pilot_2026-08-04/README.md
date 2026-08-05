@@ -1,4 +1,4 @@
-# Generator pilot — 2026-08-04
+﻿# Generator pilot — 2026-08-04
 
 ## Outcome
 

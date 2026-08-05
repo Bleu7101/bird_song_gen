@@ -64,6 +64,10 @@ The generated preview contains broad horizontal energy bands and noisy texture b
 
 ## Reproduce generation and scoring
 
+The command below reproduces the published historical temperature-1.0 score,
+which intentionally used the legacy residual checkpoint. Use
+`classifier_artifacts/selected_crnn/best.pt` for new generated-sample scoring.
+
 ```powershell
 python scripts/06_generate_transformer.py `
   --checkpoint runs/transformer_generator/best.pt `
@@ -85,5 +89,8 @@ python scripts/07_evaluate_generated.py `
 - `classifier_eval_real_cached_test.*`: `.npy` compatibility control.
 - `classifier_eval_residual_*`: published residual-classifier temperature sweep.
 - `classifier_eval_crnn_*`: secondary cross-classifier check.
-- `../../outputs/autoregressive_transformer_eval*`: generated evaluation arrays and manifests.
-- `../../outputs/autoregressive_transformer_preview*`: preview arrays and comparison figures.
+- `../../outputs/autoregressive_transformer_eval*`: retained generated manifests;
+  reproducible sample arrays were removed from the branch head to keep the tree
+  reviewable.
+- `../../outputs/autoregressive_transformer_preview*`: retained comparison
+  figures and manifests; preview arrays are likewise reproducible and ignored.

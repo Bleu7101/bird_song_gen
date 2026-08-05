@@ -25,7 +25,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--train-manifest", type=Path, default=PROJECT_ROOT / "manifests/full_dataset_train.csv")
     parser.add_argument("--val-manifest", type=Path, default=PROJECT_ROOT / "manifests/full_dataset_validation.csv")
     parser.add_argument("--output-dir", type=Path, default=PROJECT_ROOT / "runs/classifier")
-    parser.add_argument("--architecture", choices=ARCHITECTURES, default="residual_cnn")
+    parser.add_argument("--architecture", choices=ARCHITECTURES, default="crnn")
     parser.add_argument("--width", type=int, default=32, help="Base convolution width used by every architecture.")
     parser.add_argument("--dropout", type=float, default=0.30)
     parser.add_argument("--epochs", type=int, default=40)
