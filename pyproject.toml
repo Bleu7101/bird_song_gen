@@ -5,8 +5,17 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "bird-song-gen"
 version = "0.1.0"
-description = "Shared pipeline code for bird-song classification and generation"
+description = "Minimal BigVGAN-compatible bird-song WGAN experiment"
 requires-python = ">=3.10"
+dependencies = [
+  "numpy>=1.26",
+  "pandas>=2.2",
+  "librosa>=0.10.2",
+  "soundfile>=0.12.1",
+  "scipy>=1.12",
+  "torch>=2.7",
+  "torchaudio>=2.7",
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]

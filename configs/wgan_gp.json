@@ -1,5 +1,6 @@
 {
-  "image_size": 128,
+  "height": 80,
+  "width": 256,
   "channels": 1,
   "num_classes": 3,
   "latent_dim": 128,
@@ -7,5 +8,5 @@
   "label_dim": 64,
   "critic_base_channels": 64,
   "gradient_penalty_weight": 10.0,
-  "critic_steps": 5
+  "critic_steps": 2
 }

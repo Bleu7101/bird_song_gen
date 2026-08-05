@@ -1,5 +1,5 @@
-"""Shared code for the seven-stage bird-song generation project."""
+"""Minimal BigVGAN/WGAN experiment package."""
 
-from .config import SpectrogramConfig
+from .config import DEFAULT_CLASSES
 
-__all__ = ["SpectrogramConfig"]
+__all__ = ["DEFAULT_CLASSES"]

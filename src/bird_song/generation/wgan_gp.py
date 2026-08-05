@@ -5,14 +5,14 @@ from typing import Any
 
 import torch
 from torch import nn
-from torch.nn import functional as F
 
 
 @dataclass(frozen=True)
 class WGANConfig:
-    """Contract for a class-conditional WGAN-GP on 128 x 128 spectrograms."""
+    """Conditional WGAN-GP contract for 80 x 256 BigVGAN mels."""
 
-    image_size: int = 128
+    height: int = 80
+    width: int = 256
     channels: int = 1
     num_classes: int = 3
     latent_dim: int = 128
@@ -20,17 +20,33 @@ class WGANConfig:
     label_dim: int = 64
     critic_base_channels: int = 64
     gradient_penalty_weight: float = 10.0
-    critic_steps: int = 5
+    critic_steps: int = 2
 
     def __post_init__(self) -> None:
-        if self.image_size != 128:
-            raise ValueError("The shared generator branch currently requires image_size=128")
+        if self.height < 16 or self.width < 16 or self.height % 16 or self.width % 16:
+            raise ValueError("height and width must be positive multiples of 16")
         if self.channels < 1 or self.num_classes < 1 or self.latent_dim < 1:
             raise ValueError("channels, num_classes, and latent_dim must be positive")
-        if self.base_channels < 8 or self.critic_base_channels < 8:
-            raise ValueError("base channel counts are too small")
-        if self.label_dim < 1 or self.gradient_penalty_weight < 0 or self.critic_steps < 1:
-            raise ValueError("label_dim, gradient penalty, and critic steps must be valid")
+        if self.base_channels < 8 or self.critic_base_channels < 8 or self.label_dim < 1:
+            raise ValueError("channel and label dimensions are too small")
+        if self.gradient_penalty_weight < 0 or self.critic_steps < 1:
+            raise ValueError("gradient penalty and critic steps must be valid")
+
+    @property
+    def seed_height(self) -> int:
+        return self.height // 16
+
+    @property
+    def seed_width(self) -> int:
+        return self.width // 16
+
+    @property
+    def feature_height(self) -> int:
+        return self.seed_height
+
+    @property
+    def feature_width(self) -> int:
+        return self.seed_width
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -53,12 +69,12 @@ class _GeneratorBlock(nn.Module):
             nn.SiLU(inplace=True),
         )
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return self.block(x)
+    def forward(self, inputs: torch.Tensor) -> torch.Tensor:
+        return self.block(inputs)
 
 
 class ConditionalGenerator(nn.Module):
-    """Class-conditional generator with local convolutional detail synthesis."""
+    """Class-conditional generator whose output is [batch, channels, 80, 256]."""
 
     def __init__(self, config: WGANConfig) -> None:
         super().__init__()
@@ -66,40 +82,42 @@ class ConditionalGenerator(nn.Module):
         c = config.base_channels
         self.label_embedding = nn.Embedding(config.num_classes, config.label_dim)
         self.input = nn.Sequential(
-            nn.Linear(config.latent_dim + config.label_dim, c * 16 * 4 * 4),
+            nn.Linear(config.latent_dim + config.label_dim, c * 8 * config.seed_height * config.seed_width),
             nn.SiLU(inplace=True),
         )
         self.blocks = nn.Sequential(
-            _GeneratorBlock(c * 16, c * 8),
             _GeneratorBlock(c * 8, c * 4),
             _GeneratorBlock(c * 4, c * 2),
             _GeneratorBlock(c * 2, c),
             _GeneratorBlock(c, max(c // 2, 16)),
         )
         self.output = nn.Sequential(
-            nn.Conv2d(max(c // 2, 16), c // 4, 3, padding=1),
+            nn.Conv2d(max(c // 2, 16), max(c // 4, 8), 3, padding=1),
             nn.SiLU(inplace=True),
-            nn.Conv2d(c // 4, config.channels, 3, padding=1),
+            nn.Conv2d(max(c // 4, 8), config.channels, 3, padding=1),
             nn.Tanh(),
         )
 
     def forward(self, noise: torch.Tensor, labels: torch.Tensor) -> torch.Tensor:
         if noise.ndim != 2 or noise.shape[1] != self.config.latent_dim:
-            raise ValueError(
-                f"Expected noise shaped (batch, {self.config.latent_dim}), got {tuple(noise.shape)}"
-            )
+            raise ValueError(f"Expected noise shaped (batch, {self.config.latent_dim}), got {tuple(noise.shape)}")
         _validate_labels(labels, noise.shape[0], self.config.num_classes)
         condition = self.label_embedding(labels)
-        x = self.input(torch.cat((noise, condition), dim=1))
-        x = x.reshape(noise.shape[0], self.config.base_channels * 16, 4, 4)
-        return self.output(self.blocks(x))
+        inputs = self.input(torch.cat((noise, condition), dim=1))
+        inputs = inputs.reshape(
+            noise.shape[0],
+            self.config.base_channels * 8,
+            self.config.seed_height,
+            self.config.seed_width,
+        )
+        output = self.output(self.blocks(inputs))
+        expected = (self.config.channels, self.config.height, self.config.width)
+        if tuple(output.shape[1:]) != expected:
+            raise RuntimeError(f"Generator produced {tuple(output.shape[1:])}, expected {expected}")
+        return output
 
     @torch.inference_mode()
-    def sample(
-        self,
-        labels: torch.Tensor,
-        generator: torch.Generator | None = None,
-    ) -> torch.Tensor:
+    def sample(self, labels: torch.Tensor, generator: torch.Generator | None = None) -> torch.Tensor:
         _validate_labels(labels, labels.shape[0], self.config.num_classes)
         noise = torch.randn(
             labels.shape[0],
@@ -123,12 +141,12 @@ class _CriticBlock(nn.Module):
             nn.LeakyReLU(0.2, inplace=True),
         )
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return self.block(x)
+    def forward(self, inputs: torch.Tensor) -> torch.Tensor:
+        return self.block(inputs)
 
 
 class ConditionalCritic(nn.Module):
-    """Projection critic; it returns one scalar per spectrogram."""
+    """Projection critic returning one scalar per rectangular spectrogram."""
 
     def __init__(self, config: WGANConfig) -> None:
         super().__init__()
@@ -140,13 +158,13 @@ class ConditionalCritic(nn.Module):
             _CriticBlock(c, c * 2),
             _CriticBlock(c * 2, c * 4),
             _CriticBlock(c * 4, c * 8),
-            _CriticBlock(c * 8, c * 16),
         )
-        self.output = nn.Linear(c * 16 * 4 * 4, 1)
-        self.label_embedding = nn.Embedding(config.num_classes, c * 16 * 4 * 4)
+        feature_count = c * 8 * config.feature_height * config.feature_width
+        self.output = nn.Linear(feature_count, 1)
+        self.label_embedding = nn.Embedding(config.num_classes, feature_count)
 
     def forward(self, images: torch.Tensor, labels: torch.Tensor) -> torch.Tensor:
-        expected = (self.config.channels, self.config.image_size, self.config.image_size)
+        expected = (self.config.channels, self.config.height, self.config.width)
         if images.ndim != 4 or tuple(images.shape[1:]) != expected:
             raise ValueError(f"Expected images shaped (batch, {expected}), got {tuple(images.shape)}")
         _validate_labels(labels, images.shape[0], self.config.num_classes)
@@ -169,7 +187,6 @@ def gradient_penalty(
     fake: torch.Tensor,
     labels: torch.Tensor,
 ) -> torch.Tensor:
-    """Compute the WGAN-GP penalty in float32, even under autocast."""
     alpha = torch.rand(real.shape[0], 1, 1, 1, device=real.device, dtype=torch.float32)
     interpolated = (alpha * real.float() + (1.0 - alpha) * fake.float()).requires_grad_(True)
     scores = critic(interpolated, labels).float()
