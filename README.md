@@ -19,7 +19,11 @@ The target species are American Robin, Northern Cardinal, and Song Sparrow.
 ```text
 configs/
 |-- spectrogram.json                         Shared representation for Stages 2-7
-`-- transformer.json                         Autoregressive generator architecture
+|-- transformer.json                         Continuous autoregressive baseline
+|-- wgan_gp.json                             Conditional WGAN-GP
+|-- vqgan.json                               Adversarial tokenizer/decoder
+|-- token_transformer.json                   Transformer over VQGAN tokens
+`-- latent_diffusion.json                    Diffusion over VQGAN latents
 
 notebooks/
 |-- 01_dataset_audit.ipynb                   Stage 1 data audit and split exploration
@@ -38,7 +42,13 @@ scripts/
 |-- 06_train_transformer.py                  Train the autoregressive transformer generator
 |-- 06_generate_transformer.py               Generate conditional log-mel images
 |-- 06_evaluate_generated.py                 Legacy generated-sample evaluation entry point
-`-- 07_evaluate_generated.py                 Score generated samples and summarize results
+|-- 07_evaluate_generated.py                 Score generated samples and summarize results
+|-- 08_train_wgan_gp.py                      Train the sharp direct-GAN baseline
+|-- 09_train_vqgan.py                        Train the adversarial tokenizer/decoder
+|-- 09_train_token_transformer.py            Train a transformer over discrete tokens
+|-- 10_train_latent_diffusion.py             Train diffusion over VQGAN latents
+|-- 11_evaluate_generators.py                Compare detail, validity, and diversity
+`-- 12_decode_generated_audio.py             Fixed Griffin-Lim listening decoder
 
 src/bird_song/
 |-- audio.py                                 Shared WAV/log-mel preprocessing
@@ -48,7 +58,8 @@ src/bird_song/
 |-- classifier/                              Model and classifier-evaluation workflows
 |-- vae/                                     Stage 4 package boundary
 |-- diffusion/                               Stage 5 package boundary
-`-- transformer/                             Stage 6 model, cache loader, training, and generation
+|-- transformer/                             Stage 6 continuous-patch baseline
+`-- generation/                              WGAN, VQGAN/token, diffusion, audio, and metrics
 
 classifier_artifacts/
 |-- Harvey_classifier/                       Published residual model and held-out results
@@ -144,6 +155,18 @@ python scripts/06_generate_transformer.py --checkpoint runs/transformer_generato
 The generator writes normalized `.npy` images under species-named directories, a `generated_manifest.csv`, and a visual `conditional_samples.png`. Use `notebooks/06_autoregressive_transformer.ipynb` for patch-order visualization, gated training and generation, loss curves, real-versus-generated comparisons, and diversity diagnostics.
 
 The completed 4.95M-parameter transformer run, checkpoint, temperature sweep, classifier interoperability evaluation, previews, and technical verdict are documented in [`runs/transformer_generator/README.md`](runs/transformer_generator/README.md). The model trained cleanly and produces classifier-readable spectrograms, but the generated images remain blurrier and less structured than real bird calls; treat it as a working baseline rather than a realism-ready generator.
+
+The generator recovery branch adds a conditional WGAN-GP, a VQGAN/token
+transformer path, and latent diffusion without changing the classifier. The
+first full-data WGAN pilot produced sharper, diverse spectrograms and 84.90%
+target agreement with the residual classifier, but only 40.63% with the CRNN.
+The evidence, histories, curated audio, and next-step verdict are in
+[`reports/generator_pilot_2026-08-04`](reports/generator_pilot_2026-08-04/README.md).
+
+The recommended next experiment is WGAN-GP v2 with limited-data discriminator
+augmentation and checkpoint selection based on realistic detail, diversity,
+and cross-classifier consistency. The current rule favors maximum detail and
+can select noisy over-sharp checkpoints.
 
 ## Stage 7: generated-sample evaluation
 
