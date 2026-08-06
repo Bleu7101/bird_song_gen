@@ -32,7 +32,9 @@ spectrograms/
 outputs/conditional_vae/generated_npy/
 outputs/conditional_vae/classifier_input/
 outputs/conditional_vae_v2/generated_npy/
+outputs/conditional_vae_v3/generated_npy/
 outputs/conditional_vae_v2/classifier_input/
+outputs/conditional_vae_v3/classifier_input/
 processed/
 artifacts/
 models/
