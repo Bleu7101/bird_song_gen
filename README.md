@@ -6,20 +6,21 @@ The shared representation is a normalized `1 x 128 x 128` log-mel tensor.
 
 ## Harvey_classifier review snapshot
 
-This branch contains Harvey's classifier work, the continuous transformer
-baseline, and the later generator pilots. The branch is intentionally not a
-merge of the separate `Diffusion` branch; that branch remains notebook-based
-and is being developed independently.
+This branch contains Harvey's classifier work, two canonical generation
+baselines (the continuous Transformer and WGAN-GP), and preserved teammate
+experiments. The branch is intentionally not a merge of the separate
+`Diffusion` branch; that branch remains notebook-based and is being developed
+independently.
 
 | Area | Canonical implementation | Evidence/status |
 |---|---|---|
 | Dataset and splits | `scripts/01_create_splits.py` and `manifests/` | 2,339 train, 519 validation, 489 test clips; recording-safe splits |
 | Shared preprocessing | `scripts/02_build_spectrograms.py` and `configs/spectrogram.json` | Reproducible cache under local `artifacts/spectrograms/` |
 | Classifier | `src/bird_song/classifier/` and `scripts/03_*.py` | Four architectures, three seeds each; CRNN selected from validation evidence |
-| VAE | `notebooks/04_conditional_vae.ipynb` | Notebook experiment and recorded outputs; no claim of a reusable `src` implementation on this branch |
-| Diffusion | `Diffusion` branch notebook | Not merged here; its checkpoint is not part of this branch's reproducible artifacts |
-| Transformer | `src/bird_song/transformer/` and `scripts/06_*.py` | Working baseline with a documented caveated verdict |
-| Generator pilots | `src/bird_song/generation/` and `scripts/08_*.py` through `scripts/12_*.py` | WGAN, VQGAN/token, latent-diffusion wiring and recorded pilot evidence |
+| Canonical Transformer | `src/bird_song/transformer/` and `scripts/06_*.py` | Fully trained working baseline with a documented caveated verdict |
+| Canonical WGAN-GP | `src/bird_song/generation/wgan_gp.py` and `scripts/08_*.py` | Full-split 20-epoch run with recorded evidence and curated audio |
+| Teammate VAE | `notebooks/04_conditional_vae.ipynb` | Shenghao's notebook experiment and recorded outputs are preserved; no claim of a reusable `src` implementation on this branch |
+| Teammate Diffusion | `Diffusion` branch notebook | Vincent's branch remains independent; its checkpoint is not part of this branch's reproducible artifacts |
 
 ## Setup and smoke test
 
@@ -29,6 +30,7 @@ from the repository root in PowerShell:
 
 ```powershell
 $py = "..\bird_song_venv\Scripts\python.exe"
+$env:PYTHONPATH = (Resolve-Path "src").Path
 & $py -m pip install -r requirements.txt
 & $py -m pip install -e .
 & $py -m pytest
@@ -101,7 +103,12 @@ For architecture comparison, use the controlled sweep command in the
 architecture-comparison README. Do not select architectures by repeatedly
 checking the held-out test split.
 
-## Generation baselines and evaluation boundary
+## Canonical generation models and evaluation boundary
+
+The maintained generator comparison on `Harvey_classifier` contains exactly
+two model families: the continuous autoregressive Transformer and WGAN-GP.
+Shared evaluation and Griffin-Lim decoding helpers support those models but are
+not additional generators.
 
 The continuous autoregressive transformer is documented in
 [`runs/transformer_generator/README.md`](runs/transformer_generator/README.md).
@@ -110,10 +117,16 @@ with the legacy residual classifier but only 39.58% with the independent CRNN.
 Classifier agreement is a diagnostic for generated samples, not proof of
 acoustic realism; the model card records the visual and conditioning caveats.
 
-The WGAN-GP pilot and quick VQGAN/token/diffusion pilots are summarized in
+The full-split WGAN-GP run is summarized in
 [`reports/generator_pilot_2026-08-04/README.md`](reports/generator_pilot_2026-08-04/README.md).
 That report likewise separates residual-classifier agreement (84.90%) from
 CRNN agreement (40.63%), detail ratios, listening, and visual inspection.
+
+The earlier VQGAN, token-Transformer, and latent-diffusion wiring pilots are
+not maintained on this branch because they were short integration checks, not
+comparable generator experiments. Existing ignored local checkpoints and
+outputs are left untouched. The teammate VAE artifacts remain in this branch,
+and teammate Diffusion work remains on `origin/Diffusion`.
 
 Generated-sample evaluation is run with species-named parent directories:
 
@@ -134,6 +147,7 @@ generated-audio conclusions must include listening and spectrogram review.
 & $py scripts/02_build_spectrograms.py --limit 8 --output-dir artifacts/spectrograms_smoke
 & $py scripts/03_train_classifier.py --architecture crnn --epochs 40 --batch-size 64 --workers 4 --device cuda
 & $py scripts/06_train_transformer.py --epochs 60 --batch-size 32 --workers 4 --device cuda
+& $py scripts/08_train_wgan_gp.py --epochs 20 --critic-steps 2 --batch-size 32 --workers 0 --device cuda
 ```
 
 The VAE notebook and the separate Diffusion notebook should be treated as

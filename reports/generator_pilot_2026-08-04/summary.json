@@ -1,6 +1,7 @@
 {
   "date": "2026-08-04",
-  "branch": "codex/generator-models",
+  "source_branch": "codex/generator-models",
+  "retained_model": "wgan_gp",
   "representation": "normalized 1x128x128 log-mel",
   "classifier_changed": false,
   "wgan_gp": {
@@ -29,13 +30,6 @@
       }
     },
     "verdict": "Promising sharpness and one encouraging listening sample, but not audio-ready because cross-classifier conditioning remains weak and detail overshoots real data for two species."
-  },
-  "quick_pilots": {
-    "training_batches_per_epoch": 8,
-    "vqgan_epochs": 10,
-    "token_transformer_epochs": 20,
-    "latent_diffusion_epochs": 10,
-    "verdict": "Wiring and CUDA paths pass, but generated token-transformer and diffusion detail energy is 4.6x to 17.4x real data and is consistent with noisy artifacts. These are pilot results, not full-data comparisons."
   },
   "next_experiment": "WGAN-GP v2 with limited-data discriminator augmentation and checkpoint selection based on closeness to real detail plus diversity and cross-classifier consistency."
 }

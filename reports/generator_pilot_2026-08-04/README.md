@@ -1,16 +1,19 @@
-﻿# Generator pilot — 2026-08-04
+# WGAN-GP pilot - 2026-08-04
+
+This retained report covers the canonical WGAN-GP experiment only. The report
+directory keeps its historical name so existing links remain valid.
 
 ## Outcome
 
 The conditional WGAN-GP is the branch's first useful sharp-spectrogram
 baseline. It trained for 20 epochs over the full cached training split on CUDA
 and produced 64 samples per species. One listening sample is encouraging, but
-the evidence does not yet support an audio-ready claim.
+the evidence does not support an audio-ready claim.
 
 The frozen residual classifier matched the requested class on 84.90% of 192
 WGAN samples. The independent CRNN matched only 40.63%, heavily favoring
-American Robin. This disagreement is the main reason to continue improving the
-generator instead of treating classifier readability as realism.
+American Robin. This disagreement is the main reason not to treat classifier
+readability as realism.
 
 Generated time/frequency detail ratios were:
 
@@ -30,8 +33,8 @@ inspection therefore remain necessary.
 - [Northern Cardinal](audio/northern_cardinal.wav)
 - [Song Sparrow](audio/song_sparrow.wav)
 
-These are 3-second Griffin-Lim demonstrations, peak-normalized to 0.95. The
-decoder cannot recover phase discarded by the log-mel representation.
+These are three-second Griffin-Lim demonstrations, peak-normalized to 0.95.
+The decoder cannot recover phase discarded by the log-mel representation.
 
 ## Reproduction
 
@@ -51,21 +54,12 @@ $py = "..\bird_song_venv\Scripts\python.exe"
     --device auto --overwrite
 ```
 
-The large checkpoints and bulk arrays remain local and ignored. The history
-files in this directory are the recorded training evidence.
-
-## Quick pilots
-
-VQGAN (10 epochs), token transformer (20 epochs), and latent diffusion (10
-epochs) were run with eight batches per epoch to validate their CUDA and model
-handoffs quickly. Their generated detail energy was roughly 4.6–17.4 times the
-real baseline, consistent with noisy artifacts. They are not comparable to the
-full-data WGAN run.
+The large checkpoints and bulk arrays remain local and ignored. The WGAN
+history file in this directory is the recorded training evidence.
 
 ## Next experiment
 
 Train WGAN-GP v2 with limited-data discriminator augmentation and three seeds.
-Change checkpoint selection so it rewards detail ratios close to 1.0, diversity,
-and cross-classifier consistency; the current maximum-detail rule can select
-over-sharp noisy checkpoints. Keep VQGAN/diffusion paused until this cleaner
-WGAN benchmark is established.
+Change checkpoint selection so it rewards detail ratios close to 1.0,
+diversity, and cross-classifier consistency; the current maximum-detail rule
+can select over-sharp noisy checkpoints.

@@ -42,11 +42,14 @@ runs/
 *.pth
 *.pt
 
-# Bulk generator samples and listening exports. Curated evidence lives under
-# reports/generator_pilot_2026-08-04 instead.
+# Bulk generator samples and listening exports. Curated WGAN evidence lives
+# under reports/generator_pilot_2026-08-04 instead.
 outputs/**/*.npy
 outputs/wgan_gp_real/
 outputs/wgan_gp_real_audio/
+
+# Retired exploratory pilot outputs stay ignored so existing local artifacts
+# are preserved without making them maintained branch content again.
 outputs/token_transformer_quick/
 outputs/token_transformer_quick_audio/
 outputs/latent_diffusion_quick/
