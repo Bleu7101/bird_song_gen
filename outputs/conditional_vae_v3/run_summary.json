@@ -1,0 +1,154 @@
+{
+  "model": "spatial_detail_classifier_regularized_conditional_vae_v3",
+  "execution_mode": "existing_checkpoint_evaluation",
+  "target_species": [
+    "Northern Cardinal",
+    "Song Sparrow",
+    "American Robin"
+  ],
+  "label_to_id": {
+    "Northern Cardinal": 0,
+    "Song Sparrow": 1,
+    "American Robin": 2
+  },
+  "input_shape": [
+    1,
+    128,
+    128
+  ],
+  "latent_shape": [
+    16,
+    16,
+    16
+  ],
+  "latent_dim": 4096,
+  "class_embed_dim": 64,
+  "base_channels": 32,
+  "total_parameters": 5365025,
+  "trainable_parameters": 5365025,
+  "batch_size": 24,
+  "learning_rate": 0.0002,
+  "beta_kl": 0.0005,
+  "kl_warmup_epochs": 20,
+  "free_nats_per_channel": 0.25,
+  "classifier_checkpoint": "C:\\Users\\sheng\\Documents\\1508_project\\bird_song_gen\\classifier_artifacts\\Harvey_classifier\\best.pt",
+  "loss_weights": {
+    "event": 1.5,
+    "multiscale": 0.25,
+    "time_gradient": 0.6,
+    "frequency_gradient": 0.6,
+    "classifier_feature": 0.08,
+    "classifier_label": 0.03
+  },
+  "completed_epochs": 60,
+  "best_epoch": 59,
+  "best_validation_loss": 0.41670800013349235,
+  "best_validation_mse": 0.02778524451086976,
+  "best_validation_classifier_accuracy": 0.9017341178276636,
+  "test_metrics": {
+    "loss": 0.4187175276820645,
+    "recon": 0.4080470891817947,
+    "mse": 0.02806341195581881,
+    "mae": 0.12605974187880206,
+    "multiscale": 0.0478707341694393,
+    "time_grad": 0.23439401680706468,
+    "freq_grad": 0.21320316935975128,
+    "kl": 4.111639081334776,
+    "kl_raw": 4.111639081334776,
+    "active_latent_fraction": 1.0,
+    "classifier_feature": 0.005263324437000177,
+    "classifier_label": 0.2731183072540658,
+    "classifier_accuracy": 0.895705541950062,
+    "spectral_convergence": 0.1794483530009451,
+    "time_gradient_ratio": 0.7513655650835096,
+    "frequency_gradient_ratio": 0.5423615256701511,
+    "time_gradient_cosine": 0.7848537363157682,
+    "frequency_gradient_cosine": 0.6284214694563353,
+    "target_classifier_accuracy": 0.8629856850715747,
+    "reconstruction_classifier_accuracy": 0.8957055214723927
+  },
+  "generated_detail_metrics": [
+    {
+      "species": "Northern Cardinal",
+      "real_time_gradient_energy": 0.2863071358498232,
+      "real_frequency_gradient_energy": 0.20124850072610526,
+      "generated_time_gradient_energy": 0.23197923880070448,
+      "generated_frequency_gradient_energy": 0.11579654086381197,
+      "time_detail_ratio": 0.8102460950270713,
+      "frequency_detail_ratio": 0.5753908250049946
+    },
+    {
+      "species": "Song Sparrow",
+      "real_time_gradient_energy": 0.2725439531790031,
+      "real_frequency_gradient_energy": 0.21046563475341587,
+      "generated_time_gradient_energy": 0.22711153700947762,
+      "generated_frequency_gradient_energy": 0.10901816748082638,
+      "time_detail_ratio": 0.8333024246563046,
+      "frequency_detail_ratio": 0.5179855970717187
+    },
+    {
+      "species": "American Robin",
+      "real_time_gradient_energy": 0.24709100065560177,
+      "real_frequency_gradient_energy": 0.1950769407995816,
+      "generated_time_gradient_energy": 0.1902682837098837,
+      "generated_frequency_gradient_energy": 0.10659488337114453,
+      "time_detail_ratio": 0.7700332395961348,
+      "frequency_detail_ratio": 0.5464248256827963
+    }
+  ],
+  "sampling_prior": {
+    "type": "per_species_posterior_anchor_mixture",
+    "fitted_split": "train",
+    "bank_size_per_species": 256,
+    "temperature": 0.35,
+    "guardrail": "high-fidelity stochastic variants, not an independent unconditional prior"
+  },
+  "audio_export": {
+    "performed_in_notebook": false,
+    "external_script": "scripts/05_export_generated_audio.py",
+    "required_flag": "--no-peak-normalize"
+  },
+  "comparison_to_v2": {
+    "mse": {
+      "v2": 0.06538758829144613,
+      "v3": 0.02806341195581881,
+      "v3_minus_v2": -0.03732417633562732
+    },
+    "mae": {
+      "v2": 0.18941335797553657,
+      "v3": 0.12605974187880206,
+      "v3_minus_v2": -0.06335361609673451
+    },
+    "spectral_convergence": {
+      "v2": 0.272696984569963,
+      "v3": 0.1794483530009451,
+      "v3_minus_v2": -0.09324863156901789
+    },
+    "time_gradient_ratio": {
+      "v2": 0.32865188165676373,
+      "v3": 0.7513655650835096,
+      "v3_minus_v2": 0.42271368342674587
+    },
+    "frequency_gradient_ratio": {
+      "v2": 0.38918437645723,
+      "v3": 0.5423615256701511,
+      "v3_minus_v2": 0.15317714921292108
+    },
+    "time_gradient_cosine": {
+      "v2": 0.45028962484410445,
+      "v3": 0.7848537363157682,
+      "v3_minus_v2": 0.3345641114716637
+    },
+    "frequency_gradient_cosine": {
+      "v2": 0.48628108876858267,
+      "v3": 0.6284214694563353,
+      "v3_minus_v2": 0.1421403806877526
+    }
+  },
+  "training_section_seconds": 575.6384178999888,
+  "mean_epoch_seconds": 9.59397363166648,
+  "peak_allocated_cuda_gb": 0.10403299331665039,
+  "device": "cuda",
+  "smoke_test": false,
+  "best_checkpoint": "C:\\Users\\sheng\\Documents\\1508_project\\bird_song_gen\\checkpoints\\conditional_vae_v3\\conditional_vae_v3_best.pt"
+}

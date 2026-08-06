@@ -1,0 +1,13 @@
+{
+  "image_size": 128,
+  "patch_size": 16,
+  "channels": 1,
+  "num_classes": 3,
+  "d_model": 256,
+  "num_heads": 8,
+  "num_layers": 6,
+  "feedforward_dim": 1024,
+  "dropout": 0.1,
+  "min_log_scale": -5.0,
+  "max_log_scale": 1.0
+}

@@ -1,24 +1,63 @@
 .DS_Store
 **/.DS_Store
 
+# Local Codex agent configuration.
+.agents/
+.codex/
+
 # Local notebooks are kept out of the pushed structure for now.
 # *.ipynb
 
-# Local dataset files. Teammates should place their own copy here.
+# Local dataset files.
 bird_songs_dataset/
+
+# Downloaded third-party model/source checkouts stay local.
+external/
 
 # Python cache files
 __pycache__/
 *.py[cod]
+*.egg-info/
 .ipynb_checkpoints/
+.pytest_cache/
+.ruff_cache/
+
+# Virtual environments (the Windows setup uses ../bird_song_venv).
+.venv/
+bird_song_venv/
 
 # Generated preprocessing/training outputs
 preview_specs_128/
 processed/
 spectrograms/
+outputs/conditional_vae/generated_npy/
+outputs/conditional_vae/classifier_input/
+outputs/conditional_vae_v2/generated_npy/
+outputs/conditional_vae_v3/generated_npy/
+outputs/conditional_vae_v2/classifier_input/
+outputs/conditional_vae_v3/classifier_input/
+processed/
+artifacts/
 models/
 checkpoints/
 runs/
 *.ckpt
 *.pth
 *.pt
+
+# Bulk generator samples and listening exports. Curated WGAN evidence lives
+# under reports/generator_pilot_2026-08-04 instead.
+outputs/**/*.npy
+outputs/wgan_gp_real/
+outputs/wgan_gp_real_audio/
+
+# Retired exploratory pilot outputs stay ignored so existing local artifacts
+# are preserved without making them maintained branch content again.
+outputs/token_transformer_quick/
+outputs/token_transformer_quick_audio/
+outputs/latent_diffusion_quick/
+outputs/latent_diffusion_quick_audio/
+
+# The selected classifier checkpoint is intentionally versioned despite the
+# general local-checkpoint rule above.
+!classifier_artifacts/selected_crnn/best.pt

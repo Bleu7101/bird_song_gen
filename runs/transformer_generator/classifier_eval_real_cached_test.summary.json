@@ -1,0 +1,18 @@
+{
+  "checkpoint": "classifier_artifacts/Harvey_classifier/best.pt",
+  "input": "artifacts/spectrograms/test",
+  "num_samples": 489,
+  "mean_confidence": 0.8692529084492315,
+  "predicted_class_counts": {
+    "Song Sparrow": 196,
+    "Northern Cardinal": 153,
+    "American Robin": 140
+  },
+  "num_labeled_samples": 489,
+  "target_label_accuracy": 0.9038854805725971,
+  "per_target_accuracy": {
+    "American Robin": 0.896551724137931,
+    "Northern Cardinal": 0.8765432098765432,
+    "Song Sparrow": 0.9340659340659341
+  }
+}

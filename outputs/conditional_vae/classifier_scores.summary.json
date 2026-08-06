@@ -1,0 +1,15 @@
+{
+  "checkpoint": "C:\\Users\\sheng\\Documents\\1508_project\\bird_song_gen\\classifier_artifacts\\Harvey_classifier\\best.pt",
+  "input": "C:\\Users\\sheng\\Documents\\1508_project\\bird_song_gen\\outputs\\conditional_vae\\classifier_input",
+  "num_samples": 16,
+  "mean_confidence": 0.6306799165904522,
+  "predicted_class_counts": {
+    "Northern Cardinal": 16
+  },
+  "num_labeled_samples": 16,
+  "target_label_accuracy": 0.5,
+  "per_target_accuracy": {
+    "Northern Cardinal": 1.0,
+    "Song Sparrow": 0.0
+  }
+}

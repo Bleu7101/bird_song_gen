@@ -1,0 +1,46 @@
+{
+  "dataset_root": "bird_songs_dataset",
+  "spectrogram_config": "configs/spectrogram.json",
+  "train_manifest": "manifests/full_dataset_train.csv",
+  "val_manifest": "manifests/full_dataset_validation.csv",
+  "output_dir": "classifier_artifacts/architecture_comparison/plain_cnn/seed_777",
+  "architecture": "plain_cnn",
+  "width": 32,
+  "dropout": 0.3,
+  "epochs": 40,
+  "batch_size": 64,
+  "workers": 4,
+  "learning_rate": 0.0003,
+  "weight_decay": 0.0001,
+  "label_smoothing": 0.05,
+  "patience": 8,
+  "seed": 777,
+  "device": "cuda",
+  "balanced_sampler": false,
+  "compile_model": false,
+  "overwrite": false,
+  "dry_run": false,
+  "classes": [
+    "American Robin",
+    "Northern Cardinal",
+    "Song Sparrow"
+  ],
+  "spectrogram": {
+    "sample_rate": 22050,
+    "duration_seconds": 3.0,
+    "n_fft": 1024,
+    "hop_length": 512,
+    "n_mels": 128,
+    "spectrogram_width": 128,
+    "f_min": 150.0,
+    "f_max": 10500.0,
+    "top_db": 80.0
+  },
+  "model_config": {
+    "architecture": "plain_cnn",
+    "num_classes": 3,
+    "dropout": 0.3,
+    "width": 32
+  },
+  "trainable_parameters": 1238691
+}
