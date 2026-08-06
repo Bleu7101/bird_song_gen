@@ -1,0 +1,18 @@
+{
+  "checkpoint": "C:\\Users\\Harvey\\Documents\\Coding\\bird_song_gen\\classifier_artifacts\\selected_crnn\\best.pt",
+  "input": "C:\\Users\\Harvey\\Documents\\Coding\\bird_song_gen_decoder_test\\reports\\legacy_classifier_diagnostics\\wgan_stability_seed42\\.wav_only",
+  "num_samples": 24,
+  "mean_confidence": 0.8893437286218008,
+  "predicted_class_counts": {
+    "Song Sparrow": 9,
+    "American Robin": 8,
+    "Northern Cardinal": 7
+  },
+  "num_labeled_samples": 24,
+  "target_label_accuracy": 0.9583333333333334,
+  "per_target_accuracy": {
+    "American Robin": 1.0,
+    "Northern Cardinal": 0.875,
+    "Song Sparrow": 1.0
+  }
+}

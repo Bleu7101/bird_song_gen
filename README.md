@@ -79,11 +79,45 @@ Generate eight samples per species and decode them with BigVGAN:
 ignored. The generator-only checkpoint stores its model shape, classes, mel
 contract, training scaler, seed, and validation-selection metrics.
 
+## Generator retraining matrix
+
+The recorded comparison uses the same cache and validation split for seeds
+42, 123, and 777:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/run_bigvgan_matrix.ps1
+```
+
+The WGAN baseline uses equal `1e-4` learning rates and two critic steps. The
+stability candidate uses generator `5e-5`, critic `1e-4`, and three critic
+steps. The Transformer comparison uses rectangular 16×16 and 8×16 patches.
+Checkpoints are selected from validation evidence only; the compact recorded
+matrix is [reports/bigvgan_matrix_report.md](reports/bigvgan_matrix_report.md).
+
+The selected models are the stability WGAN (seed 42) and the 8×16 Transformer
+(seed 42). The small publication bundle, model cards, hashes, configs, and a
+balanced listening set are in [reports/canonical_models](reports/canonical_models).
+
+Generate and evaluate a Transformer set at a requested temperature:
+
+```powershell
+& $py -B scripts/07_generate_transformer.py `
+  --checkpoint runs/experiments/transformer_8x16_seed42/best.pt `
+  --temperature 0.8 --samples-per-species 8 --device cuda `
+  --output-dir runs/final_evaluations/transformer_selected/temp_0.8 --overwrite
+& $py -B scripts/08_evaluate_generators.py `
+  --generated-manifest runs/final_evaluations/transformer_selected/temp_0.8/generated_manifest.csv `
+  --output-json reports/transformer_evaluation.json
+```
+
 ## Evidence boundary
 
-This branch intentionally removes the classifier, transformer, VAE, diffusion,
-notebook, and historical output trees. The generated-audio report therefore
+This branch contains only the BigVGAN decoder, WGAN-GP, and rectangular
+Transformer work. Teammate VAE and Diffusion work remains on its own branches.
+The generated-audio report therefore
 checks shape, finite values, mel saturation, waveform length, clipping, RMS,
 silence, detail ratios, and diversity. Those checks establish that the WGAN →
 BigVGAN handoff works; they do not prove that the generated sounds are realistic
 or correctly conditioned. Use the local listening manifest for that judgment.
+The frozen legacy residual CNN and CRNN are conditioning diagnostics only, not
+perceptual-realism scores.

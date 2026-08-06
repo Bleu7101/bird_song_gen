@@ -1,0 +1,14 @@
+{
+  "name": "wgan_stability",
+  "generator_learning_rate": 0.00005,
+  "critic_learning_rate": 0.0001,
+  "critic_steps": 3,
+  "epochs": 20,
+  "batch_size": 32,
+  "seeds": [42, 123, 777],
+  "selection_metric": "sum_abs_log_detail_and_sample_std_ratios",
+  "selection_split": "validation",
+  "selected_seed": 42,
+  "selected_epoch": 18,
+  "selected_validation_selection_error": 0.04413034627862762
+}

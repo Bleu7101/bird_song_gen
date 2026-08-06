@@ -1,0 +1,475 @@
+{
+  "generated_from": "decoder_test",
+  "contract": {
+    "sample_rate": 22050,
+    "num_samples": 65536,
+    "n_fft": 1024,
+    "hop_length": 256,
+    "win_length": 1024,
+    "n_mels": 80,
+    "expected_frames": 256,
+    "model_id": "nvidia/bigvgan_v2_22khz_80band_256x",
+    "representation": "raw natural-log mel -> global train-only min-max scaled to [-1, 1]",
+    "classes": [
+      "American Robin",
+      "Northern Cardinal",
+      "Song Sparrow"
+    ]
+  },
+  "scaler": {
+    "count": 47902720,
+    "fitted_split": "train",
+    "maximum": 2.1087865829467773,
+    "minimum": -11.512925148010254,
+    "normalization": "global_train_minmax_to_minus_one_one"
+  },
+  "matrix": [
+    {
+      "run": "transformer_16x16_seed123",
+      "seed": 123,
+      "best_epoch": 46,
+      "checkpoint": "runs/experiments/transformer_16x16_seed123/best.pt",
+      "patches": 16,
+      "best_validation_nll": -1.0387466190407961
+    },
+    {
+      "run": "transformer_16x16_seed42",
+      "seed": 42,
+      "best_epoch": 49,
+      "checkpoint": "runs/experiments/transformer_16x16_seed42/best.pt",
+      "patches": 16,
+      "best_validation_nll": -1.0416021703065934
+    },
+    {
+      "run": "transformer_16x16_seed777",
+      "seed": 777,
+      "best_epoch": 42,
+      "checkpoint": "runs/experiments/transformer_16x16_seed777/best.pt",
+      "patches": 16,
+      "best_validation_nll": -1.0394120806673819
+    },
+    {
+      "run": "transformer_8x16_seed123",
+      "seed": 123,
+      "best_epoch": 52,
+      "checkpoint": "runs/experiments/transformer_8x16_seed123/best.pt",
+      "patches": 8,
+      "best_validation_nll": -1.143976862490292
+    },
+    {
+      "run": "transformer_8x16_seed42",
+      "seed": 42,
+      "best_epoch": 51,
+      "checkpoint": "runs/experiments/transformer_8x16_seed42/best.pt",
+      "patches": 8,
+      "best_validation_nll": -1.1461628436582856
+    },
+    {
+      "run": "transformer_8x16_seed777",
+      "seed": 777,
+      "best_epoch": 48,
+      "checkpoint": "runs/experiments/transformer_8x16_seed777/best.pt",
+      "patches": 8,
+      "best_validation_nll": -1.143820599094751
+    },
+    {
+      "run": "wgan_current_seed123",
+      "seed": 123,
+      "best_epoch": 20,
+      "checkpoint": "runs/experiments/wgan_current_seed123/best_generator.pt",
+      "configuration": "current",
+      "best_selection_error": 0.06389122172703908
+    },
+    {
+      "run": "wgan_current_seed42",
+      "seed": 42,
+      "best_epoch": 14,
+      "checkpoint": "runs/experiments/wgan_current_seed42/best_generator.pt",
+      "configuration": "current",
+      "best_selection_error": 0.19813516146274676
+    },
+    {
+      "run": "wgan_current_seed777",
+      "seed": 777,
+      "best_epoch": 19,
+      "checkpoint": "runs/experiments/wgan_current_seed777/best_generator.pt",
+      "configuration": "current",
+      "best_selection_error": 0.11825632901586332
+    },
+    {
+      "run": "wgan_stability_seed123",
+      "seed": 123,
+      "best_epoch": 18,
+      "checkpoint": "runs/experiments/wgan_stability_seed123/best_generator.pt",
+      "configuration": "stability",
+      "best_selection_error": 0.1647245424663121
+    },
+    {
+      "run": "wgan_stability_seed42",
+      "seed": 42,
+      "best_epoch": 18,
+      "checkpoint": "runs/experiments/wgan_stability_seed42/best_generator.pt",
+      "configuration": "stability",
+      "best_selection_error": 0.04413034627862762
+    },
+    {
+      "run": "wgan_stability_seed777",
+      "seed": 777,
+      "best_epoch": 18,
+      "checkpoint": "runs/experiments/wgan_stability_seed777/best_generator.pt",
+      "configuration": "stability",
+      "best_selection_error": 0.07780641562502344
+    }
+  ],
+  "selection": {
+    "wgan": {
+      "config": "stability",
+      "mean": 0.09555376812332106,
+      "median": 0.07780641562502344,
+      "seed": 42,
+      "run": "wgan_stability_seed42"
+    },
+    "transformer": {
+      "patches": "8x16",
+      "mean": -1.1446534350811095,
+      "median": -1.143976862490292,
+      "seed": 42,
+      "run": "transformer_8x16_seed42"
+    }
+  },
+  "generation": [
+    {
+      "path": "runs/final_evaluations/transformer_8x16_seed123/temp_0.8/generation_summary.json",
+      "label": "runs/final_evaluations/transformer_8x16_seed123/temp_0.8",
+      "status": "generation_pass",
+      "generated_samples": 24,
+      "samples_per_species": 8,
+      "temperature": 0.8,
+      "seed": 2026,
+      "maximum_clipped_fraction": 0.0,
+      "silent_samples": 0,
+      "mean_scaled_saturation_fraction": 4.882812587917821e-05,
+      "mean_pairwise_scaled_l2_distance": 21.91924285888672
+    },
+    {
+      "path": "runs/final_evaluations/transformer_8x16_seed42/temp_0.8/generation_summary.json",
+      "label": "runs/final_evaluations/transformer_8x16_seed42/temp_0.8",
+      "status": "generation_pass",
+      "generated_samples": 24,
+      "samples_per_species": 8,
+      "temperature": 0.8,
+      "seed": 2026,
+      "maximum_clipped_fraction": 0.0,
+      "silent_samples": 0,
+      "mean_scaled_saturation_fraction": 5.086263111782804e-05,
+      "mean_pairwise_scaled_l2_distance": 21.67300033569336
+    },
+    {
+      "path": "runs/final_evaluations/transformer_8x16_seed777/temp_0.8/generation_summary.json",
+      "label": "runs/final_evaluations/transformer_8x16_seed777/temp_0.8",
+      "status": "generation_pass",
+      "generated_samples": 24,
+      "samples_per_species": 8,
+      "temperature": 0.8,
+      "seed": 2026,
+      "maximum_clipped_fraction": 0.0,
+      "silent_samples": 0,
+      "mean_scaled_saturation_fraction": 4.679362064052839e-05,
+      "mean_pairwise_scaled_l2_distance": 20.16073989868164
+    },
+    {
+      "path": "runs/final_evaluations/transformer_selected/temp_0.4/generation_summary.json",
+      "label": "runs/final_evaluations/transformer_selected/temp_0.4",
+      "status": "generation_pass",
+      "generated_samples": 24,
+      "samples_per_species": 8,
+      "temperature": 0.4,
+      "seed": 2026,
+      "maximum_clipped_fraction": 0.0,
+      "silent_samples": 0,
+      "mean_scaled_saturation_fraction": 0.0,
+      "mean_pairwise_scaled_l2_distance": 14.21333122253418
+    },
+    {
+      "path": "runs/final_evaluations/transformer_selected/temp_0.6/generation_summary.json",
+      "label": "runs/final_evaluations/transformer_selected/temp_0.6",
+      "status": "generation_pass",
+      "generated_samples": 24,
+      "samples_per_species": 8,
+      "temperature": 0.6,
+      "seed": 2026,
+      "maximum_clipped_fraction": 0.0,
+      "silent_samples": 0,
+      "mean_scaled_saturation_fraction": 8.138020954599293e-06,
+      "mean_pairwise_scaled_l2_distance": 17.510440826416016
+    },
+    {
+      "path": "runs/final_evaluations/transformer_selected/temp_0.8/generation_summary.json",
+      "label": "runs/final_evaluations/transformer_selected/temp_0.8",
+      "status": "generation_pass",
+      "generated_samples": 24,
+      "samples_per_species": 8,
+      "temperature": 0.8,
+      "seed": 2026,
+      "maximum_clipped_fraction": 0.0,
+      "silent_samples": 0,
+      "mean_scaled_saturation_fraction": 5.086263111782804e-05,
+      "mean_pairwise_scaled_l2_distance": 21.67300033569336
+    },
+    {
+      "path": "runs/final_evaluations/transformer_selected/temp_1.0/generation_summary.json",
+      "label": "runs/final_evaluations/transformer_selected/temp_1.0",
+      "status": "generation_pass",
+      "generated_samples": 24,
+      "samples_per_species": 8,
+      "temperature": 1.0,
+      "seed": 2026,
+      "maximum_clipped_fraction": 0.0001373291015625,
+      "silent_samples": 0,
+      "mean_scaled_saturation_fraction": 0.00019327799736856832,
+      "mean_pairwise_scaled_l2_distance": 26.767929077148438
+    },
+    {
+      "path": "runs/final_evaluations/wgan_current_seed123/generation_summary.json",
+      "label": "runs/final_evaluations/wgan_current_seed123",
+      "status": "integration_pass",
+      "generated_samples": 24,
+      "samples_per_species": 8,
+      "temperature": "",
+      "seed": 2026,
+      "maximum_clipped_fraction": 7.62939453125e-05,
+      "silent_samples": 0,
+      "mean_scaled_saturation_fraction": 0.0,
+      "mean_pairwise_scaled_l2_distance": 45.876121520996094
+    },
+    {
+      "path": "runs/final_evaluations/wgan_current_seed42/generation_summary.json",
+      "label": "runs/final_evaluations/wgan_current_seed42",
+      "status": "integration_pass",
+      "generated_samples": 24,
+      "samples_per_species": 8,
+      "temperature": "",
+      "seed": 2026,
+      "maximum_clipped_fraction": 9.1552734375e-05,
+      "silent_samples": 0,
+      "mean_scaled_saturation_fraction": 0.0,
+      "mean_pairwise_scaled_l2_distance": 49.490318298339844
+    },
+    {
+      "path": "runs/final_evaluations/wgan_current_seed777/generation_summary.json",
+      "label": "runs/final_evaluations/wgan_current_seed777",
+      "status": "integration_pass",
+      "generated_samples": 24,
+      "samples_per_species": 8,
+      "temperature": "",
+      "seed": 2026,
+      "maximum_clipped_fraction": 0.00018310546875,
+      "silent_samples": 0,
+      "mean_scaled_saturation_fraction": 0.0,
+      "mean_pairwise_scaled_l2_distance": 37.368778228759766
+    },
+    {
+      "path": "runs/final_evaluations/wgan_stability_seed123/generation_summary.json",
+      "label": "runs/final_evaluations/wgan_stability_seed123",
+      "status": "integration_pass",
+      "generated_samples": 24,
+      "samples_per_species": 8,
+      "temperature": "",
+      "seed": 2026,
+      "maximum_clipped_fraction": 0.0002288818359375,
+      "silent_samples": 0,
+      "mean_scaled_saturation_fraction": 0.0,
+      "mean_pairwise_scaled_l2_distance": 37.45693588256836
+    },
+    {
+      "path": "runs/final_evaluations/wgan_stability_seed42/generation_summary.json",
+      "label": "runs/final_evaluations/wgan_stability_seed42",
+      "status": "integration_pass",
+      "generated_samples": 24,
+      "samples_per_species": 8,
+      "temperature": "",
+      "seed": 2026,
+      "maximum_clipped_fraction": 0.0002899169921875,
+      "silent_samples": 0,
+      "mean_scaled_saturation_fraction": 0.0,
+      "mean_pairwise_scaled_l2_distance": 48.65531539916992
+    },
+    {
+      "path": "runs/final_evaluations/wgan_stability_seed777/generation_summary.json",
+      "label": "runs/final_evaluations/wgan_stability_seed777",
+      "status": "integration_pass",
+      "generated_samples": 24,
+      "samples_per_species": 8,
+      "temperature": "",
+      "seed": 2026,
+      "maximum_clipped_fraction": 0.000396728515625,
+      "silent_samples": 0,
+      "mean_scaled_saturation_fraction": 0.0,
+      "mean_pairwise_scaled_l2_distance": 46.05778503417969
+    }
+  ],
+  "classifier_diagnostics": [
+    {
+      "path": "reports/legacy_classifier_diagnostics/transformer_8x16_seed123_temp_0.8/summary.json",
+      "classifiers": {
+        "residual_cnn": {
+          "num_samples": 24,
+          "mean_confidence": 0.7180496727426847,
+          "target_label_accuracy": 0.7083333333333334,
+          "per_target_accuracy": {
+            "American Robin": 1.0,
+            "Northern Cardinal": 0.125,
+            "Song Sparrow": 1.0
+          }
+        },
+        "crnn": {
+          "num_samples": 24,
+          "mean_confidence": 0.659281712025404,
+          "target_label_accuracy": 0.4166666666666667,
+          "per_target_accuracy": {
+            "American Robin": 1.0,
+            "Northern Cardinal": 0.0,
+            "Song Sparrow": 0.25
+          }
+        }
+      }
+    },
+    {
+      "path": "reports/legacy_classifier_diagnostics/transformer_8x16_seed42_temp_0.8/summary.json",
+      "classifiers": {
+        "residual_cnn": {
+          "num_samples": 24,
+          "mean_confidence": 0.6751292869448662,
+          "target_label_accuracy": 0.7916666666666666,
+          "per_target_accuracy": {
+            "American Robin": 1.0,
+            "Northern Cardinal": 0.375,
+            "Song Sparrow": 1.0
+          }
+        },
+        "crnn": {
+          "num_samples": 24,
+          "mean_confidence": 0.6855411753058434,
+          "target_label_accuracy": 0.4583333333333333,
+          "per_target_accuracy": {
+            "American Robin": 1.0,
+            "Northern Cardinal": 0.0,
+            "Song Sparrow": 0.375
+          }
+        }
+      }
+    },
+    {
+      "path": "reports/legacy_classifier_diagnostics/transformer_8x16_seed777_temp_0.8/summary.json",
+      "classifiers": {
+        "residual_cnn": {
+          "num_samples": 24,
+          "mean_confidence": 0.6903384526570638,
+          "target_label_accuracy": 0.8333333333333334,
+          "per_target_accuracy": {
+            "American Robin": 1.0,
+            "Northern Cardinal": 0.5,
+            "Song Sparrow": 1.0
+          }
+        },
+        "crnn": {
+          "num_samples": 24,
+          "mean_confidence": 0.6498153309027354,
+          "target_label_accuracy": 0.5,
+          "per_target_accuracy": {
+            "American Robin": 1.0,
+            "Northern Cardinal": 0.0,
+            "Song Sparrow": 0.5
+          }
+        }
+      }
+    },
+    {
+      "path": "reports/legacy_classifier_diagnostics/wgan_stability_seed123/summary.json",
+      "classifiers": {
+        "residual_cnn": {
+          "num_samples": 24,
+          "mean_confidence": 0.8238855873545011,
+          "target_label_accuracy": 0.9166666666666666,
+          "per_target_accuracy": {
+            "American Robin": 1.0,
+            "Northern Cardinal": 0.75,
+            "Song Sparrow": 1.0
+          }
+        },
+        "crnn": {
+          "num_samples": 24,
+          "mean_confidence": 0.8689961296816667,
+          "target_label_accuracy": 0.875,
+          "per_target_accuracy": {
+            "American Robin": 1.0,
+            "Northern Cardinal": 0.75,
+            "Song Sparrow": 0.875
+          }
+        }
+      }
+    },
+    {
+      "path": "reports/legacy_classifier_diagnostics/wgan_stability_seed42/summary.json",
+      "classifiers": {
+        "residual_cnn": {
+          "num_samples": 24,
+          "mean_confidence": 0.8387763388454914,
+          "target_label_accuracy": 0.9166666666666666,
+          "per_target_accuracy": {
+            "American Robin": 1.0,
+            "Northern Cardinal": 0.875,
+            "Song Sparrow": 0.875
+          }
+        },
+        "crnn": {
+          "num_samples": 24,
+          "mean_confidence": 0.8893437286218008,
+          "target_label_accuracy": 0.9583333333333334,
+          "per_target_accuracy": {
+            "American Robin": 1.0,
+            "Northern Cardinal": 0.875,
+            "Song Sparrow": 1.0
+          }
+        }
+      }
+    },
+    {
+      "path": "reports/legacy_classifier_diagnostics/wgan_stability_seed777/summary.json",
+      "classifiers": {
+        "residual_cnn": {
+          "num_samples": 24,
+          "mean_confidence": 0.8749541838963827,
+          "target_label_accuracy": 0.9583333333333334,
+          "per_target_accuracy": {
+            "American Robin": 0.875,
+            "Northern Cardinal": 1.0,
+            "Song Sparrow": 1.0
+          }
+        },
+        "crnn": {
+          "num_samples": 24,
+          "mean_confidence": 0.8763280535737673,
+          "target_label_accuracy": 0.7916666666666666,
+          "per_target_accuracy": {
+            "American Robin": 0.75,
+            "Northern Cardinal": 0.625,
+            "Song Sparrow": 1.0
+          }
+        }
+      }
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "reports/canonical_models/transformer_8x16_seed42.pt",
+      "sha256": "e9ac12cb8b9f4a878af4f5925789da24bbd6649a9a6f181114968601924bb84e",
+      "bytes": 19547414
+    },
+    {
+      "path": "reports/canonical_models/wgan_gp_stability_seed42.pt",
+      "sha256": "c760ad2d396f7a307d4f7db66267e22cd3e50e92c9fd608b39c3b4d6dbf67811",
+      "bytes": 41076610
+    }
+  ]
+}

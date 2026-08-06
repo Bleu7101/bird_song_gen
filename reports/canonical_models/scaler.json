@@ -1,0 +1,7 @@
+{
+  "minimum": -11.512925148010254,
+  "maximum": 2.1087865829467773,
+  "count": 47902720,
+  "fitted_split": "train",
+  "normalization": "global_train_minmax_to_minus_one_one"
+}

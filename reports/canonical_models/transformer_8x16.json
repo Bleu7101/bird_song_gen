@@ -1,0 +1,21 @@
+{
+  "height": 80,
+  "width": 256,
+  "patch_height": 8,
+  "patch_width": 16,
+  "channels": 1,
+  "num_classes": 3,
+  "d_model": 256,
+  "num_heads": 8,
+  "num_layers": 6,
+  "feedforward_dim": 1024,
+  "dropout": 0.1,
+  "min_log_scale": -5.0,
+  "max_log_scale": 1.0,
+  "seeds": [42, 123, 777],
+  "selection_split": "validation",
+  "selected_seed": 42,
+  "selected_epoch": 51,
+  "selected_validation_nll": -1.1461628436582856,
+  "listening_temperature": 0.8
+}

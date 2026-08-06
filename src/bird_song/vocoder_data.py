@@ -20,6 +20,7 @@ class BigVGANMelDataset(Dataset[tuple[torch.Tensor, torch.Tensor, str]]):
         classes: Iterable[str],
         config: VocoderSpectrogramConfig,
         scaler: VocoderMelScaler,
+        specaugment: bool = False,
     ) -> None:
         rows = pd.read_csv(manifest_path)
         required = {"split", "name", "relative_mel_path"}
@@ -38,9 +39,24 @@ class BigVGANMelDataset(Dataset[tuple[torch.Tensor, torch.Tensor, str]]):
         self.labels = torch.tensor([self.class_to_index[name] for name in self.rows["name"]], dtype=torch.long)
         self.config = config
         self.scaler = scaler
+        self.specaugment = specaugment
 
     def __len__(self) -> int:
         return len(self.rows)
+
+    def _mask(self, mel: torch.Tensor) -> torch.Tensor:
+        """Apply light masks in the normalized mel domain during Transformer training."""
+
+        mel = mel.clone()
+        if torch.rand(()) < 0.5:
+            width = int(torch.randint(1, min(13, self.config.n_mels + 1), ()).item())
+            start = int(torch.randint(self.config.n_mels - width + 1, ()).item())
+            mel[:, start : start + width, :] = -1.0
+        if torch.rand(()) < 0.5:
+            width = int(torch.randint(1, min(17, self.config.expected_frames + 1), ()).item())
+            start = int(torch.randint(self.config.expected_frames - width + 1, ()).item())
+            mel[:, :, start : start + width] = -1.0
+        return mel
 
     def __getitem__(self, index: int) -> tuple[torch.Tensor, torch.Tensor, str]:
         row = self.rows.iloc[index]
@@ -50,6 +66,8 @@ class BigVGANMelDataset(Dataset[tuple[torch.Tensor, torch.Tensor, str]]):
         if array.shape != expected or not np.isfinite(array).all():
             raise ValueError(f"invalid raw mel at {path}: shape={array.shape}")
         mel = self.scaler.normalize(torch.from_numpy(np.asarray(array, dtype=np.float32))).unsqueeze(0)
+        if self.specaugment:
+            mel = self._mask(mel)
         return mel, self.labels[index], str(path)
 
 

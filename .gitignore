@@ -35,3 +35,8 @@ outputs/
 
 # Local listening exports and generated audio.
 *.wav
+
+# Small, explicitly curated publication bundle. Raw runs, caches, resumable
+# checkpoints, and bulk audio remain ignored above.
+!reports/canonical_models/
+!reports/canonical_models/**

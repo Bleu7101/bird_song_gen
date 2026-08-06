@@ -1,0 +1,1005 @@
+{
+  "models": {
+    "temp_0.4": {
+      "manifest": "C:\\Users\\Harvey\\Documents\\Coding\\bird_song_gen_decoder_test\\runs\\final_evaluations\\transformer_selected\\temp_0.4\\generated_manifest.csv",
+      "species": {
+        "American Robin": {
+          "detail": {
+            "frequency_detail_ratio": 0.42250263690948486,
+            "generated_frequency_gradient_energy": 0.0024959309957921505,
+            "generated_time_gradient_energy": 0.001828257692977786,
+            "real_frequency_gradient_energy": 0.005907492246478796,
+            "real_time_gradient_energy": 0.003393844934180379,
+            "sample_std_ratio": 0.6931837797164917,
+            "time_detail_ratio": 0.5386980772018433
+          },
+          "diversity": {
+            "pairwise_l2_mean": 9.113533973693848,
+            "pairwise_l2_median": 8.450754165649414,
+            "pairwise_l2_min": 7.232778072357178,
+            "sample_count": 8.0,
+            "sample_std": 0.13550835847854614
+          },
+          "validity": {
+            "finite": true,
+            "maximum": 0.5887080430984497,
+            "minimum": -0.7676375508308411,
+            "saturated_fraction": 0.0,
+            "shape": [
+              8,
+              1,
+              80,
+              256
+            ],
+            "within_normalized_range": true
+          }
+        },
+        "Northern Cardinal": {
+          "detail": {
+            "frequency_detail_ratio": 0.3492092788219452,
+            "generated_frequency_gradient_energy": 0.0022035487927496433,
+            "generated_time_gradient_energy": 0.0016732728108763695,
+            "real_frequency_gradient_energy": 0.00631010951474309,
+            "real_time_gradient_energy": 0.004516999237239361,
+            "sample_std_ratio": 0.5876864790916443,
+            "time_detail_ratio": 0.3704390227794647
+          },
+          "diversity": {
+            "pairwise_l2_mean": 9.246542930603027,
+            "pairwise_l2_median": 8.788368225097656,
+            "pairwise_l2_min": 6.737928867340088,
+            "sample_count": 8.0,
+            "sample_std": 0.12471630424261093
+          },
+          "validity": {
+            "finite": true,
+            "maximum": 0.5833638310432434,
+            "minimum": -0.6555520296096802,
+            "saturated_fraction": 0.0,
+            "shape": [
+              8,
+              1,
+              80,
+              256
+            ],
+            "within_normalized_range": true
+          }
+        },
+        "Song Sparrow": {
+          "detail": {
+            "frequency_detail_ratio": 0.42763110995292664,
+            "generated_frequency_gradient_energy": 0.0026716282591223717,
+            "generated_time_gradient_energy": 0.001904511358588934,
+            "real_frequency_gradient_energy": 0.006247506942600012,
+            "real_time_gradient_energy": 0.004145115148276091,
+            "sample_std_ratio": 0.49549806118011475,
+            "time_detail_ratio": 0.45945921540260315
+          },
+          "diversity": {
+            "pairwise_l2_mean": 9.602337837219238,
+            "pairwise_l2_median": 9.57274341583252,
+            "pairwise_l2_min": 7.0352091789245605,
+            "sample_count": 8.0,
+            "sample_std": 0.11988645046949387
+          },
+          "validity": {
+            "finite": true,
+            "maximum": 0.5118681192398071,
+            "minimum": -0.8487356901168823,
+            "saturated_fraction": 0.0,
+            "shape": [
+              8,
+              1,
+              80,
+              256
+            ],
+            "within_normalized_range": true
+          }
+        }
+      }
+    },
+    "temp_0.6": {
+      "manifest": "C:\\Users\\Harvey\\Documents\\Coding\\bird_song_gen_decoder_test\\runs\\final_evaluations\\transformer_selected\\temp_0.6\\generated_manifest.csv",
+      "species": {
+        "American Robin": {
+          "detail": {
+            "frequency_detail_ratio": 0.9065698981285095,
+            "generated_frequency_gradient_energy": 0.005355554632842541,
+            "generated_time_gradient_energy": 0.004439880605787039,
+            "real_frequency_gradient_energy": 0.005907492246478796,
+            "real_time_gradient_energy": 0.003393844934180379,
+            "sample_std_ratio": 0.757132887840271,
+            "time_detail_ratio": 1.3082154989242554
+          },
+          "diversity": {
+            "pairwise_l2_mean": 13.554727554321289,
+            "pairwise_l2_median": 12.684462547302246,
+            "pairwise_l2_min": 10.844075202941895,
+            "sample_count": 8.0,
+            "sample_std": 0.14943072199821472
+          },
+          "validity": {
+            "finite": true,
+            "maximum": 0.7112720608711243,
+            "minimum": -1.0,
+            "saturated_fraction": 6.10351571594947e-06,
+            "shape": [
+              8,
+              1,
+              80,
+              256
+            ],
+            "within_normalized_range": true
+          }
+        },
+        "Northern Cardinal": {
+          "detail": {
+            "frequency_detail_ratio": 0.7264188528060913,
+            "generated_frequency_gradient_energy": 0.0045837825164198875,
+            "generated_time_gradient_energy": 0.004018481820821762,
+            "real_frequency_gradient_energy": 0.00631010951474309,
+            "real_time_gradient_energy": 0.004516999237239361,
+            "sample_std_ratio": 0.6264206171035767,
+            "time_detail_ratio": 0.8896352648735046
+          },
+          "diversity": {
+            "pairwise_l2_mean": 14.351921081542969,
+            "pairwise_l2_median": 14.629536628723145,
+            "pairwise_l2_min": 10.2733736038208,
+            "sample_count": 8.0,
+            "sample_std": 0.13484057784080505
+          },
+          "validity": {
+            "finite": true,
+            "maximum": 0.718766987323761,
+            "minimum": -0.9214333295822144,
+            "saturated_fraction": 0.0,
+            "shape": [
+              8,
+              1,
+              80,
+              256
+            ],
+            "within_normalized_range": true
+          }
+        },
+        "Song Sparrow": {
+          "detail": {
+            "frequency_detail_ratio": 0.8701494336128235,
+            "generated_frequency_gradient_energy": 0.00543626444414258,
+            "generated_time_gradient_energy": 0.004542135167866945,
+            "real_frequency_gradient_energy": 0.006247506942600012,
+            "real_time_gradient_energy": 0.004145115148276091,
+            "sample_std_ratio": 0.5098165273666382,
+            "time_detail_ratio": 1.0957802534103394
+          },
+          "diversity": {
+            "pairwise_l2_mean": 14.161656379699707,
+            "pairwise_l2_median": 13.513070106506348,
+            "pairwise_l2_min": 11.027207374572754,
+            "sample_count": 8.0,
+            "sample_std": 0.12522611021995544
+          },
+          "validity": {
+            "finite": true,
+            "maximum": 0.714781641960144,
+            "minimum": -1.0,
+            "saturated_fraction": 1.831054760259576e-05,
+            "shape": [
+              8,
+              1,
+              80,
+              256
+            ],
+            "within_normalized_range": true
+          }
+        }
+      }
+    },
+    "temp_0.8": {
+      "manifest": "C:\\Users\\Harvey\\Documents\\Coding\\bird_song_gen_decoder_test\\runs\\final_evaluations\\transformer_selected\\temp_0.8\\generated_manifest.csv",
+      "species": {
+        "American Robin": {
+          "detail": {
+            "frequency_detail_ratio": 1.698632001876831,
+            "generated_frequency_gradient_energy": 0.010034655220806599,
+            "generated_time_gradient_energy": 0.008933905512094498,
+            "real_frequency_gradient_energy": 0.005907492246478796,
+            "real_time_gradient_energy": 0.003393844934180379,
+            "sample_std_ratio": 0.8327610492706299,
+            "time_detail_ratio": 2.632384777069092
+          },
+          "diversity": {
+            "pairwise_l2_mean": 18.50577163696289,
+            "pairwise_l2_median": 17.864137649536133,
+            "pairwise_l2_min": 14.660656929016113,
+            "sample_count": 8.0,
+            "sample_std": 0.16586226224899292
+          },
+          "validity": {
+            "finite": true,
+            "maximum": 0.9759547710418701,
+            "minimum": -1.0,
+            "saturated_fraction": 4.882812572759576e-05,
+            "shape": [
+              8,
+              1,
+              80,
+              256
+            ],
+            "within_normalized_range": true
+          }
+        },
+        "Northern Cardinal": {
+          "detail": {
+            "frequency_detail_ratio": 1.3930732011795044,
+            "generated_frequency_gradient_energy": 0.00879044458270073,
+            "generated_time_gradient_energy": 0.008203167468309402,
+            "real_frequency_gradient_energy": 0.00631010951474309,
+            "real_time_gradient_energy": 0.004516999237239361,
+            "sample_std_ratio": 0.6922552585601807,
+            "time_detail_ratio": 1.8160656690597534
+          },
+          "diversity": {
+            "pairwise_l2_mean": 19.877788543701172,
+            "pairwise_l2_median": 19.388158798217773,
+            "pairwise_l2_min": 14.691754341125488,
+            "sample_count": 8.0,
+            "sample_std": 0.15193602442741394
+          },
+          "validity": {
+            "finite": true,
+            "maximum": 0.9841395020484924,
+            "minimum": -1.0,
+            "saturated_fraction": 2.441406286379788e-05,
+            "shape": [
+              8,
+              1,
+              80,
+              256
+            ],
+            "within_normalized_range": true
+          }
+        },
+        "Song Sparrow": {
+          "detail": {
+            "frequency_detail_ratio": 1.6075078248977661,
+            "generated_frequency_gradient_energy": 0.010042916052043438,
+            "generated_time_gradient_energy": 0.0090470090508461,
+            "real_frequency_gradient_energy": 0.006247506942600012,
+            "real_time_gradient_energy": 0.004145115148276091,
+            "sample_std_ratio": 0.5312376618385315,
+            "time_detail_ratio": 2.1825711727142334
+          },
+          "diversity": {
+            "pairwise_l2_mean": 18.935697555541992,
+            "pairwise_l2_median": 17.96307373046875,
+            "pairwise_l2_min": 14.848320007324219,
+            "sample_count": 8.0,
+            "sample_std": 0.13304273784160614
+          },
+          "validity": {
+            "finite": true,
+            "maximum": 0.993466317653656,
+            "minimum": -1.0,
+            "saturated_fraction": 7.934570021461695e-05,
+            "shape": [
+              8,
+              1,
+              80,
+              256
+            ],
+            "within_normalized_range": true
+          }
+        }
+      }
+    },
+    "temp_1.0": {
+      "manifest": "C:\\Users\\Harvey\\Documents\\Coding\\bird_song_gen_decoder_test\\runs\\final_evaluations\\transformer_selected\\temp_1.0\\generated_manifest.csv",
+      "species": {
+        "American Robin": {
+          "detail": {
+            "frequency_detail_ratio": 2.977019786834717,
+            "generated_frequency_gradient_energy": 0.0175867211073637,
+            "generated_time_gradient_energy": 0.016500823199748993,
+            "real_frequency_gradient_energy": 0.005907492246478796,
+            "real_time_gradient_energy": 0.003393844934180379,
+            "sample_std_ratio": 0.9233983755111694,
+            "time_detail_ratio": 4.861985206604004
+          },
+          "diversity": {
+            "pairwise_l2_mean": 24.395517349243164,
+            "pairwise_l2_median": 23.82149887084961,
+            "pairwise_l2_min": 19.59078598022461,
+            "sample_count": 8.0,
+            "sample_std": 0.1856001615524292
+          },
+          "validity": {
+            "finite": true,
+            "maximum": 1.0,
+            "minimum": -1.0,
+            "saturated_fraction": 0.00020141601271461695,
+            "shape": [
+              8,
+              1,
+              80,
+              256
+            ],
+            "within_normalized_range": true
+          }
+        },
+        "Northern Cardinal": {
+          "detail": {
+            "frequency_detail_ratio": 2.6598825454711914,
+            "generated_frequency_gradient_energy": 0.016784150153398514,
+            "generated_time_gradient_energy": 0.016142522916197777,
+            "real_frequency_gradient_energy": 0.00631010951474309,
+            "real_time_gradient_energy": 0.004516999237239361,
+            "sample_std_ratio": 0.8204329609870911,
+            "time_detail_ratio": 3.5737271308898926
+          },
+          "diversity": {
+            "pairwise_l2_mean": 25.68998908996582,
+            "pairwise_l2_median": 26.09549903869629,
+            "pairwise_l2_min": 18.764341354370117,
+            "sample_count": 8.0,
+            "sample_std": 0.17958125472068787
+          },
+          "validity": {
+            "finite": true,
+            "maximum": 1.0,
+            "minimum": -1.0,
+            "saturated_fraction": 0.0001464843808207661,
+            "shape": [
+              8,
+              1,
+              80,
+              256
+            ],
+            "within_normalized_range": true
+          }
+        },
+        "Song Sparrow": {
+          "detail": {
+            "frequency_detail_ratio": 2.9110817909240723,
+            "generated_frequency_gradient_energy": 0.01818700321018696,
+            "generated_time_gradient_energy": 0.017141563817858696,
+            "real_frequency_gradient_energy": 0.006247506942600012,
+            "real_time_gradient_energy": 0.004145115148276091,
+            "sample_std_ratio": 0.5863087773323059,
+            "time_detail_ratio": 4.135365009307861
+          },
+          "diversity": {
+            "pairwise_l2_mean": 24.710336685180664,
+            "pairwise_l2_median": 24.577796936035156,
+            "pairwise_l2_min": 19.397167205810547,
+            "sample_count": 8.0,
+            "sample_std": 0.14882723987102509
+          },
+          "validity": {
+            "finite": true,
+            "maximum": 1.0,
+            "minimum": -1.0,
+            "saturated_fraction": 0.00023193359083961695,
+            "shape": [
+              8,
+              1,
+              80,
+              256
+            ],
+            "within_normalized_range": true
+          }
+        }
+      }
+    },
+    "wgan_current_seed123": {
+      "manifest": "C:\\Users\\Harvey\\Documents\\Coding\\bird_song_gen_decoder_test\\runs\\final_evaluations\\wgan_current_seed123\\generated_manifest.csv",
+      "species": {
+        "American Robin": {
+          "detail": {
+            "frequency_detail_ratio": 1.1150634288787842,
+            "generated_frequency_gradient_energy": 0.006587228272110224,
+            "generated_time_gradient_energy": 0.0032230583019554615,
+            "real_frequency_gradient_energy": 0.005907492246478796,
+            "real_time_gradient_energy": 0.003393844934180379,
+            "sample_std_ratio": 1.1466143131256104,
+            "time_detail_ratio": 0.9496775269508362
+          },
+          "diversity": {
+            "pairwise_l2_mean": 42.70070266723633,
+            "pairwise_l2_median": 42.296085357666016,
+            "pairwise_l2_min": 23.2830753326416,
+            "sample_count": 8.0,
+            "sample_std": 0.25311556458473206
+          },
+          "validity": {
+            "finite": true,
+            "maximum": 0.9158137440681458,
+            "minimum": -0.8576618432998657,
+            "saturated_fraction": 0.0,
+            "shape": [
+              8,
+              1,
+              80,
+              256
+            ],
+            "within_normalized_range": true
+          }
+        },
+        "Northern Cardinal": {
+          "detail": {
+            "frequency_detail_ratio": 0.9301391839981079,
+            "generated_frequency_gradient_energy": 0.005869280081242323,
+            "generated_time_gradient_energy": 0.003914400469511747,
+            "real_frequency_gradient_energy": 0.00631010951474309,
+            "real_time_gradient_energy": 0.004516999237239361,
+            "sample_std_ratio": 1.0134384632110596,
+            "time_detail_ratio": 0.8665931224822998
+          },
+          "diversity": {
+            "pairwise_l2_mean": 43.93358612060547,
+            "pairwise_l2_median": 40.08711624145508,
+            "pairwise_l2_min": 19.956703186035156,
+            "sample_count": 8.0,
+            "sample_std": 0.2550494074821472
+          },
+          "validity": {
+            "finite": true,
+            "maximum": 0.9003390669822693,
+            "minimum": -0.9899738430976868,
+            "saturated_fraction": 0.0,
+            "shape": [
+              8,
+              1,
+              80,
+              256
+            ],
+            "within_normalized_range": true
+          }
+        },
+        "Song Sparrow": {
+          "detail": {
+            "frequency_detail_ratio": 0.9641579389572144,
+            "generated_frequency_gradient_energy": 0.006023583468049765,
+            "generated_time_gradient_energy": 0.003738497383892536,
+            "real_frequency_gradient_energy": 0.006247506942600012,
+            "real_time_gradient_energy": 0.004145115148276091,
+            "sample_std_ratio": 0.9096314907073975,
+            "time_detail_ratio": 0.9019043445587158
+          },
+          "diversity": {
+            "pairwise_l2_mean": 50.16455841064453,
+            "pairwise_l2_median": 46.340057373046875,
+            "pairwise_l2_min": 28.250362396240234,
+            "sample_count": 8.0,
+            "sample_std": 0.26693010330200195
+          },
+          "validity": {
+            "finite": true,
+            "maximum": 0.854920506477356,
+            "minimum": -0.9891154170036316,
+            "saturated_fraction": 0.0,
+            "shape": [
+              8,
+              1,
+              80,
+              256
+            ],
+            "within_normalized_range": true
+          }
+        }
+      }
+    },
+    "wgan_current_seed42": {
+      "manifest": "C:\\Users\\Harvey\\Documents\\Coding\\bird_song_gen_decoder_test\\runs\\final_evaluations\\wgan_current_seed42\\generated_manifest.csv",
+      "species": {
+        "American Robin": {
+          "detail": {
+            "frequency_detail_ratio": 0.7683144807815552,
+            "generated_frequency_gradient_energy": 0.00453881174325943,
+            "generated_time_gradient_energy": 0.002392801456153393,
+            "real_frequency_gradient_energy": 0.005907492246478796,
+            "real_time_gradient_energy": 0.003393844934180379,
+            "sample_std_ratio": 1.3059579133987427,
+            "time_detail_ratio": 0.7050414681434631
+          },
+          "diversity": {
+            "pairwise_l2_mean": 45.21901321411133,
+            "pairwise_l2_median": 43.472164154052734,
+            "pairwise_l2_min": 18.958276748657227,
+            "sample_count": 8.0,
+            "sample_std": 0.28798630833625793
+          },
+          "validity": {
+            "finite": true,
+            "maximum": 0.887165367603302,
+            "minimum": -0.9775775074958801,
+            "saturated_fraction": 0.0,
+            "shape": [
+              8,
+              1,
+              80,
+              256
+            ],
+            "within_normalized_range": true
+          }
+        },
+        "Northern Cardinal": {
+          "detail": {
+            "frequency_detail_ratio": 0.8992262482643127,
+            "generated_frequency_gradient_energy": 0.005674215964972973,
+            "generated_time_gradient_energy": 0.004477668087929487,
+            "real_frequency_gradient_energy": 0.00631010951474309,
+            "real_time_gradient_energy": 0.004516999237239361,
+            "sample_std_ratio": 1.2822213172912598,
+            "time_detail_ratio": 0.9912926554679871
+          },
+          "diversity": {
+            "pairwise_l2_mean": 56.27089309692383,
+            "pairwise_l2_median": 56.56992721557617,
+            "pairwise_l2_min": 28.28404426574707,
+            "sample_count": 8.0,
+            "sample_std": 0.3059268593788147
+          },
+          "validity": {
+            "finite": true,
+            "maximum": 0.8921080827713013,
+            "minimum": -0.9976766109466553,
+            "saturated_fraction": 0.0,
+            "shape": [
+              8,
+              1,
+              80,
+              256
+            ],
+            "within_normalized_range": true
+          }
+        },
+        "Song Sparrow": {
+          "detail": {
+            "frequency_detail_ratio": 0.8429170250892639,
+            "generated_frequency_gradient_energy": 0.005266129970550537,
+            "generated_time_gradient_energy": 0.003446836257353425,
+            "real_frequency_gradient_energy": 0.006247506942600012,
+            "real_time_gradient_energy": 0.004145115148276091,
+            "sample_std_ratio": 0.778253436088562,
+            "time_detail_ratio": 0.8315417170524597
+          },
+          "diversity": {
+            "pairwise_l2_mean": 43.32484817504883,
+            "pairwise_l2_median": 40.29438400268555,
+            "pairwise_l2_min": 19.944841384887695,
+            "sample_count": 8.0,
+            "sample_std": 0.2363732010126114
+          },
+          "validity": {
+            "finite": true,
+            "maximum": 0.8662229180335999,
+            "minimum": -0.9349053502082825,
+            "saturated_fraction": 0.0,
+            "shape": [
+              8,
+              1,
+              80,
+              256
+            ],
+            "within_normalized_range": true
+          }
+        }
+      }
+    },
+    "wgan_current_seed777": {
+      "manifest": "C:\\Users\\Harvey\\Documents\\Coding\\bird_song_gen_decoder_test\\runs\\final_evaluations\\wgan_current_seed777\\generated_manifest.csv",
+      "species": {
+        "American Robin": {
+          "detail": {
+            "frequency_detail_ratio": 0.7162471413612366,
+            "generated_frequency_gradient_energy": 0.004231224302202463,
+            "generated_time_gradient_energy": 0.002108721761032939,
+            "real_frequency_gradient_energy": 0.005907492246478796,
+            "real_time_gradient_energy": 0.003393844934180379,
+            "sample_std_ratio": 1.0592541694641113,
+            "time_detail_ratio": 0.6213371157646179
+          },
+          "diversity": {
+            "pairwise_l2_mean": 39.39362716674805,
+            "pairwise_l2_median": 38.21424102783203,
+            "pairwise_l2_min": 12.899169921875,
+            "sample_count": 8.0,
+            "sample_std": 0.22925050556659698
+          },
+          "validity": {
+            "finite": true,
+            "maximum": 0.7992682456970215,
+            "minimum": -0.9884757399559021,
+            "saturated_fraction": 0.0,
+            "shape": [
+              8,
+              1,
+              80,
+              256
+            ],
+            "within_normalized_range": true
+          }
+        },
+        "Northern Cardinal": {
+          "detail": {
+            "frequency_detail_ratio": 0.9344351887702942,
+            "generated_frequency_gradient_energy": 0.005896388553082943,
+            "generated_time_gradient_energy": 0.004260842222720385,
+            "real_frequency_gradient_energy": 0.00631010951474309,
+            "real_time_gradient_energy": 0.004516999237239361,
+            "sample_std_ratio": 0.8213406205177307,
+            "time_detail_ratio": 0.9432904720306396
+          },
+          "diversity": {
+            "pairwise_l2_mean": 23.826040267944336,
+            "pairwise_l2_median": 23.464855194091797,
+            "pairwise_l2_min": 11.543819427490234,
+            "sample_count": 8.0,
+            "sample_std": 0.18260891735553741
+          },
+          "validity": {
+            "finite": true,
+            "maximum": 0.9241986274719238,
+            "minimum": -0.9708859324455261,
+            "saturated_fraction": 0.0,
+            "shape": [
+              8,
+              1,
+              80,
+              256
+            ],
+            "within_normalized_range": true
+          }
+        },
+        "Song Sparrow": {
+          "detail": {
+            "frequency_detail_ratio": 1.317743182182312,
+            "generated_frequency_gradient_energy": 0.008232609368860722,
+            "generated_time_gradient_energy": 0.006594564765691757,
+            "real_frequency_gradient_energy": 0.006247506942600012,
+            "real_time_gradient_energy": 0.004145115148276091,
+            "sample_std_ratio": 0.8823359608650208,
+            "time_detail_ratio": 1.5909243822097778
+          },
+          "diversity": {
+            "pairwise_l2_mean": 36.54638671875,
+            "pairwise_l2_median": 36.63671875,
+            "pairwise_l2_min": 18.674518585205078,
+            "sample_count": 8.0,
+            "sample_std": 0.22519071400165558
+          },
+          "validity": {
+            "finite": true,
+            "maximum": 0.9093299508094788,
+            "minimum": -0.9314253330230713,
+            "saturated_fraction": 0.0,
+            "shape": [
+              8,
+              1,
+              80,
+              256
+            ],
+            "within_normalized_range": true
+          }
+        }
+      }
+    },
+    "wgan_stability_seed123": {
+      "manifest": "C:\\Users\\Harvey\\Documents\\Coding\\bird_song_gen_decoder_test\\runs\\final_evaluations\\wgan_stability_seed123\\generated_manifest.csv",
+      "species": {
+        "American Robin": {
+          "detail": {
+            "frequency_detail_ratio": 0.9942961931228638,
+            "generated_frequency_gradient_energy": 0.005873796995729208,
+            "generated_time_gradient_energy": 0.003522970713675022,
+            "real_frequency_gradient_energy": 0.005907492246478796,
+            "real_time_gradient_energy": 0.003393844934180379,
+            "sample_std_ratio": 1.1519341468811035,
+            "time_detail_ratio": 1.0380470752716064
+          },
+          "diversity": {
+            "pairwise_l2_mean": 41.84781265258789,
+            "pairwise_l2_median": 39.050052642822266,
+            "pairwise_l2_min": 23.231678009033203,
+            "sample_count": 8.0,
+            "sample_std": 0.25074660778045654
+          },
+          "validity": {
+            "finite": true,
+            "maximum": 0.958785355091095,
+            "minimum": -0.9240025877952576,
+            "saturated_fraction": 0.0,
+            "shape": [
+              8,
+              1,
+              80,
+              256
+            ],
+            "within_normalized_range": true
+          }
+        },
+        "Northern Cardinal": {
+          "detail": {
+            "frequency_detail_ratio": 0.9106352925300598,
+            "generated_frequency_gradient_energy": 0.005746208596974611,
+            "generated_time_gradient_energy": 0.004176389425992966,
+            "real_frequency_gradient_energy": 0.00631010951474309,
+            "real_time_gradient_energy": 0.004516999237239361,
+            "sample_std_ratio": 0.9290750622749329,
+            "time_detail_ratio": 0.9245938062667847
+          },
+          "diversity": {
+            "pairwise_l2_mean": 37.501407623291016,
+            "pairwise_l2_median": 34.94084548950195,
+            "pairwise_l2_min": 22.703718185424805,
+            "sample_count": 8.0,
+            "sample_std": 0.2261393517255783
+          },
+          "validity": {
+            "finite": true,
+            "maximum": 0.9609730243682861,
+            "minimum": -0.7847709059715271,
+            "saturated_fraction": 0.0,
+            "shape": [
+              8,
+              1,
+              80,
+              256
+            ],
+            "within_normalized_range": true
+          }
+        },
+        "Song Sparrow": {
+          "detail": {
+            "frequency_detail_ratio": 0.7044435143470764,
+            "generated_frequency_gradient_energy": 0.00440101558342576,
+            "generated_time_gradient_energy": 0.003264110768213868,
+            "real_frequency_gradient_energy": 0.006247506942600012,
+            "real_time_gradient_energy": 0.004145115148276091,
+            "sample_std_ratio": 0.5983698964118958,
+            "time_detail_ratio": 0.7874596118927002
+          },
+          "diversity": {
+            "pairwise_l2_mean": 28.664249420166016,
+            "pairwise_l2_median": 29.126995086669922,
+            "pairwise_l2_min": 16.57656478881836,
+            "sample_count": 8.0,
+            "sample_std": 0.15942251682281494
+          },
+          "validity": {
+            "finite": true,
+            "maximum": 0.8901525735855103,
+            "minimum": -0.7292089462280273,
+            "saturated_fraction": 0.0,
+            "shape": [
+              8,
+              1,
+              80,
+              256
+            ],
+            "within_normalized_range": true
+          }
+        }
+      }
+    },
+    "wgan_stability_seed42": {
+      "manifest": "C:\\Users\\Harvey\\Documents\\Coding\\bird_song_gen_decoder_test\\runs\\final_evaluations\\wgan_stability_seed42\\generated_manifest.csv",
+      "species": {
+        "American Robin": {
+          "detail": {
+            "frequency_detail_ratio": 0.8854594826698303,
+            "generated_frequency_gradient_energy": 0.0052308449521660805,
+            "generated_time_gradient_energy": 0.002656692173331976,
+            "real_frequency_gradient_energy": 0.005907492246478796,
+            "real_time_gradient_energy": 0.003393844934180379,
+            "sample_std_ratio": 1.32303786277771,
+            "time_detail_ratio": 0.7827971577644348
+          },
+          "diversity": {
+            "pairwise_l2_mean": 56.0224723815918,
+            "pairwise_l2_median": 51.50656509399414,
+            "pairwise_l2_min": 24.051536560058594,
+            "sample_count": 8.0,
+            "sample_std": 0.30592647194862366
+          },
+          "validity": {
+            "finite": true,
+            "maximum": 0.9217039942741394,
+            "minimum": -0.9977291226387024,
+            "saturated_fraction": 0.0,
+            "shape": [
+              8,
+              1,
+              80,
+              256
+            ],
+            "within_normalized_range": true
+          }
+        },
+        "Northern Cardinal": {
+          "detail": {
+            "frequency_detail_ratio": 1.088651180267334,
+            "generated_frequency_gradient_energy": 0.0068695079535245895,
+            "generated_time_gradient_energy": 0.005605319514870644,
+            "real_frequency_gradient_energy": 0.00631010951474309,
+            "real_time_gradient_energy": 0.004516999237239361,
+            "sample_std_ratio": 0.9596843123435974,
+            "time_detail_ratio": 1.2409387826919556
+          },
+          "diversity": {
+            "pairwise_l2_mean": 39.134132385253906,
+            "pairwise_l2_median": 37.58339309692383,
+            "pairwise_l2_min": 28.702733993530273,
+            "sample_count": 8.0,
+            "sample_std": 0.22665254771709442
+          },
+          "validity": {
+            "finite": true,
+            "maximum": 0.9338694214820862,
+            "minimum": -0.8765622973442078,
+            "saturated_fraction": 0.0,
+            "shape": [
+              8,
+              1,
+              80,
+              256
+            ],
+            "within_normalized_range": true
+          }
+        },
+        "Song Sparrow": {
+          "detail": {
+            "frequency_detail_ratio": 1.0501468181610107,
+            "generated_frequency_gradient_energy": 0.006560799200087786,
+            "generated_time_gradient_energy": 0.0038707905914634466,
+            "real_frequency_gradient_energy": 0.006247506942600012,
+            "real_time_gradient_energy": 0.004145115148276091,
+            "sample_std_ratio": 0.9391430020332336,
+            "time_detail_ratio": 0.9338197708129883
+          },
+          "diversity": {
+            "pairwise_l2_mean": 47.34645462036133,
+            "pairwise_l2_median": 44.59321212768555,
+            "pairwise_l2_min": 23.250627517700195,
+            "sample_count": 8.0,
+            "sample_std": 0.2679539918899536
+          },
+          "validity": {
+            "finite": true,
+            "maximum": 0.9078094363212585,
+            "minimum": -0.9830585718154907,
+            "saturated_fraction": 0.0,
+            "shape": [
+              8,
+              1,
+              80,
+              256
+            ],
+            "within_normalized_range": true
+          }
+        }
+      }
+    },
+    "wgan_stability_seed777": {
+      "manifest": "C:\\Users\\Harvey\\Documents\\Coding\\bird_song_gen_decoder_test\\runs\\final_evaluations\\wgan_stability_seed777\\generated_manifest.csv",
+      "species": {
+        "American Robin": {
+          "detail": {
+            "frequency_detail_ratio": 0.8335989713668823,
+            "generated_frequency_gradient_energy": 0.004924479406327009,
+            "generated_time_gradient_energy": 0.0027576361317187548,
+            "real_frequency_gradient_energy": 0.005907492246478796,
+            "real_time_gradient_energy": 0.003393844934180379,
+            "sample_std_ratio": 0.9187319874763489,
+            "time_detail_ratio": 0.8125404119491577
+          },
+          "diversity": {
+            "pairwise_l2_mean": 43.7889404296875,
+            "pairwise_l2_median": 37.7410774230957,
+            "pairwise_l2_min": 22.807939529418945,
+            "sample_count": 8.0,
+            "sample_std": 0.24198302626609802
+          },
+          "validity": {
+            "finite": true,
+            "maximum": 0.9471373558044434,
+            "minimum": -0.8456875085830688,
+            "saturated_fraction": 0.0,
+            "shape": [
+              8,
+              1,
+              80,
+              256
+            ],
+            "within_normalized_range": true
+          }
+        },
+        "Northern Cardinal": {
+          "detail": {
+            "frequency_detail_ratio": 1.2322778701782227,
+            "generated_frequency_gradient_energy": 0.007775808684527874,
+            "generated_time_gradient_energy": 0.00703892856836319,
+            "real_frequency_gradient_energy": 0.00631010951474309,
+            "real_time_gradient_energy": 0.004516999237239361,
+            "sample_std_ratio": 1.0555787086486816,
+            "time_detail_ratio": 1.5583195686340332
+          },
+          "diversity": {
+            "pairwise_l2_mean": 50.31258773803711,
+            "pairwise_l2_median": 49.4190673828125,
+            "pairwise_l2_min": 21.874895095825195,
+            "sample_count": 8.0,
+            "sample_std": 0.2787362337112427
+          },
+          "validity": {
+            "finite": true,
+            "maximum": 0.9890588521957397,
+            "minimum": -0.8365920782089233,
+            "saturated_fraction": 0.0,
+            "shape": [
+              8,
+              1,
+              80,
+              256
+            ],
+            "within_normalized_range": true
+          }
+        },
+        "Song Sparrow": {
+          "detail": {
+            "frequency_detail_ratio": 0.9696330428123474,
+            "generated_frequency_gradient_energy": 0.006057789083570242,
+            "generated_time_gradient_energy": 0.004160519689321518,
+            "real_frequency_gradient_energy": 0.006247506942600012,
+            "real_time_gradient_energy": 0.004145115148276091,
+            "sample_std_ratio": 0.8763716816902161,
+            "time_detail_ratio": 1.0037163496017456
+          },
+          "diversity": {
+            "pairwise_l2_mean": 40.64631271362305,
+            "pairwise_l2_median": 37.68033981323242,
+            "pairwise_l2_min": 20.406143188476562,
+            "sample_count": 8.0,
+            "sample_std": 0.23659132421016693
+          },
+          "validity": {
+            "finite": true,
+            "maximum": 0.9436731934547424,
+            "minimum": -0.9969534873962402,
+            "saturated_fraction": 0.0,
+            "shape": [
+              8,
+              1,
+              80,
+              256
+            ],
+            "within_normalized_range": true
+          }
+        }
+      }
+    }
+  },
+  "representation": "bigvgan_normalized_logmel",
+  "scaler": {
+    "count": 47902720,
+    "fitted_split": "train",
+    "maximum": 2.1087865829467773,
+    "minimum": -11.512925148010254,
+    "normalization": "global_train_minmax_to_minus_one_one"
+  },
+  "split": "validation",
+  "vocoder": {
+    "expected_frames": 256,
+    "f_max": null,
+    "f_min": 0.0,
+    "hop_length": 256,
+    "model_id": "nvidia/bigvgan_v2_22khz_80band_256x",
+    "n_fft": 1024,
+    "n_mels": 80,
+    "num_samples": 65536,
+    "sample_rate": 22050,
+    "win_length": 1024
+  }
+}

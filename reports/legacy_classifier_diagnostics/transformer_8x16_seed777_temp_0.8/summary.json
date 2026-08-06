@@ -1,0 +1,42 @@
+{
+  "input": "C:\\Users\\Harvey\\Documents\\Coding\\bird_song_gen_decoder_test\\runs\\final_evaluations\\transformer_8x16_seed777\\temp_0.8",
+  "legacy_root": "C:\\Users\\Harvey\\Documents\\Coding\\bird_song_gen",
+  "classifiers": {
+    "residual_cnn": {
+      "checkpoint": "C:\\Users\\Harvey\\Documents\\Coding\\bird_song_gen\\classifier_artifacts\\Harvey_classifier\\best.pt",
+      "input": "C:\\Users\\Harvey\\Documents\\Coding\\bird_song_gen_decoder_test\\reports\\legacy_classifier_diagnostics\\transformer_8x16_seed777_temp_0.8\\.wav_only",
+      "num_samples": 24,
+      "mean_confidence": 0.6903384526570638,
+      "predicted_class_counts": {
+        "American Robin": 10,
+        "Song Sparrow": 10,
+        "Northern Cardinal": 4
+      },
+      "num_labeled_samples": 24,
+      "target_label_accuracy": 0.8333333333333334,
+      "per_target_accuracy": {
+        "American Robin": 1.0,
+        "Northern Cardinal": 0.5,
+        "Song Sparrow": 1.0
+      }
+    },
+    "crnn": {
+      "checkpoint": "C:\\Users\\Harvey\\Documents\\Coding\\bird_song_gen\\classifier_artifacts\\selected_crnn\\best.pt",
+      "input": "C:\\Users\\Harvey\\Documents\\Coding\\bird_song_gen_decoder_test\\reports\\legacy_classifier_diagnostics\\transformer_8x16_seed777_temp_0.8\\.wav_only",
+      "num_samples": 24,
+      "mean_confidence": 0.6498153309027354,
+      "predicted_class_counts": {
+        "American Robin": 15,
+        "Song Sparrow": 9
+      },
+      "num_labeled_samples": 24,
+      "target_label_accuracy": 0.5,
+      "per_target_accuracy": {
+        "American Robin": 1.0,
+        "Northern Cardinal": 0.0,
+        "Song Sparrow": 0.5
+      }
+    }
+  },
+  "note": "Classifier agreement is a conditioning diagnostic, not an acoustic realism score."
+}

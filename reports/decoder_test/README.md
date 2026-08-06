@@ -1,6 +1,6 @@
 # `decoder_test` recorded evidence
 
-Recorded locally on 2026-08-05 from the `decoder_test` worktree at
+Recorded locally on 2026-08-06 from the `decoder_test` worktree at
 `C:\Users\Harvey\Documents\Coding\bird_song_gen_decoder_test`.
 
 ## Reproduction commands
@@ -64,9 +64,11 @@ errors were:
 This is an automatic decoder pass. The per-clip CSV and balanced listening
 manifest are in the ignored `runs/bigvgan_real_test/` directory.
 
-### WGAN-GP training history
+### Historical WGAN-GP pilot
 
-The 20-epoch CUDA run took 331.31 seconds. Selection minimizes
+The following is the original single-seed pilot retained as baseline evidence;
+it is not the new canonical matrix selection. The 20-epoch CUDA run took
+331.31 seconds. Selection minimizes
 `abs(log(time_detail_ratio)) + abs(log(frequency_detail_ratio))` on validation;
 epoch 10 was selected (`selection_error=0.065870`, time ratio `1.007071`,
 frequency ratio `0.942873`).
@@ -109,12 +111,46 @@ them, and decoded them with the frozen pure-PyTorch BigVGAN path.
 The generated WAVs and `generated_manifest.csv` are in the ignored
 `runs/wgan_gp_bigvgan_audio/` directory for local listening.
 
+## Generator retraining matrix
+
+The new matrix keeps the original WGAN run as the current-settings baseline
+and compares it with the stability candidate across seeds 42, 123, and 777.
+It also ports the canonical Transformer to the 80x256 rectangular contract and
+compares 16x16 with 8x16 patches across the same seeds. The full validation
+rows, generated-output gates, temperature sweep, conditioning diagnostics,
+and selected artifact hashes are in
+[`../bigvgan_matrix_report.md`](../bigvgan_matrix_report.md).
+
+| Family | Candidate | Mean validation metric | Median validation metric | Selected seed |
+|---|---|---:|---:|---:|
+| WGAN-GP | current (`1e-4`, `1e-4`, 2 critic steps) | 0.126761 selection error | 0.118256 | 123 within candidate |
+| WGAN-GP | stability (`5e-5`, `1e-4`, 3 critic steps) | **0.095554** selection error | **0.077806** | **42** |
+| Transformer | 16x16 patches | -1.039920 validation NLL | -1.039412 | 42 within candidate |
+| Transformer | 8x16 patches | **-1.144653** validation NLL | **-1.143977** | **42** |
+
+The canonical publication bundle therefore contains the stability WGAN seed 42
+and the 8x16 Transformer seed 42. Both checkpoints embed the 22.05 kHz /
+65,536-sample / 80x256 BigVGAN contract, training-only scaler, classes,
+configuration, seed, epoch, and metrics. The bundle contains only those
+checkpoints, configs, model cards, hashes, and a small balanced WAV set;
+BigVGAN weights, resumable checkpoints, caches, bulk arrays, and bulk audio
+remain excluded.
+
+Balanced output gates passed for all recorded final sets: finite 80x256 mels,
+finite 65,536-sample audio, zero silence, and clipping below 0.1%. Transformer
+temperature 0.8 is the listening choice after the requested 0.4/0.6/0.8/1.0
+sweep; temperature did not affect checkpoint selection.
+
+The legacy residual CNN and CRNN were run only on BigVGAN-decoded WAVs. Their
+target-label accuracies are reported separately as conditioning diagnostics,
+not validation losses or perceived-realism scores.
+
 ## Verdict
 
 The BigVGAN decoder passes the held-out reconstruction gate and improves both
 recorded mean multi-resolution metrics over the exact-mel Griffin-Lim baseline.
-The rectangular WGAN-to-BigVGAN interface also passes shape, range, finite,
-waveform-length, clipping, and diversity checks. This is integration evidence,
-not proof of acoustic realism or correct species conditioning; no classifier
-agreement claim is made on this minimal branch. Use the balanced listening
-manifests before treating the generated audio as perceptually successful.
+The retrained stability WGAN and 8x16 Transformer both pass the shape, range,
+finite, waveform-length, clipping, and diversity handoff checks. The evidence
+supports `decoder_test` as the long-lived BigVGAN branch, not a claim of
+perceptual realism or correct species conditioning. Use the balanced listening
+manifests and keep the frozen-classifier results in their diagnostic role.

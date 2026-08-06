@@ -75,8 +75,9 @@ def evaluate_epoch(
     metrics["wasserstein_gap"] = metrics["real_score"] - metrics["fake_score"]
     metrics["selection_error"] = sum(
         abs(math.log(max(metrics[name], 1e-8)))
-        for name in ("time_detail_ratio", "frequency_detail_ratio")
+        for name in ("time_detail_ratio", "frequency_detail_ratio", "sample_std_ratio")
     )
+    metrics["selection_metric"] = "sum_abs_log_detail_and_sample_std_ratios"
     return metrics
 
 
@@ -214,7 +215,7 @@ def main() -> None:
             history_file.flush()
             print(" ".join(f"{key}={value:.4f}" if isinstance(value, float) else f"{key}={value}" for key, value in row.items()))
             checkpoint = {
-                "format_version": 1,
+                "format_version": 2,
                 "model_type": "conditional_wgan_gp_bigvgan_mel_generator",
                 "generator_state": generator.state_dict(),
                 "critic_state": critic.state_dict(),
@@ -233,7 +234,7 @@ def main() -> None:
                 best_error = row["selection_error"]
                 atomic_torch_save(
                     {
-                        "format_version": 1,
+                        "format_version": 2,
                         "model_type": checkpoint["model_type"],
                         "generator_state": cpu_state_dict(generator),
                         "model_config": model_config.to_dict(),

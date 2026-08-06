@@ -1,0 +1,11 @@
+{
+  "name": "wgan_current",
+  "generator_learning_rate": 0.0001,
+  "critic_learning_rate": 0.0001,
+  "critic_steps": 2,
+  "epochs": 20,
+  "batch_size": 32,
+  "seeds": [42, 123, 777],
+  "selection_metric": "sum_abs_log_detail_and_sample_std_ratios",
+  "selection_split": "validation"
+}
