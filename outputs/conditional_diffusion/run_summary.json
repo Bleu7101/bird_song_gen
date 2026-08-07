@@ -1,17 +1,17 @@
 {
   "model": "conditional_diffusion",
-  "num_timesteps": 200,
+  "num_timesteps": 1000,
   "beta_schedule": "cosine",
   "sampler": "ddim",
   "guidance_weight": 3.0,
   "parameter_counts": {
-    "total": 4620065,
-    "trainable": 4620065
+    "total": 18443841,
+    "trainable": 18443841
   },
-  "best_val_loss": 0.14885219749285766,
-  "epochs_trained": 15,
-  "best_checkpoint": "D:\\ECE1508\\code\\bird_song_gen\\checkpoints\\conditional_diffusion\\conditional_diffusion_best.pt",
-  "output_dir": "D:\\ECE1508\\code\\bird_song_gen\\outputs\\conditional_diffusion",
+  "best_val_loss": 0.14420514203507548,
+  "epochs_trained": 23,
+  "best_checkpoint": "/content/drive/MyDrive/googlecolab/bird_song_gen/checkpoints/conditional_diffusion/conditional_diffusion_best.pt",
+  "output_dir": "/content/drive/MyDrive/googlecolab/bird_song_gen/outputs/conditional_diffusion",
   "target_species": [
     "Northern Cardinal",
     "Song Sparrow",
