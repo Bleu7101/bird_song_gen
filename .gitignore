@@ -28,6 +28,7 @@ preview_specs_128/
 spectrograms/
 outputs/conditional_vae/generated_npy/
 outputs/conditional_diffusion/generated_npy/
+outputs/conditional_diffusion/generated_npy_classifier_scale
 processed/
 artifacts/
 models/

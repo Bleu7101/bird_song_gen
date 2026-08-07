@@ -1,4 +1,4 @@
-# Bird Song Generation
+## Bird Song Generation
 
 A six-stage pipeline for bird-song generation and evaluation.
 

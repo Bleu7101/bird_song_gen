@@ -25,6 +25,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--checkpoint", type=Path, required=True)
     parser.add_argument("--input", type=Path, required=True, help="One file or a directory searched recursively.")
     parser.add_argument("--output", type=Path, default=PROJECT_ROOT / "runs/evaluation/generated_classifier_scores.csv")
+    parser.add_argument(
+        "--name",
+        default="classifier_report",
+        help="Base name for the .txt report saved under outputs/conditional_diffusion/. "
+        "Name it per run (e.g. --name diffusion_run1) to keep results separate.",
+    )
     parser.add_argument("--labels-from-parent", action="store_true", help="Treat each file's parent folder as the expected species.")
     parser.add_argument("--batch-size", type=int, default=128)
     parser.add_argument("--workers", type=int, default=4)
@@ -37,6 +43,7 @@ def main() -> None:
     paths = [args.input] if args.input.is_file() else sorted(p for p in args.input.rglob("*") if p.suffix.lower() in SUPPORTED_EXTENSIONS)
     if not paths:
         raise FileNotFoundError(f"No supported audio or .npy files found under {args.input}")
+    print(f"Scoring {len(paths)} file(s) from {args.input} ...")
     device = choose_device(args.device)
     model, classes, config, _ = load_checkpoint(args.checkpoint, device)
     model.eval()
@@ -74,10 +81,19 @@ def main() -> None:
         }
     summary_path = args.output.with_suffix(".summary.json")
     summary_path.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
-    print(frame[[column for column in ("path", "expected", "prediction", "confidence", "correct") if column in frame]].to_string(index=False))
+
+    # Human-readable .txt report, saved under outputs/conditional_diffusion/<name>.txt.
+    table = frame[[column for column in ("path", "expected", "prediction", "confidence", "correct") if column in frame]].to_string(index=False)
+    report = table + "\n\n" + json.dumps(summary, indent=2) + "\n"
+    txt_path = PROJECT_ROOT / "outputs" / "conditional_diffusion" / f"{args.name}.txt"
+    txt_path.parent.mkdir(parents=True, exist_ok=True)
+    txt_path.write_text(report, encoding="utf-8")
+
+    print(table)
     print(json.dumps(summary, indent=2))
     print(f"Per-file scores: {args.output}")
     print(f"Evaluation summary: {summary_path}")
+    print(f"Text report: {txt_path}")
 
 
 if __name__ == "__main__":
