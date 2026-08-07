@@ -32,7 +32,7 @@ outputs/conditional_diffusion/generated_npy_classifier_scale
 processed/
 artifacts/
 models/
-checkpoints/
+
 runs/
 *.ckpt
 *.pth
