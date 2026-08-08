@@ -8,9 +8,9 @@
     "total": 18443841,
     "trainable": 18443841
   },
-  "best_val_loss": 0.1399647983684705,
-  "epochs_trained": 17,
-  "best_checkpoint": "/content/drive/MyDrive/googlecolab/bird_song_gen/checkpoints/conditional_diffusion/conditional_diffusion_best.pt",
+  "best_val_loss": null,
+  "epochs_trained": 34,
+  "best_checkpoint": "/content/drive/MyDrive/googlecolab/bird_song_gen/checkpoints/conditional_diffusion/conditional_diffusion_best_low_batch_60_eps.pt",
   "output_dir": "/content/drive/MyDrive/googlecolab/bird_song_gen/outputs/conditional_diffusion",
   "target_species": [
     "Northern Cardinal",
