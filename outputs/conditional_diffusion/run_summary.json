@@ -2,15 +2,15 @@
   "model": "conditional_diffusion",
   "num_timesteps": 1000,
   "beta_schedule": "cosine",
-  "sampler": "ddpm",
+  "sampler": "ddim",
   "guidance_weight": 3.0,
   "parameter_counts": {
     "total": 18443841,
     "trainable": 18443841
   },
-  "best_val_loss": 0.14470337276743556,
+  "best_val_loss": null,
   "epochs_trained": 34,
-  "best_checkpoint": "/content/drive/MyDrive/googlecolab/bird_song_gen/checkpoints/conditional_diffusion/conditional_diffusion_best_low_batch_60_eps_weighted.pt",
+  "best_checkpoint": "/content/drive/MyDrive/googlecolab/bird_song_gen/checkpoints/conditional_diffusion/conditional_diffusion_best_low_batch_100_eps_weighted.pt",
   "output_dir": "/content/drive/MyDrive/googlecolab/bird_song_gen/outputs/conditional_diffusion",
   "target_species": [
     "Northern Cardinal",
