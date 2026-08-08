@@ -1,0 +1,37 @@
+                                                                                       path        prediction  confidence
+   outputs/conditional_diffusion/generated_npy_classifier_scale/diff_american_robin_000.npy    American Robin    0.819634
+   outputs/conditional_diffusion/generated_npy_classifier_scale/diff_american_robin_001.npy    American Robin    0.940205
+   outputs/conditional_diffusion/generated_npy_classifier_scale/diff_american_robin_002.npy    American Robin    0.526409
+   outputs/conditional_diffusion/generated_npy_classifier_scale/diff_american_robin_003.npy      Song Sparrow    0.483854
+   outputs/conditional_diffusion/generated_npy_classifier_scale/diff_american_robin_004.npy    American Robin    0.760293
+   outputs/conditional_diffusion/generated_npy_classifier_scale/diff_american_robin_005.npy      Song Sparrow    0.578271
+   outputs/conditional_diffusion/generated_npy_classifier_scale/diff_american_robin_006.npy    American Robin    0.563890
+   outputs/conditional_diffusion/generated_npy_classifier_scale/diff_american_robin_007.npy    American Robin    0.769307
+outputs/conditional_diffusion/generated_npy_classifier_scale/diff_northern_cardinal_000.npy Northern Cardinal    0.985625
+outputs/conditional_diffusion/generated_npy_classifier_scale/diff_northern_cardinal_001.npy Northern Cardinal    0.975509
+outputs/conditional_diffusion/generated_npy_classifier_scale/diff_northern_cardinal_002.npy Northern Cardinal    0.971510
+outputs/conditional_diffusion/generated_npy_classifier_scale/diff_northern_cardinal_003.npy Northern Cardinal    0.980351
+outputs/conditional_diffusion/generated_npy_classifier_scale/diff_northern_cardinal_004.npy Northern Cardinal    0.978349
+outputs/conditional_diffusion/generated_npy_classifier_scale/diff_northern_cardinal_005.npy Northern Cardinal    0.897337
+outputs/conditional_diffusion/generated_npy_classifier_scale/diff_northern_cardinal_006.npy Northern Cardinal    0.958109
+outputs/conditional_diffusion/generated_npy_classifier_scale/diff_northern_cardinal_007.npy Northern Cardinal    0.988233
+     outputs/conditional_diffusion/generated_npy_classifier_scale/diff_song_sparrow_000.npy      Song Sparrow    0.877550
+     outputs/conditional_diffusion/generated_npy_classifier_scale/diff_song_sparrow_001.npy      Song Sparrow    0.889640
+     outputs/conditional_diffusion/generated_npy_classifier_scale/diff_song_sparrow_002.npy      Song Sparrow    0.791636
+     outputs/conditional_diffusion/generated_npy_classifier_scale/diff_song_sparrow_003.npy    American Robin    0.823447
+     outputs/conditional_diffusion/generated_npy_classifier_scale/diff_song_sparrow_004.npy      Song Sparrow    0.972112
+     outputs/conditional_diffusion/generated_npy_classifier_scale/diff_song_sparrow_005.npy      Song Sparrow    0.858435
+     outputs/conditional_diffusion/generated_npy_classifier_scale/diff_song_sparrow_006.npy      Song Sparrow    0.801571
+     outputs/conditional_diffusion/generated_npy_classifier_scale/diff_song_sparrow_007.npy      Song Sparrow    0.823583
+
+{
+  "checkpoint": "/content/drive/MyDrive/googlecolab/bird_song_gen/classifier_artifacts/Harvey_classifier/best.pt",
+  "input": "/content/drive/MyDrive/googlecolab/bird_song_gen/outputs/conditional_diffusion/generated_npy_classifier_scale",
+  "num_samples": 24,
+  "mean_confidence": 0.8339524107674757,
+  "predicted_class_counts": {
+    "Song Sparrow": 9,
+    "Northern Cardinal": 8,
+    "American Robin": 7
+  }
+}

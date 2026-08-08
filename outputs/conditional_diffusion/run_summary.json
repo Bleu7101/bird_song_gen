@@ -2,14 +2,14 @@
   "model": "conditional_diffusion",
   "num_timesteps": 1000,
   "beta_schedule": "cosine",
-  "sampler": "ddim",
+  "sampler": "ddpm",
   "guidance_weight": 3.0,
   "parameter_counts": {
     "total": 18443841,
     "trainable": 18443841
   },
-  "best_val_loss": 0.14420514203507548,
-  "epochs_trained": 23,
+  "best_val_loss": 0.1399647983684705,
+  "epochs_trained": 17,
   "best_checkpoint": "/content/drive/MyDrive/googlecolab/bird_song_gen/checkpoints/conditional_diffusion/conditional_diffusion_best.pt",
   "output_dir": "/content/drive/MyDrive/googlecolab/bird_song_gen/outputs/conditional_diffusion",
   "target_species": [
