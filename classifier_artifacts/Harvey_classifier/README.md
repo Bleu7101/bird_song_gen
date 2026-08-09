@@ -1,5 +1,8 @@
 # Legacy Residual CNN Baseline Model Card
 
+The directory name `Harvey_classifier` is a historical artifact label, not an
+active Git branch. The repository's primary branch is now `main`.
+
 This is the original held-out-tested residual CNN checkpoint. It remains in
 the repository so earlier transformer and generator evaluations stay exactly
 reproducible. The validation-selected CRNN is now packaged separately under

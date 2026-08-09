@@ -7,9 +7,9 @@ representation: normalized `[1, 128, 128]` log-mel arrays from
 modified.
 
 The other canonical generator is the continuous autoregressive Transformer in
-`src/bird_song/transformer/`. Shenghao's VAE notebook and recorded outputs are
-preserved separately, while Vincent's Diffusion model remains on the independent
-`Diffusion` branch.
+`src/bird_song/transformer/`. VAE v1/v2/v3 notebook artifacts are preserved on
+`main`. Diffusion models live on the separate `Diffusion`, `Difussion`, and
+`diffusion_vincent` branches and are not part of this package.
 
 ## Train and sample
 
@@ -51,3 +51,10 @@ Decode any generated manifest to WAV with the same fixed Griffin-Lim baseline:
 
 This decoder is a controlled comparison, not a claim that Griffin-Lim restores
 the phase information discarded by the mel transform.
+
+Future work comparing alternative methods for converting generated
+spectrograms into audio waveforms belongs on the `BigVGAN_decode` branch. That
+branch currently uses a raw `80 x 256` BigVGAN-compatible mel contract, whereas
+this package uses normalized `128 x 128` mels. Do not exchange cached mels or
+generator checkpoints between those contracts without an explicit conversion
+and validation step.

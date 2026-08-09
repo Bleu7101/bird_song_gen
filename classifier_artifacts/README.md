@@ -10,6 +10,9 @@ legacy held-out baseline must not be presented as the same experiment.
 | [`architecture_comparison`](architecture_comparison/README.md) | Complete four-architecture, three-seed sweep | Validation only; all 12 checkpoints are retained |
 | [`Harvey_classifier`](Harvey_classifier/README.md) | Legacy residual CNN checkpoint | Previously evaluated held-out baseline used by earlier generator reports |
 
+`Harvey_classifier` in this table is a retained artifact-directory name. It
+does not refer to an active branch; current repository work is on `main`.
+
 The selected checkpoint is copied unchanged from
 `architecture_comparison/crnn/seed_777/best.pt`. Both copies must retain the
 same SHA-256 hash. Earlier generated-sample reports continue to name the

@@ -36,6 +36,11 @@ inspection therefore remain necessary.
 These are three-second Griffin-Lim demonstrations, peak-normalized to 0.95.
 The decoder cannot recover phase discarded by the log-mel representation.
 
+Griffin-Lim remains the fixed decoder baseline for this historical report.
+Future work comparing other ways to convert generated spectrograms into audio
+waveforms is isolated on the `BigVGAN_decode` branch so decoder changes do not
+alter the evidence recorded here.
+
 ## Reproduction
 
 From the repository root in PowerShell:

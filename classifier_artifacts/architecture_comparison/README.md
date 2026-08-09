@@ -1,6 +1,10 @@
 # Classifier Architecture Comparison
 
-This folder preserves the complete four-architecture, three-seed validation sweep run on the `Harvey_classifier` branch. It contains all 12 selected checkpoints, per-epoch histories, portable run configurations, aggregate results, and SHA-256 checksums.
+This folder preserves the complete four-architecture, three-seed validation
+sweep originally run before `Harvey_classifier` was promoted to `main`. The
+evidence now lives on `main` and contains all 12 selected checkpoints,
+per-epoch histories, portable run configurations, aggregate results, and
+SHA-256 checksums.
 
 ## Outcome
 
