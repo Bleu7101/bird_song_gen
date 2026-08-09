@@ -62,6 +62,14 @@ The generated preview contains broad horizontal energy bands and noisy texture b
 - Treat the checkpoint as a Stage 6 baseline for further generator work, not as a realism-ready synthesis model.
 - For the next model iteration, prioritize a finer or latent representation. The current 16 x 16 continuous patches with Gaussian likelihood encourage smooth averages; smaller patches, learned discrete/latent tokens, or a latent diffusion decoder should preserve sharper bird-note structure.
 
+## Later downstream evidence (2026-08-09)
+
+The first CRNN synthetic-augmentation evaluation later tested frozen VAE-v3
+and diffusion pools; it is recorded in
+[`reports/crnn_synthetic_augmentation_2026-08-09`](../../reports/crnn_synthetic_augmentation_2026-08-09/README.md).
+It did not evaluate this Transformer and therefore does not revise the
+historical verdict above.
+
 ## Reproduce generation and scoring
 
 The command below reproduces the published historical temperature-1.0 score,

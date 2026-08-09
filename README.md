@@ -9,8 +9,11 @@ The shared representation is a normalized `1 x 128 x 128` log-mel tensor.
 `main` is the primary review branch. It contains the shared data pipeline, the
 classifier study, VAE v1/v2/v3 artifacts, and two canonical spectrogram
 generation baselines: the continuous Transformer and WGAN-GP. Decoder research
-and diffusion models are kept on separate branches so their different model
-and representation contracts are not mixed into the main workflow.
+and diffusion implementations are kept on separate branches so their different
+model and representation contracts are not mixed into the main workflow. The
+first CRNN augmentation evaluation on `main` uses one frozen, classifier-ready
+pool from VAE v3 and one from `diffusion_vincent`; this does not promote a
+diffusion implementation onto `main`.
 
 ## Branch guide
 
@@ -26,13 +29,14 @@ contract, and diffusion code should be evaluated from its own branch.
 
 | Area | Canonical implementation | Evidence/status |
 |---|---|---|
-| Dataset and splits | `scripts/01_create_splits.py` and `manifests/` | 2,339 train, 519 validation, 489 test clips; recording-safe splits |
-| Shared preprocessing | `scripts/02_build_spectrograms.py` and `configs/spectrogram.json` | Reproducible cache under local `artifacts/spectrograms/` |
+| Dataset and splits | `scripts/01_create_splits.py` and `manifests/` | Historical v1: 2,339 train, 519 validation, 489 test clips with no recording-ID overlap; `manifests/content_safe_v2/` additionally removes exact-content duplicates for future work |
+| Shared preprocessing | `scripts/02_build_spectrograms.py` and `configs/spectrogram.json` | Content-addressed real cache under local `artifacts/spectrograms/`; 3,347 logical rows reference 3,323 unique arrays |
 | Classifier | `src/bird_song/classifier/` and `scripts/03_*.py` | Four architectures, three seeds each; CRNN selected from validation evidence |
+| CRNN synthetic augmentation v1 | `scripts/14_crnn_synthetic_augmentation.py` and `reports/crnn_synthetic_augmentation_2026-08-09/` | Full-real-data VAE-v3/diffusion ratio sweep; no mean held-out gain demonstrated |
 | Canonical Transformer | `src/bird_song/transformer/` and `scripts/06_*.py` | Fully trained working baseline with a documented caveated verdict |
 | Canonical WGAN-GP | `src/bird_song/generation/wgan_gp.py` and `scripts/08_*.py` | Full-split 20-epoch run with recorded evidence and curated audio |
 | VAE v1/v2/v3 | `notebooks/04_conditional_vae.ipynb`, `artifacts/vae_artifacts/`, and `outputs/conditional_vae*/` | Three recorded VAE versions are preserved on `main`; the notebook is the experiment entry point |
-| Diffusion models | Separate diffusion branches listed above | Diffusion implementations and artifacts are intentionally kept outside `main` |
+| Diffusion models | Separate diffusion branches listed above | Implementations remain outside `main`; only the frozen classifier-ready pool used by the v1 augmentation report is cached locally on `main` |
 
 ## Decoder roadmap
 
@@ -59,6 +63,7 @@ $py = "..\bird_song_venv\Scripts\python.exe"
 $env:PYTHONPATH = (Resolve-Path "src").Path
 & $py -m pip install -r requirements.txt
 & $py -m pip install -e .
+& $py scripts/02_build_spectrograms.py --output-dir artifacts/spectrograms
 & $py -m pytest
 & $py scripts/03_train_classifier.py --architecture crnn --dry-run --workers 0 --device auto
 ```
@@ -66,6 +71,14 @@ $env:PYTHONPATH = (Resolve-Path "src").Path
 The smoke test loads one batch, checks the `(batch, 1, 128, 128)` input shape,
 and performs no optimizer step. Training and evaluation commands refuse to
 silently overwrite existing run files.
+
+Classifier training and evaluation default to the real-audio cache at
+`artifacts/spectrograms/`; pass `--spectrogram-cache` to use another validated
+cache. The cache is content-addressed, so byte-identical spectrograms have one
+physical `.npy` object even when the historical v1 manifest retains multiple
+logical rows. Audit it without changing files using
+`scripts/02_deduplicate_spectrogram_cache.py`; add `--apply` only when converting
+an older cache layout.
 
 ## Repository roles
 
@@ -83,8 +96,9 @@ silently overwrite existing run files.
 
 ## Classifier: selection and recorded results
 
-The controlled comparison used the same recording-safe splits, preprocessing,
-optimizer, width, dropout, early-stopping rule, and seeds for every architecture.
+The controlled comparison used the same recording-ID-isolated historical v1
+splits, preprocessing, optimizer, width, dropout, early-stopping rule, and seeds
+for every architecture.
 
 | Architecture | Parameters | Validation accuracy | Validation macro F1 |
 |---|---:|---:|---:|
@@ -129,12 +143,73 @@ For architecture comparison, use the controlled sweep command in the
 architecture-comparison README. Do not select architectures by repeatedly
 checking the held-out test split.
 
+## First VAE/diffusion CRNN augmentation evaluation
+
+The first full-real-data sweep retained all 2,339 historical training rows and
+added 50, 100, or 200 generated spectrograms per species. Validation selected
+200 per species for both generators; only those selected ratios were evaluated
+on the 489-clip test split. All 18 retained run configs record `cuda`,
+confirming that the sweep trained on GPU.
+
+| Condition | Test runs | Mean accuracy | Mean macro F1 | Accuracy delta | Macro-F1 delta |
+|---|---:|---:|---:|---:|---:|
+| Historical selected CRNN, seed 777 | 1 | 89.98% | 90.16% | reference | reference |
+| VAE v3, 200 generated/species | 3 | 89.43% | 89.48% | -0.55 pp | -0.68 pp |
+| Diffusion, 200 generated/species | 3 | 89.23% | 89.28% | -0.75 pp | -0.88 pp |
+
+This first evaluation shows no demonstrated mean gain. It does **not** show
+that synthetic data is harmful: the reference is one historically selected
+seed trained from WAV with stochastic transforms, while the augmented values
+are three-seed means trained from fixed cached real spectrograms. There is no
+matched three-seed cached-real-only arm. The validation wins for 200/species
+were also small (0.50 pp for VAE v3 and 0.32 pp for diffusion over the
+runner-up ratio) relative to seed variation.
+
+An exact-content audit found nine validation clips whose audio bytes also
+occur in the historical v1 training split; no exact duplicate reaches test.
+The v1 results above are preserved as recorded. New experiments should use the
+versioned manifests in `manifests/content_safe_v2/`, which preserve all 519
+validation and 489 test rows while reducing training from 2,339 to 2,315 rows.
+The full protocol, per-seed metrics, provenance, and interpretation limits are
+in [`reports/crnn_synthetic_augmentation_2026-08-09`](reports/crnn_synthetic_augmentation_2026-08-09/README.md).
+
+The reusable local caches contain one 200-per-species pool per generator:
+
+- `artifacts/generated_spectrograms/vae_v3/`
+- `artifacts/generated_spectrograms/diffusion/`
+
+Audit the pools or run the maintained cache-backed sweep with:
+
+```powershell
+& $py scripts/14_crnn_synthetic_augmentation.py audit `
+  --train-manifest manifests/content_safe_v2/full_dataset_train.csv
+& $py scripts/14_crnn_synthetic_augmentation.py train-sweep `
+  --train-manifest manifests/content_safe_v2/full_dataset_train.csv `
+  --validation-manifest manifests/content_safe_v2/full_dataset_validation.csv `
+  --ratios 50 100 200 --seeds 42 123 777 --device cuda `
+  --run-root runs/crnn_synthetic_augmentation/cache_sweep_v2
+& $py scripts/14_crnn_synthetic_augmentation.py select-evaluate --device cuda `
+  --train-manifest manifests/content_safe_v2/full_dataset_train.csv `
+  --validation-manifest manifests/content_safe_v2/full_dataset_validation.csv `
+  --test-manifest manifests/content_safe_v2/full_dataset_test.csv `
+  --run-root runs/crnn_synthetic_augmentation/cache_sweep_v2
+```
+
+Bulk pools and checkpoints remain local and ignored; the tracked report is the
+portable evaluation record. Because the retained v1 outputs do not identify a
+committed run-code revision or optimizer specification, the maintained command
+is not claimed as an exact reconstruction of the already recorded run. Always
+train into a fresh run root. Training defaults to `cache_sweep_v2`, while
+`select-evaluate` defaults to the retained historical `cache_sweep` evidence;
+legacy checkpoints are protected from `--overwrite`.
+
 ## Canonical generation models and evaluation boundary
 
-The maintained generator comparison on `main` contains exactly
-two model families: the continuous autoregressive Transformer and WGAN-GP.
-Shared evaluation and Griffin-Lim decoding helpers support those models but are
-not additional generators.
+The maintained canonical generator comparison on `main` contains exactly two
+model families: the continuous autoregressive Transformer and WGAN-GP. Shared
+evaluation and Griffin-Lim decoding helpers support those models but are not
+additional generators. The VAE-v3/diffusion augmentation report is a separate
+classifier-utility experiment and does not change that canonical selection.
 
 The continuous autoregressive transformer is documented in
 [`runs/transformer_generator/README.md`](runs/transformer_generator/README.md).
@@ -172,6 +247,8 @@ generated-audio conclusions must include listening and spectrogram review.
 ```powershell
 & $py scripts/01_create_splits.py --dry-run
 & $py scripts/02_build_spectrograms.py --limit 8 --output-dir artifacts/spectrograms_smoke
+& $py scripts/01_deduplicate_manifests.py --output-dir manifests/content_safe_v2
+& $py scripts/02_deduplicate_spectrogram_cache.py
 & $py scripts/03_train_classifier.py --architecture crnn --epochs 40 --batch-size 64 --workers 4 --device cuda
 & $py scripts/06_train_transformer.py --epochs 60 --batch-size 32 --workers 4 --device cuda
 & $py scripts/08_train_wgan_gp.py --epochs 20 --critic-steps 2 --batch-size 32 --workers 0 --device cuda

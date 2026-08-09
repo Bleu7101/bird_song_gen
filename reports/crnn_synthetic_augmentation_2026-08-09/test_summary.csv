@@ -1,0 +1,10 @@
+scope,condition,generator,ratio_per_species,seed,loss,accuracy,macro_f1,delta_accuracy_vs_historical,delta_macro_f1_vs_historical,recall_american_robin,recall_northern_cardinal,recall_song_sparrow,checkpoint
+historical_reference,selected_crnn_seed_777,none,0,777,,0.8997955010224948,0.9016177383860278,0,0,0.9517241379310345,0.8580246913580247,0.8956043956043956,classifier_artifacts/selected_crnn/best.pt
+seed,vae_v3_augmented,vae_v3,200,42,0.26287939346153555,0.9243353783231084,0.9249568373653343,,,0.9586206896551724,0.8950617283950617,0.9230769230769231,runs/crnn_synthetic_augmentation/cache_sweep/vae_v3/ratio_200/seed_42/best.pt
+seed,vae_v3_augmented,vae_v3,200,123,0.376709926957245,0.8711656441717791,0.870768788680537,,,0.9724137931034482,0.8271604938271605,0.8296703296703297,runs/crnn_synthetic_augmentation/cache_sweep/vae_v3/ratio_200/seed_123/best.pt
+seed,vae_v3_augmented,vae_v3,200,777,0.332103550921676,0.8875255623721882,0.888748299735839,,,0.8620689655172413,0.9382716049382716,0.8626373626373627,runs/crnn_synthetic_augmentation/cache_sweep/vae_v3/ratio_200/seed_777/best.pt
+three_seed_mean,vae_v3_augmented,vae_v3,200,,,0.8943421949556919,0.8948246419272367,-0.005453306066802943,-0.006793096458791115,,,,
+seed,diffusion_augmented,diffusion,200,42,0.337508435142065,0.8997955010224948,0.902256118722647,,,0.9655172413793104,0.7962962962962963,0.9395604395604396,runs/crnn_synthetic_augmentation/cache_sweep/diffusion/ratio_200/seed_42/best.pt
+seed,diffusion_augmented,diffusion,200,123,0.324724253213723,0.8773006134969326,0.875371867256676,,,0.9655172413793104,0.7283950617283951,0.9395604395604396,runs/crnn_synthetic_augmentation/cache_sweep/diffusion/ratio_200/seed_123/best.pt
+seed,diffusion_augmented,diffusion,200,777,0.251482034022091,0.8997955010224948,0.900857966135642,,,0.9103448275862069,0.8333333333333334,0.9505494505494505,runs/crnn_synthetic_augmentation/cache_sweep/diffusion/ratio_200/seed_777/best.pt
+three_seed_mean,diffusion_augmented,diffusion,200,,,0.8922972051806407,0.8928286507049883,-0.00749829584185413,-0.008789087681039476,,,,

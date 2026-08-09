@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import argparse
-import re
 from pathlib import Path
 
 import numpy as np
@@ -11,13 +10,10 @@ from tqdm import tqdm
 from bird_song.audio import LogMelTransform, load_waveform
 from bird_song.config import SpectrogramConfig
 from bird_song.data import resolve_dataset_root
+from bird_song.spectrogram_cache import array_sha256, cache_object_path, canonicalize_spectrogram_cache
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-
-
-def slug(value: str) -> str:
-    return re.sub(r"[^a-z0-9]+", "_", value.lower()).strip("_")
 
 
 def parse_args() -> argparse.Namespace:
@@ -53,21 +49,22 @@ def main() -> None:
     transform = LogMelTransform(config, training=False)
     output_rows = []
     for row in tqdm(rows.itertuples(index=False), total=len(rows), desc="Spectrograms"):
-        species_slug = getattr(row, "species_slug", None) or slug(row.name)
-        relative_output = Path(row.split) / species_slug / f"{Path(row.filename).stem}.npy"
-        destination = args.output_dir / relative_output
-        if destination.exists() and not args.overwrite:
-            raise FileExistsError(f"Spectrogram already exists: {destination}")
-        destination.parent.mkdir(parents=True, exist_ok=True)
         waveform = load_waveform(dataset_root / row.relative_wav_path, config, training=False)
         spectrogram = transform(waveform).squeeze(0).numpy().astype(np.float32, copy=False)
-        np.save(destination, spectrogram, allow_pickle=False)
+        digest = array_sha256(spectrogram)
+        relative_output = cache_object_path(digest)
+        destination = args.output_dir / relative_output
+        if args.overwrite or not destination.exists():
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            np.save(destination, spectrogram, allow_pickle=False)
         output = row._asdict()
         output["relative_spectrogram_path"] = relative_output.as_posix()
+        output["spectrogram_sha256"] = digest
         output_rows.append(output)
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
     pd.DataFrame(output_rows).to_csv(cache_manifest, index=False)
+    canonicalize_spectrogram_cache(args.output_dir, config, args.spectrogram_config.resolve(), apply=True)
     print(f"Saved {len(output_rows)} spectrograms with shape ({config.n_mels}, {config.spectrogram_width})")
     print(f"Cache manifest: {cache_manifest}")
 

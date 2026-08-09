@@ -27,6 +27,12 @@ def parse_args() -> argparse.Namespace:
         help="Repeat every architecture with these random seeds (three are recommended for reporting).",
     )
     parser.add_argument("--dataset-root", type=Path, default=None)
+    parser.add_argument(
+        "--spectrogram-cache",
+        type=Path,
+        default=PROJECT_ROOT / "artifacts/spectrograms",
+        help="Historical real-audio spectrogram cache root (default: artifacts/spectrograms).",
+    )
     parser.add_argument("--spectrogram-config", type=Path, default=PROJECT_ROOT / "configs/spectrogram.json")
     parser.add_argument("--train-manifest", type=Path, default=PROJECT_ROOT / "manifests/full_dataset_train.csv")
     parser.add_argument("--val-manifest", type=Path, default=PROJECT_ROOT / "manifests/full_dataset_validation.csv")
@@ -81,6 +87,7 @@ def validate_existing_run(
         "train_manifest": str(args.train_manifest),
         "val_manifest": str(args.val_manifest),
         "dataset_root": str(args.dataset_root),
+        "spectrogram_cache": str(args.spectrogram_cache),
     }
     mismatches = {key: (config.get(key), value) for key, value in expected.items() if config.get(key) != value}
     if mismatches:
@@ -103,6 +110,8 @@ def training_command(args: argparse.Namespace, architecture: str, seed: int, run
         str(args.train_manifest),
         "--val-manifest",
         str(args.val_manifest),
+        "--spectrogram-cache",
+        str(args.spectrogram_cache),
         "--output-dir",
         str(run_dir),
         "--epochs",
@@ -181,7 +190,7 @@ def write_markdown(summary: pd.DataFrame, args: argparse.Namespace, output_path:
     lines = [
         "# Classifier architecture comparison",
         "",
-        "All architectures used the same recording-safe train/validation manifests, preprocessing, optimizer settings, "
+        "All architectures used the same recording-ID-isolated historical train/validation manifests, preprocessing, optimizer settings, "
         "early-stopping rule, and seed set. The held-out test split was not used for architecture selection.",
         "",
         f"Seeds: `{', '.join(map(str, args.seeds))}`. Maximum epochs: {args.epochs}. "
@@ -214,6 +223,7 @@ def main() -> None:
     args.spectrogram_config = args.spectrogram_config.resolve()
     args.train_manifest = args.train_manifest.resolve()
     args.val_manifest = args.val_manifest.resolve()
+    args.spectrogram_cache = args.spectrogram_cache.resolve()
     args.output_dir = args.output_dir.resolve()
     args.dataset_root = (args.dataset_root or PROJECT_ROOT / "bird_songs_dataset").resolve()
 

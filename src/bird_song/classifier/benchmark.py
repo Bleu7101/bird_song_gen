@@ -8,7 +8,7 @@ from pathlib import Path
 import torch
 
 from bird_song.config import DEFAULT_CLASSES, SpectrogramConfig
-from bird_song.data import ManifestDataset, make_loader, resolve_dataset_root
+from bird_song.data import ManifestDataset, make_loader, resolve_spectrogram_cache_root
 from bird_song.classifier.model import ARCHITECTURES, build_classifier
 from bird_song.runtime import choose_device, load_checkpoint
 
@@ -28,9 +28,15 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--iterations", type=int, default=50)
     parser.add_argument("--device", default="auto")
     parser.add_argument("--output", type=Path, default=PROJECT_ROOT / "runs/benchmarks/model_throughput.csv")
-    parser.add_argument("--data-pipeline", action="store_true", help="Also time test-manifest audio decoding and log-mel creation.")
+    parser.add_argument("--data-pipeline", action="store_true", help="Also time test-manifest cached spectrogram loading.")
     parser.add_argument("--manifest", type=Path, default=PROJECT_ROOT / "manifests/full_dataset_test.csv")
     parser.add_argument("--dataset-root", type=Path, default=None)
+    parser.add_argument(
+        "--spectrogram-cache",
+        type=Path,
+        default=PROJECT_ROOT / "artifacts/spectrograms",
+        help="Historical real-audio spectrogram cache root (default: artifacts/spectrograms).",
+    )
     parser.add_argument("--workers", type=int, default=4)
     parser.add_argument("--data-batches", type=int, default=20)
     return parser.parse_args()
@@ -82,7 +88,15 @@ def main() -> None:
         writer.writerows(rows)
 
     if args.data_pipeline:
-        dataset = ManifestDataset(args.manifest, resolve_dataset_root(PROJECT_ROOT, args.dataset_root), classes, config)
+        spectrogram_cache_root = resolve_spectrogram_cache_root(PROJECT_ROOT, args.spectrogram_cache)
+        dataset_root = args.dataset_root.resolve() if args.dataset_root is not None else None
+        dataset = ManifestDataset(
+            args.manifest,
+            dataset_root,
+            classes,
+            config,
+            spectrogram_cache_root=spectrogram_cache_root,
+        )
         loader = make_loader(dataset, max(args.batch_sizes), args.workers)
         seen = 0
         started = time.perf_counter()

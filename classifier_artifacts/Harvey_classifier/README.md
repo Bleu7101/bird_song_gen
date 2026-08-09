@@ -23,7 +23,10 @@ Classify real or generated three-second samples as American Robin, Northern Card
 
 ## Held-out test evaluation
 
-The test manifest contains 489 clips isolated from training and validation by original recording ID.
+The historical v1 test manifest contains 489 clips isolated from training and
+validation by original recording ID. A later exact-content audit also found no
+duplicate reaching test; the nine identified cross-split duplicate clips affect
+training and validation only.
 
 | Metric | Result |
 |---|---:|

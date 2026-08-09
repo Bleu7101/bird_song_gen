@@ -11,6 +11,12 @@ The other canonical generator is the continuous autoregressive Transformer in
 `main`. Diffusion models live on the separate `Diffusion`, `Difussion`, and
 `diffusion_vincent` branches and are not part of this package.
 
+The first VAE-v3/diffusion CRNN augmentation result is documented separately in
+[`reports/crnn_synthetic_augmentation_2026-08-09`](../../../reports/crnn_synthetic_augmentation_2026-08-09/README.md).
+It evaluates whether frozen generated spectrogram pools help a downstream
+classifier; it does not add either model to this canonical WGAN-GP/Transformer
+comparison or establish audio realism.
+
 ## Train and sample
 
 All scripts use `--device auto`, so CUDA is selected when available. Use

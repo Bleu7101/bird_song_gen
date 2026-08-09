@@ -11,7 +11,7 @@ import pandas as pd
 import torch
 from sklearn.metrics import classification_report, confusion_matrix
 
-from bird_song.data import ManifestDataset, make_loader, resolve_dataset_root
+from bird_song.data import ManifestDataset, make_loader, resolve_spectrogram_cache_root
 from bird_song.runtime import choose_device, load_checkpoint
 
 
@@ -31,6 +31,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--checkpoint", type=Path, required=True)
     parser.add_argument("--manifest", type=Path, default=PROJECT_ROOT / "manifests/full_dataset_test.csv")
     parser.add_argument("--dataset-root", type=Path, default=None)
+    parser.add_argument(
+        "--spectrogram-cache",
+        type=Path,
+        default=PROJECT_ROOT / "artifacts/spectrograms",
+        help="Historical real-audio spectrogram cache root (default: artifacts/spectrograms).",
+    )
     parser.add_argument("--output-dir", type=Path, default=PROJECT_ROOT / "runs/classifier/test")
     parser.add_argument("--batch-size", type=int, default=128)
     parser.add_argument("--workers", type=int, default=4)
@@ -43,9 +49,16 @@ def main() -> None:
     device = choose_device(args.device)
     checkpoint_path = args.checkpoint.resolve()
     manifest_path = args.manifest.resolve()
-    dataset_root = resolve_dataset_root(PROJECT_ROOT, args.dataset_root)
+    spectrogram_cache_root = resolve_spectrogram_cache_root(PROJECT_ROOT, args.spectrogram_cache)
+    dataset_root = args.dataset_root.resolve() if args.dataset_root is not None else None
     model, classes, config, checkpoint = load_checkpoint(checkpoint_path, device)
-    dataset = ManifestDataset(manifest_path, dataset_root, classes, config)
+    dataset = ManifestDataset(
+        manifest_path,
+        dataset_root,
+        classes,
+        config,
+        spectrogram_cache_root=spectrogram_cache_root,
+    )
     loader = make_loader(dataset, args.batch_size, args.workers)
     model.eval()
     predictions: list[int] = []
@@ -100,7 +113,7 @@ def main() -> None:
     for path, target, prediction, probs in zip(paths, targets, predictions, probabilities):
         absolute_path = Path(path).resolve()
         try:
-            portable_path = absolute_path.relative_to(dataset_root.resolve()).as_posix()
+            portable_path = absolute_path.relative_to(spectrogram_cache_root.resolve()).as_posix()
         except ValueError:
             portable_path = absolute_path.as_posix()
         row = {

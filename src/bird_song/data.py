@@ -9,6 +9,7 @@ from torch.utils.data import DataLoader, Dataset, WeightedRandomSampler
 
 from .audio import LogMelTransform, load_generated_spectrogram, load_waveform
 from .config import SpectrogramConfig
+from .spectrogram_cache import load_cache_array, resolve_cache_path
 
 
 def resolve_dataset_root(project_root: Path, requested: Path | None = None) -> Path:
@@ -21,14 +22,26 @@ def resolve_dataset_root(project_root: Path, requested: Path | None = None) -> P
     return root
 
 
+def resolve_spectrogram_cache_root(project_root: Path, requested: Path | None = None) -> Path:
+    root = (requested or project_root / "artifacts/spectrograms").resolve()
+    manifest = root / "spectrogram_manifest.csv"
+    if not root.is_dir() or not manifest.is_file():
+        raise FileNotFoundError(
+            f"Expected cached spectrograms and {manifest}. "
+            "Generate or provide the historical real-audio spectrogram cache."
+        )
+    return root
+
+
 class ManifestDataset(Dataset[tuple[torch.Tensor, int, str]]):
     def __init__(
         self,
         manifest_path: Path,
-        dataset_root: Path,
+        dataset_root: Path | None,
         classes: Iterable[str],
         config: SpectrogramConfig,
         training: bool = False,
+        spectrogram_cache_root: Path | None = None,
     ) -> None:
         self.rows = pd.read_csv(manifest_path)
         required = {"name", "relative_wav_path"}
@@ -37,7 +50,6 @@ class ManifestDataset(Dataset[tuple[torch.Tensor, int, str]]):
             raise ValueError(f"Manifest {manifest_path} is missing columns: {sorted(missing)}")
         if self.rows.empty:
             raise ValueError(f"Manifest is empty: {manifest_path}")
-        self.dataset_root = dataset_root
         self.classes = tuple(classes)
         self.class_to_index = {name: index for index, name in enumerate(self.classes)}
         unknown = sorted(set(self.rows["name"]) - set(self.classes))
@@ -46,13 +58,56 @@ class ManifestDataset(Dataset[tuple[torch.Tensor, int, str]]):
         self.labels = self.rows["name"].map(self.class_to_index).astype(int).tolist()
         self.config = config
         self.training = training
-        self.transform = LogMelTransform(config, training=training)
+        self.dataset_root = dataset_root.resolve() if dataset_root is not None else None
+        self.spectrogram_paths: list[Path] | None = None
+        if spectrogram_cache_root is not None:
+            cache_root = spectrogram_cache_root.resolve()
+            cache_manifest_path = cache_root / "spectrogram_manifest.csv"
+            cache_rows = pd.read_csv(cache_manifest_path)
+            cache_required = {"split", "relative_wav_path", "relative_spectrogram_path"}
+            cache_missing = cache_required - set(cache_rows.columns)
+            if cache_missing:
+                raise ValueError(f"Cached manifest {cache_manifest_path} is missing columns: {sorted(cache_missing)}")
+            if cache_rows[list(cache_required)].isna().any().any():
+                raise ValueError(f"Cached manifest {cache_manifest_path} has missing required values")
+            if "split" not in self.rows.columns:
+                raise ValueError(f"Manifest {manifest_path} needs a split column for cached spectrogram lookup")
+
+            def key(frame: pd.DataFrame) -> pd.Series:
+                return frame["split"].astype(str) + "\0" + frame["relative_wav_path"].astype(str)
+
+            cache_keys = key(cache_rows)
+            if cache_keys.duplicated().any():
+                raise ValueError(f"Cached manifest has duplicate recording paths: {cache_manifest_path}")
+            cache_index = dict(zip(cache_keys.tolist(), cache_rows["relative_spectrogram_path"].tolist()))
+            row_keys = key(self.rows)
+            missing_keys = [value for value in row_keys.tolist() if value not in cache_index]
+            if missing_keys:
+                raise FileNotFoundError(
+                    f"Cached manifest {cache_manifest_path} is missing {len(missing_keys)} rows from {manifest_path}"
+                )
+            self.spectrogram_paths = [
+                resolve_cache_path(cache_root, str(cache_index[value])) for value in row_keys.tolist()
+            ]
+            missing_paths = [path for path in self.spectrogram_paths if not path.is_file()]
+            if missing_paths:
+                raise FileNotFoundError(f"Cached spectrogram file is missing: {missing_paths[0]}")
+            self.transform = None
+        else:
+            if self.dataset_root is None:
+                raise ValueError("dataset_root is required when spectrogram_cache_root is not provided")
+            self.transform = LogMelTransform(config, training=training)
 
     def __len__(self) -> int:
         return len(self.rows)
 
     def __getitem__(self, index: int) -> tuple[torch.Tensor, int, str]:
         row = self.rows.iloc[index]
+        if self.spectrogram_paths is not None:
+            path = self.spectrogram_paths[index]
+            spec = torch.from_numpy(load_cache_array(path, self.config))
+            return spec.unsqueeze(0), self.labels[index], str(path)
+
         path = self.dataset_root / Path(row["relative_wav_path"])
         waveform = load_waveform(path, self.config, self.training)
         return self.transform(waveform), self.labels[index], str(path)

@@ -62,6 +62,14 @@ $py = "..\bird_song_venv\Scripts\python.exe"
 The large checkpoints and bulk arrays remain local and ignored. The WGAN
 history file in this directory is the recorded training evidence.
 
+## Later downstream evidence (2026-08-09)
+
+The first CRNN synthetic-augmentation evaluation later tested frozen VAE-v3
+and diffusion pools; it is recorded in
+[`crnn_synthetic_augmentation_2026-08-09`](../crnn_synthetic_augmentation_2026-08-09/README.md).
+It did not evaluate WGAN-GP and therefore does not revise this report's
+historical WGAN verdict.
+
 ## Next experiment
 
 Train WGAN-GP v2 with limited-data discriminator augmentation and three seeds.

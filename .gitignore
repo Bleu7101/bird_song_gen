@@ -38,6 +38,7 @@ outputs/conditional_vae_v2/classifier_input/
 outputs/conditional_vae_v3/classifier_input/
 processed/
 artifacts/spectrograms/
+artifacts/generated_spectrograms/
 models/
 runs/
 *.ckpt

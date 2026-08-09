@@ -10,7 +10,7 @@ import torch
 from torch import nn
 
 from bird_song.config import SpectrogramConfig
-from bird_song.data import ManifestDataset, make_loader, resolve_dataset_root
+from bird_song.data import ManifestDataset, make_loader, resolve_spectrogram_cache_root
 from bird_song.classifier.model import ARCHITECTURES, build_classifier, count_trainable_parameters
 from bird_song.runtime import atomic_torch_save, choose_device, save_json, seed_everything
 
@@ -21,6 +21,12 @@ PROJECT_ROOT = Path(__file__).resolve().parents[3]
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Train the bird-song species classifier.")
     parser.add_argument("--dataset-root", type=Path, default=None)
+    parser.add_argument(
+        "--spectrogram-cache",
+        type=Path,
+        default=PROJECT_ROOT / "artifacts/spectrograms",
+        help="Historical real-audio spectrogram cache root (default: artifacts/spectrograms).",
+    )
     parser.add_argument("--spectrogram-config", type=Path, default=PROJECT_ROOT / "configs/spectrogram.json")
     parser.add_argument("--train-manifest", type=Path, default=PROJECT_ROOT / "manifests/full_dataset_train.csv")
     parser.add_argument("--val-manifest", type=Path, default=PROJECT_ROOT / "manifests/full_dataset_validation.csv")
@@ -84,9 +90,24 @@ def main() -> None:
 
     classes = tuple(sorted(pd.read_csv(args.train_manifest)["name"].unique()))
     config = SpectrogramConfig.from_json(args.spectrogram_config)
-    dataset_root = resolve_dataset_root(PROJECT_ROOT, args.dataset_root)
-    train_set = ManifestDataset(args.train_manifest, dataset_root, classes, config, training=True)
-    val_set = ManifestDataset(args.val_manifest, dataset_root, classes, config, training=False)
+    spectrogram_cache_root = resolve_spectrogram_cache_root(PROJECT_ROOT, args.spectrogram_cache)
+    dataset_root = args.dataset_root.resolve() if args.dataset_root is not None else None
+    train_set = ManifestDataset(
+        args.train_manifest,
+        dataset_root,
+        classes,
+        config,
+        training=True,
+        spectrogram_cache_root=spectrogram_cache_root,
+    )
+    val_set = ManifestDataset(
+        args.val_manifest,
+        dataset_root,
+        classes,
+        config,
+        training=False,
+        spectrogram_cache_root=spectrogram_cache_root,
+    )
     train_loader = make_loader(
         train_set,
         args.batch_size,
@@ -131,7 +152,8 @@ def main() -> None:
         args.output_dir / "config.json",
         {
             **vars(args),
-            "dataset_root": str(dataset_root),
+            "dataset_root": str(dataset_root) if dataset_root is not None else None,
+            "spectrogram_cache": str(spectrogram_cache_root),
             "classes": classes,
             "spectrogram": config.to_dict(),
             "model_config": model_config,

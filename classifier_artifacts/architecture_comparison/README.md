@@ -25,6 +25,13 @@ These are validation results. The held-out test split was not used to select an 
 
 The separately published [`Harvey_classifier`](../Harvey_classifier/README.md) residual checkpoint remains the model with the recorded 90.39% held-out test accuracy.
 
+The historical v1 manifests prevent recording-ID overlap, but a later
+exact-content audit found nine of 519 validation clips duplicated byte-for-byte
+in training. No exact duplicate reaches test. This validation evidence remains
+the recorded selection result; it should not be relabeled as content-isolated.
+New experiments should use `manifests/content_safe_v2/`, whose train,
+validation, and test counts are 2,315, 519, and 489.
+
 ## Contents
 
 - `summary.csv`: architecture-level means and sample standard deviations.
@@ -45,7 +52,13 @@ From the repository root on a CUDA-capable machine:
   --architectures residual_cnn plain_cnn depthwise_cnn crnn `
   --seeds 42 123 777 `
   --output-dir runs\classifier_architectures `
+  --spectrogram-cache artifacts\spectrograms `
   --epochs 40 --patience 8 --batch-size 64 --workers 4 --device cuda
 ```
 
-The dataset is intentionally not included in Git. The command expects the recording-safe manifests and local `bird_songs_dataset` described in `protocol.json`.
+The dataset is intentionally not included in Git. The published checkpoints
+were trained through the earlier on-the-fly WAV path with stochastic training
+transforms. The current command intentionally uses the fixed canonical cache,
+so it reruns the architecture matrix but is not a bit-for-bit reconstruction of
+the historical training input path. The historical v1 manifests are described
+in `protocol.json`; use the content-safe v2 manifests for new studies.

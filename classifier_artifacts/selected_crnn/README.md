@@ -20,9 +20,11 @@ unchanged source run remains at
 
 ## One held-out evaluation
 
-The checkpoint was evaluated once on the recording-safe 489-clip test split.
-The complete machine-readable report is in `metrics.json`; predictions use
-dataset-relative paths in `predictions.csv`.
+The checkpoint was evaluated once on the recording-ID-isolated historical v1
+489-clip test split. A later exact-content audit found no train/test or
+validation/test duplicate, so none of the identified byte-identical leakage
+reaches this held-out result. The complete machine-readable report is in
+`metrics.json`; predictions use dataset-relative paths in `predictions.csv`.
 
 | Metric | Result |
 |---|---:|
@@ -56,6 +58,7 @@ From the repository root, with the local dataset available:
 ```powershell
 $env:PYTHONPATH = "src"
 $py = "..\bird_song_venv\Scripts\python.exe"
+& $py scripts/02_build_spectrograms.py --output-dir artifacts/spectrograms
 & $py scripts/03_evaluate_classifier.py `
   --checkpoint classifier_artifacts/selected_crnn/best.pt `
   --output-dir runs/selected_crnn_test `
@@ -65,3 +68,14 @@ $py = "..\bird_song_venv\Scripts\python.exe"
 The legacy residual package remains available for reproducing the earlier
 transformer and generator reports; its held-out result is not interchangeable
 with this CRNN evaluation.
+
+## Role in the first augmentation evaluation
+
+The VAE-v3/diffusion augmentation report uses this 89.98%-accuracy, 90.16%-macro-F1
+checkpoint as a descriptive historical reference. It is not a matched control:
+this model is one validation-selected seed trained through the earlier
+on-the-fly WAV path with stochastic transforms, while each augmented condition
+is a three-seed mean trained from fixed cached real spectrograms. Therefore the
+reported negative mean deltas are no demonstrated augmentation gain, not proof
+that synthetic data is harmful. See
+[`reports/crnn_synthetic_augmentation_2026-08-09`](../../reports/crnn_synthetic_augmentation_2026-08-09/README.md).

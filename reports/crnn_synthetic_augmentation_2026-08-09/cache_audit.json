@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "audit_date": "2026-08-09",
+  "cache_root": "artifacts/spectrograms",
+  "duplicate_definition": "Identical normalized float32 spectrogram content; cross-split cases were also confirmed as byte-identical source WAV files.",
+  "pre_canonicalization": {
+    "logical_manifest_rows": 3347,
+    "physical_npy_files": 3347,
+    "unique_array_contents": 3323,
+    "redundant_physical_files": 24,
+    "duplicate_content_groups": 16,
+    "manifest_sha256": "9FD41FBEE0C4D2D193FA1982128F50A347606DB4941BB5E489F09FA94FD00590",
+    "manifest_hash_role": "manifest used by the recorded v1 augmentation runs"
+  },
+  "post_canonicalization": {
+    "layout": "content_addressed_npy_by_spectrogram_sha256",
+    "logical_manifest_rows": 3347,
+    "physical_npy_objects": 3323,
+    "unique_array_contents": 3323,
+    "redundant_physical_files": 0,
+    "duplicate_logical_references": 24,
+    "manifest_sha256": "55C096AB061BF033C5C483A0717CC9FF6E48E12D9A26021030479E27C7DDE37E",
+    "manifest_hash_role": "current reorganized cache manifest",
+    "semantic_effect": "Physical files were deduplicated; all historical v1 logical rows and array values were preserved."
+  },
+  "historical_v1_split_audit": {
+    "recording_id_overlap_between_splits": 0,
+    "cross_split_exact_content_groups": 9,
+    "logical_rows_in_cross_split_groups": 26,
+    "validation_clips_also_present_in_train": 9,
+    "validation_clips": 519,
+    "validation_share_also_present_in_train": 0.017341040462427744,
+    "test_clips_in_cross_split_groups": 0,
+    "test_exact_content_leak_found": false,
+    "interpretation": "Physical deduplication prevents duplicate storage but does not remove duplicated logical examples from a manifest."
+  },
+  "future_content_safe_v2": {
+    "manifests_root": "manifests/content_safe_v2",
+    "deduplication_key": "SHA-256 of source WAV bytes",
+    "retention_priority": [
+      "test",
+      "validation",
+      "train"
+    ],
+    "train_rows": 2315,
+    "validation_rows": 519,
+    "test_rows": 489,
+    "total_rows": 3323,
+    "removed_training_rows": 24,
+    "exact_content_overlap_between_splits": 0,
+    "use": "Use these versioned manifests for future experiments; retain v1 manifests only to reproduce recorded results."
+  }
+}
