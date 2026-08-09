@@ -1,6 +1,6 @@
 # BigVGAN generator retraining evidence
 
-This report was generated from the recorded `decoder_test` worktree. Checkpoints are selected from validation evidence; decoded audio and frozen-classifier results are separate diagnostics.
+This report was generated from the worktree now tracked by `BigVGAN_decode` (originally named `decoder_test`). It is the first recorded baseline for future decoder/vocoder comparisons. Checkpoints are selected from validation evidence; decoded audio and frozen-classifier results are separate diagnostics.
 
 ## Contract
 

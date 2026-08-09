@@ -1,8 +1,15 @@
-# Canonical BigVGAN generator bundle
+# Selected BigVGAN-compatible generator bundle
 
-This is the small publication bundle for `decoder_test`. It contains only the
+This is the small publication bundle for the initial `BigVGAN_decode`
+experiment. It contains only the
 validation-selected WGAN-GP and Transformer generator checkpoints, their
 configs/contracts, and twelve curated WAVs (two per species per generator).
+
+The directory name `canonical_models` is experiment-local and historical. It
+identifies the selected models for this decoder contract; it does not add new
+repository-wide generator families beyond the Transformer and WGAN-GP on
+`main`. The branch is intended for future comparisons of different methods for
+turning generated spectrograms into audio waveforms.
 
 The checkpoints are CPU-loadable PyTorch files and embed the model config,
 seed, selected epoch, validation metrics, class order, training-only scaler,

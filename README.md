@@ -1,9 +1,17 @@
-# `decoder_test`: BigVGAN-compatible bird-song experiment
+# `BigVGAN_decode`: future audio-decoder research
 
-This branch is intentionally small. It changes the real-audio representation to
-the exact 80-band, 22.05 kHz mel contract used by
-`nvidia/bigvgan_v2_22khz_80band_256x`, retrains the conditional WGAN-GP on that
-representation, and decodes generated mels with the frozen BigVGAN generator.
+This branch is reserved for future work testing different decoders and
+vocoders that convert generated spectrograms into audio waveforms. The current
+contents are the first recorded experiment: they use the exact 80-band,
+22.05 kHz mel contract required by
+`nvidia/bigvgan_v2_22khz_80band_256x`, retrain the conditional WGAN-GP and
+Transformer for that representation, and decode generated mels with the frozen
+BigVGAN generator.
+
+This is a decoder-research branch, not an additional repository-wide generator
+family. `main` remains the primary classifier, VAE v1/v2/v3, Transformer, and
+WGAN-GP review branch. Diffusion models remain on the separate `Diffusion`,
+`Difussion`, and `diffusion_vincent` branches.
 
 The `256x` model suffix is its waveform upsampling ratio, not a restriction to
 256 frames. This experiment uses 256 frames because the official configuration
@@ -28,7 +36,7 @@ Fetch the frozen generator (the command is idempotent):
 & $py scripts/01_fetch_bigvgan.py
 ```
 
-## Real-audio decoder test
+## Recorded BigVGAN decoder baseline
 
 Build the raw BigVGAN mel cache. The scaler is fitted on training clips only.
 
@@ -112,12 +120,22 @@ Generate and evaluate a Transformer set at a requested temperature:
 
 ## Evidence boundary
 
-This branch contains only the BigVGAN decoder, WGAN-GP, and rectangular
-Transformer work. Teammate VAE and Diffusion work remains on its own branches.
-The generated-audio report therefore
+This branch contains only the BigVGAN decoder experiment and the WGAN-GP and
+rectangular Transformer variants retrained for its `80 x 256` contract. VAE
+v1/v2/v3 artifacts are on `main`; diffusion models are on the separate
+diffusion branches. The generated-audio report therefore
 checks shape, finite values, mel saturation, waveform length, clipping, RMS,
 silence, detail ratios, and diversity. Those checks establish that the WGAN →
 BigVGAN handoff works; they do not prove that the generated sounds are realistic
 or correctly conditioned. Use the local listening manifest for that judgment.
 The frozen legacy residual CNN and CRNN are conditioning diagnostics only, not
 perceptual-realism scores.
+
+## Future decoder work
+
+Future experiments on this branch should compare alternative decoder/vocoder
+paths using the same source spectrograms, train/validation/test boundaries,
+waveform-validity gates, and listening manifests. Objective spectral metrics
+and classifier agreement remain diagnostics; decoder selection also requires
+same-source listening review. The recorded BigVGAN result is a baseline for
+those comparisons, not a final decoder selection.

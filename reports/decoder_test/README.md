@@ -1,7 +1,17 @@
-# `decoder_test` recorded evidence
+# `BigVGAN_decode` recorded baseline evidence
 
-Recorded locally on 2026-08-06 from the `decoder_test` worktree at
-`C:\Users\Harvey\Documents\Coding\bird_song_gen_decoder_test`.
+Recorded locally on 2026-08-06 before the Git branch was renamed from
+`decoder_test` to `BigVGAN_decode`. The local worktree directory remains
+`C:\Users\Harvey\Documents\Coding\bird_song_gen_decoder_test`, and this report
+directory keeps its historical name so recorded commands and links remain
+reproducible.
+
+`BigVGAN_decode` is the future-work branch for comparing different decoder and
+vocoder methods that turn generated spectrograms into audio waveforms. This
+report is its first recorded BigVGAN baseline, not a final decoder selection.
+The primary classifier, VAE v1/v2/v3, Transformer, and WGAN-GP workflow is on
+`main`; diffusion models are on the separate `Diffusion`, `Difussion`, and
+`diffusion_vincent` branches.
 
 ## Reproduction commands
 
@@ -145,12 +155,21 @@ The legacy residual CNN and CRNN were run only on BigVGAN-decoded WAVs. Their
 target-label accuracies are reported separately as conditioning diagnostics,
 not validation losses or perceived-realism scores.
 
+## Future decoder comparison
+
+Use this BigVGAN run as the baseline for later decoder/vocoder experiments.
+Fair comparisons should pass the same source spectrograms through each path,
+retain the same data splits and waveform-validity gates, and provide paired
+listening manifests. Lower spectral error is useful evidence but does not by
+itself establish perceptual realism or select the final decoder.
+
 ## Verdict
 
 The BigVGAN decoder passes the held-out reconstruction gate and improves both
 recorded mean multi-resolution metrics over the exact-mel Griffin-Lim baseline.
 The retrained stability WGAN and 8x16 Transformer both pass the shape, range,
 finite, waveform-length, clipping, and diversity handoff checks. The evidence
-supports `decoder_test` as the long-lived BigVGAN branch, not a claim of
-perceptual realism or correct species conditioning. Use the balanced listening
-manifests and keep the frozen-classifier results in their diagnostic role.
+establishes BigVGAN as the first compatible baseline on `BigVGAN_decode`; it
+does not establish a final decoder, perceptual realism, or correct species
+conditioning. Use the balanced listening manifests and keep the
+frozen-classifier results in their diagnostic role.
