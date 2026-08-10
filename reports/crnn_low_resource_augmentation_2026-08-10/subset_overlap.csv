@@ -1,0 +1,10 @@
+species,subset_seed_a,subset_seed_b,shared_recording_ids,union_recording_ids,jaccard_overlap
+American Robin,101,202,45,55,0.8181818181818182
+American Robin,101,303,44,56,0.7857142857142857
+American Robin,202,303,46,54,0.8518518518518519
+Northern Cardinal,101,202,39,61,0.639344262295082
+Northern Cardinal,101,303,38,62,0.6129032258064516
+Northern Cardinal,202,303,41,59,0.6949152542372882
+Song Sparrow,101,202,29,71,0.4084507042253521
+Song Sparrow,101,303,27,73,0.3698630136986301
+Song Sparrow,202,303,28,72,0.3888888888888889

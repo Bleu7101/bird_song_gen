@@ -12,8 +12,9 @@ generation baselines: the continuous Transformer and WGAN-GP. Decoder research
 and diffusion implementations are kept on separate branches so their different
 model and representation contracts are not mixed into the main workflow. The
 first CRNN augmentation evaluation on `main` uses one frozen, classifier-ready
-pool from VAE v3 and one from `diffusion_vincent`; this does not promote a
-diffusion implementation onto `main`.
+pool from VAE v3 and one from `diffusion_vincent`. A separate low-resource study
+reuses three existing pools per generator; neither study promotes a diffusion
+implementation onto `main`.
 
 ## Branch guide
 
@@ -33,6 +34,7 @@ contract, and diffusion code should be evaluated from its own branch.
 | Shared preprocessing | `scripts/02_build_spectrograms.py` and `configs/spectrogram.json` | Content-addressed real cache under local `artifacts/spectrograms/`; 3,347 logical rows reference 3,323 unique arrays |
 | Classifier | `src/bird_song/classifier/` and `scripts/03_*.py` | Four architectures, three seeds each; CRNN selected from validation evidence |
 | CRNN synthetic augmentation v1 | `scripts/14_crnn_synthetic_augmentation.py` and `reports/crnn_synthetic_augmentation_2026-08-09/` | Full-real-data VAE-v3/diffusion ratio sweep; no mean held-out gain demonstrated |
+| Low-resource CRNN augmentation | `scripts/15_crnn_low_resource_augmentation.py` and `reports/crnn_low_resource_augmentation_2026-08-10/` | Matched 50-real/species study using existing three-seed pools; VAE-v3 improved classifier utility, while diffusion did not show a stable gain |
 | Historical Transformer baseline | `src/bird_song/transformer/` and `scripts/06_*.py` | Fully trained working baseline with a documented caveated verdict; run files are archived under `reports/generator_baselines/transformer/` |
 | Historical WGAN-GP baseline | `src/bird_song/generation/wgan_gp.py` and `scripts/08_*.py` | Full-split 20-epoch run with recorded evidence and curated audio under `reports/generator_baselines/wgan_gp/`; bulk runs remain local |
 | VAE v1/v2/v3 | `notebooks/04_conditional_vae.ipynb`, `artifacts/models/vae/`, and `reports/vae/` | Three recorded VAE versions are preserved on `main`; the notebook is retained unchanged as the historical experiment record |
@@ -86,12 +88,14 @@ an older cache layout.
 - `scripts/` contains thin command-line entry points for reproducible runs.
 - `notebooks/` contains visual, gated companions that import the `src` code;
   notebooks are not a second classifier implementation.
-- `notebooks/03_classifier.ipynb` is the CRNN-focused classifier companion;
-  `notebooks/06_evaluation.ipynb` is the portable generated-data augmentation
-  evaluation.
-- `notebooks/generator_checkpoint_evaluation.ipynb` is the report-only
-  three-seed evaluation of the frozen VAE-v3 and diffusion checkpoint pools;
-  it does not retrain either generator or require ignored bulk arrays.
+- `notebooks/03_classifier.ipynb` is the CRNN-focused classifier companion.
+- `notebooks/06_evaluation.ipynb` is the primary four-part evaluation report:
+  generator quality and seed stability, full-data augmentation, low-resource
+  augmentation, and the cross-study conclusion.
+- `notebooks/generator_checkpoint_evaluation.ipynb` and
+  `notebooks/low_resource_crnn_augmentation.ipynb` remain focused report-only
+  companions for the corresponding Parts 1 and 3; neither requires ignored
+  generator checkpoints or pools.
 - `notebooks/autoregressive_transformer.ipynb` and `notebooks/wgan_gp.ipynb`
   are unnumbered extra/future-work companions for the historical generator
   baselines.
@@ -212,6 +216,54 @@ is not claimed as an exact reconstruction of the already recorded run. Always
 train into a fresh run root. Training defaults to `cache_sweep_v2`, while
 `select-evaluate` defaults to the retained historical `cache_sweep` evidence;
 legacy checkpoints are protected from `--overwrite`.
+
+## Low-resource CRNN augmentation experiment
+
+The matched low-resource study asks a narrower question: if only 50 labeled
+real spectrograms per species are visible to a newly initialized CRNN, can the
+existing generated pools improve classification of real held-out clips? Each
+real row comes from a distinct recording ID. Three deterministic real subsets
+are crossed with three CRNN initialization seeds, while generation-pool seeds
+42, 123, and 777 rotate across the resulting nine matched blocks. The sweep
+trains seven conditions per block: real-only and VAE-v3/diffusion additions of
+50, 100, or 200 per species, for 63 training runs overall.
+
+Validation selected 200 generated spectrograms per species for both generators.
+Only real-only and the two selected arms were then evaluated on test:
+
+| Condition | Mean test macro F1 | Sample SD | Paired delta | Positive blocks | Descriptive block-bootstrap interval |
+|---|---:|---:|---:|---:|---:|
+| Real-only, 50/species | 84.75% | 2.52 pp | reference | reference | reference |
+| VAE-v3 +200/species | **87.69%** | 1.37 pp | **+2.93 pp** | 8/9 | +1.43 to +4.54 pp |
+| Diffusion +200/species | 85.17% | 2.23 pp | +0.42 pp | 5/9 | -1.19 to +1.85 pp |
+
+Within this design, VAE-v3 provides repeatable evidence of classifier utility;
+diffusion does not demonstrate a stable held-out gain. These are classifier
+results, not perceptual-realism results. They simulate label scarcity for three
+common project species rather than genuinely rare or unseen species, and the
+pretrained generators had access to more source data than the CRNN. The three
+real subsets also overlap because the training split contains only 56 Robin,
+63 Cardinal, and 95 Sparrow recording IDs, so the nine blocks are not nine
+independent datasets. Finally, 200/species is the largest available ratio and
+therefore the best tested value, not an estimated optimum.
+
+The portable evidence and exact limitations are in
+[`reports/crnn_low_resource_augmentation_2026-08-10`](reports/crnn_low_resource_augmentation_2026-08-10/README.md),
+with a visual companion in
+[`notebooks/low_resource_crnn_augmentation.ipynb`](notebooks/low_resource_crnn_augmentation.ipynb).
+Bulk checkpoints and histories stay under ignored
+`runs/crnn_low_resource_augmentation/`.
+
+Audit the existing pools and subset design, or resume the full experiment, with:
+
+```powershell
+& $py scripts/15_crnn_low_resource_augmentation.py audit
+& $py scripts/15_crnn_low_resource_augmentation.py run --device cuda --workers 0
+```
+
+The command never trains or samples a generator. It refuses incompatible
+existing CRNN runs and resumes only checkpoints whose complete protocol
+signature matches the requested experiment.
 
 ## Historical generation baselines and evaluation boundary
 
