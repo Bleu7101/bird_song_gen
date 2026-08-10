@@ -86,6 +86,12 @@ an older cache layout.
 - `scripts/` contains thin command-line entry points for reproducible runs.
 - `notebooks/` contains visual, gated companions that import the `src` code;
   notebooks are not a second classifier implementation.
+- `notebooks/03_classifier.ipynb` is the CRNN-focused classifier companion;
+  `notebooks/06_evaluation.ipynb` is the portable generated-data augmentation
+  evaluation.
+- `notebooks/autoregressive_transformer.ipynb` and `notebooks/wgan_gp.ipynb`
+  are unnumbered extra/future-work companions for the historical generator
+  baselines.
 - The merged legacy preprocessing notebook is retained as
   `notebooks/02_preprocess_logmel_legacy_processed.ipynb`; the canonical
   preprocessing companion is `notebooks/02_preprocess_logmel.ipynb`.
