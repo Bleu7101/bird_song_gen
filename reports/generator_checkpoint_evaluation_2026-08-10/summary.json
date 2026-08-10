@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "title": "Three-seed checkpoint generator evaluation",
+  "seed_count": 3,
+  "generated_arrays_total": 3600,
+  "calibration": [
+    {
+      "classifier": "crnn",
+      "split": "test",
+      "sample_count": 489,
+      "accuracy": 0.8997955010224948,
+      "macro_f1": 0.9016177383860278,
+      "macro_recall": 0.9017844082978183,
+      "mean_confidence": 0.9209489822387695,
+      "mean_entropy": 0.263263463973999,
+      "expected_accuracy": 0.8997955010224948,
+      "expected_macro_f1": 0.9016177383860278
+    },
+    {
+      "classifier": "residual",
+      "split": "test",
+      "sample_count": 489,
+      "accuracy": 0.9038854805725971,
+      "macro_f1": 0.9044463009375291,
+      "macro_recall": 0.9023869560268029,
+      "mean_confidence": 0.8692528605461121,
+      "mean_entropy": 0.3589407205581665,
+      "expected_accuracy": 0.9038854805725971,
+      "expected_macro_f1": 0.9044463009375291
+    }
+  ],
+  "primary_classifier": "crnn",
+  "sensitivity_classifier": "residual",
+  "selection": "No composite score or winner; report encoder-dependent rankings and three-seed mean/std/range.",
+  "metric_files": [
+    "metrics_per_seed.csv",
+    "metrics_aggregate.csv",
+    "classifier_scores.csv",
+    "nearest_neighbor_summary.csv"
+  ]
+}

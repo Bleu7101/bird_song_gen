@@ -73,10 +73,13 @@ class BirdSongCNN(nn.Module):
             nn.Linear(width * 4, num_classes),
         )
 
-    def forward(self, inputs: torch.Tensor) -> torch.Tensor:
+    def forward_features(self, inputs: torch.Tensor) -> torch.Tensor:
         features = self.features(self.stem(inputs))
         pooled = torch.cat((self.average_pool(features), self.maximum_pool(features)), dim=1)
-        return self.classifier(pooled)
+        return pooled.flatten(1)
+
+    def forward(self, inputs: torch.Tensor) -> torch.Tensor:
+        return self.classifier(self.forward_features(inputs))
 
     def metadata(self) -> dict[str, str | float | int]:
         return {
@@ -137,10 +140,13 @@ class PlainBirdSongCNN(nn.Module):
             nn.Linear(width * 4, num_classes),
         )
 
-    def forward(self, inputs: torch.Tensor) -> torch.Tensor:
+    def forward_features(self, inputs: torch.Tensor) -> torch.Tensor:
         features = self.features(inputs)
         pooled = torch.cat((self.average_pool(features), self.maximum_pool(features)), dim=1)
-        return self.classifier(pooled)
+        return pooled.flatten(1)
+
+    def forward(self, inputs: torch.Tensor) -> torch.Tensor:
+        return self.classifier(self.forward_features(inputs))
 
     def metadata(self) -> dict[str, str | float | int]:
         return {
@@ -208,10 +214,13 @@ class DepthwiseBirdSongCNN(nn.Module):
             nn.Linear(width * 4, num_classes),
         )
 
-    def forward(self, inputs: torch.Tensor) -> torch.Tensor:
+    def forward_features(self, inputs: torch.Tensor) -> torch.Tensor:
         features = self.features(self.stem(inputs))
         pooled = torch.cat((self.average_pool(features), self.maximum_pool(features)), dim=1)
-        return self.classifier(pooled)
+        return pooled.flatten(1)
+
+    def forward(self, inputs: torch.Tensor) -> torch.Tensor:
+        return self.classifier(self.forward_features(inputs))
 
     def metadata(self) -> dict[str, str | float | int]:
         return {
@@ -257,11 +266,14 @@ class BirdSongCRNN(nn.Module):
             nn.Linear(width * 4, num_classes),
         )
 
-    def forward(self, inputs: torch.Tensor) -> torch.Tensor:
+    def forward_features(self, inputs: torch.Tensor) -> torch.Tensor:
         features = self.features(self.stem(inputs)).mean(dim=2).transpose(1, 2)
         sequence, _ = self.recurrent(features)
         pooled = torch.cat((sequence.mean(dim=1), sequence.amax(dim=1)), dim=1)
-        return self.classifier(pooled)
+        return pooled
+
+    def forward(self, inputs: torch.Tensor) -> torch.Tensor:
+        return self.classifier(self.forward_features(inputs))
 
     def metadata(self) -> dict[str, str | float | int]:
         return {

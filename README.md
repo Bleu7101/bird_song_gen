@@ -89,6 +89,9 @@ an older cache layout.
 - `notebooks/03_classifier.ipynb` is the CRNN-focused classifier companion;
   `notebooks/06_evaluation.ipynb` is the portable generated-data augmentation
   evaluation.
+- `notebooks/generator_checkpoint_evaluation.ipynb` is the report-only
+  three-seed evaluation of the frozen VAE-v3 and diffusion checkpoint pools;
+  it does not retrain either generator or require ignored bulk arrays.
 - `notebooks/autoregressive_transformer.ipynb` and `notebooks/wgan_gp.ipynb`
   are unnumbered extra/future-work companions for the historical generator
   baselines.
@@ -217,6 +220,15 @@ comparison: the continuous autoregressive Transformer and WGAN-GP. Shared
 evaluation and Griffin-Lim decoding helpers support those models but are not
 additional generators. The VAE-v3/diffusion augmentation report is a separate
 classifier-utility experiment and is the current evaluation focus.
+
+The inference-only three-seed checkpoint study is documented in
+[`reports/generator_checkpoint_evaluation_2026-08-10`](reports/generator_checkpoint_evaluation_2026-08-10/)
+and its report-only companion is
+[`notebooks/generator_checkpoint_evaluation.ipynb`](notebooks/generator_checkpoint_evaluation.ipynb).
+It preserves the seed-42 pools and adds deterministic seed-123/777 pools under
+ignored `runs/generator_checkpoint_evaluation/`. The selected CRNN is primary;
+the legacy residual CNN is a sensitivity check, and all conclusions remain
+classifier-view diagnostics.
 
 The continuous autoregressive transformer is documented in
 [`reports/generator_baselines/transformer/README.md`](reports/generator_baselines/transformer/README.md).

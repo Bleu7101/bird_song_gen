@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "seeds": [
+    42,
+    123,
+    777
+  ],
+  "models": {
+    "vae_v3": {
+      "pools": [
+        {
+          "seed": 42,
+          "sample_count": 600
+        },
+        {
+          "seed": 123,
+          "sample_count": 600
+        },
+        {
+          "seed": 777,
+          "sample_count": 600
+        }
+      ]
+    },
+    "diffusion": {
+      "pools": [
+        {
+          "seed": 42,
+          "sample_count": 600
+        },
+        {
+          "seed": 123,
+          "sample_count": 600
+        },
+        {
+          "seed": 777,
+          "sample_count": 600
+        }
+      ]
+    }
+  }
+}

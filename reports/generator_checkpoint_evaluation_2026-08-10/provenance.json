@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "checkpoints": {
+    "vae_v3": {
+      "path": "artifacts/models/vae/conditional_vae_v3/conditional_vae_v3_best.pt",
+      "sha256": "AAC87E76F71CAF3D73FA02498B559371BDEB04E3BC217457A8E3B3ED79B6ABAE",
+      "parameter_count": 5365025
+    },
+    "diffusion": {
+      "path": "C:\\Users\\Harvey\\Desktop\\conditional_diffusion\\conditional_diffusion_best_low_batch_100_eps_weighted.pt",
+      "sha256": "913B6BD7C77B2CBDD4C686FBA5161993A94DF9CDDE0EA848F282927CCDF3B79D",
+      "parameter_count": 18443841,
+      "ema_state_dict": true,
+      "note": "external Desktop checkpoint; not copied or tracked"
+    }
+  },
+  "evaluators": [
+    {
+      "classifier": "crnn",
+      "path": "artifacts/models/classifier/selected_crnn/best.pt",
+      "sha256": "60525C2AB3EE2B9FC24D12DB6F591010BFA36FAC2D2804D6946C7A6021121806",
+      "classes": [
+        "American Robin",
+        "Northern Cardinal",
+        "Song Sparrow"
+      ]
+    },
+    {
+      "classifier": "residual",
+      "path": "artifacts/models/classifier/Harvey_classifier/best.pt",
+      "sha256": "7BE034908A80EF23EC83BF6B1B731B803EE13D6DF1CC548429B35C2DD3E35718",
+      "classes": [
+        "American Robin",
+        "Northern Cardinal",
+        "Song Sparrow"
+      ]
+    }
+  ],
+  "normalization": {
+    "mean": -51.5400096102764,
+    "std": 14.894513218933453,
+    "conversion": "standardized to dB, per-sample max subtraction, [-80,0] clip, [-1,1]"
+  }
+}

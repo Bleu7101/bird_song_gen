@@ -17,6 +17,13 @@ It evaluates whether frozen generated spectrogram pools help a downstream
 classifier; it does not add either model to this historical WGAN-GP/Transformer
 comparison or establish audio realism.
 
+The inference-only three-seed checkpoint study is documented in
+[`reports/generator_checkpoint_evaluation_2026-08-10`](../../../reports/generator_checkpoint_evaluation_2026-08-10/README.md).
+Use `scripts/generate_checkpoint_pool.py` to resume deterministic VAE-v3 or
+DDIM pools and `scripts/evaluate_generator_checkpoints.py` for `audit`,
+`evaluate`, or `package`. The bulk pools remain ignored; only bounded report
+evidence is intended for version control.
+
 ## Train and sample
 
 All scripts use `--device auto`, so CUDA is selected when available. Use

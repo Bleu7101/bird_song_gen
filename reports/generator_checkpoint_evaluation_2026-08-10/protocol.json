@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "title": "Three-seed checkpoint generator evaluation",
+  "models": [
+    "vae_v3",
+    "diffusion"
+  ],
+  "seeds": [
+    42,
+    123,
+    777
+  ],
+  "samples_per_species": 200,
+  "total_samples_per_model": 1800,
+  "class_order_generator": [
+    "Northern Cardinal",
+    "Song Sparrow",
+    "American Robin"
+  ],
+  "class_order_classifier": [
+    "American Robin",
+    "Northern Cardinal",
+    "Song Sparrow"
+  ],
+  "primary_classifier": "crnn",
+  "sensitivity_classifier": "residual",
+  "test_manifest": "manifests/content_safe_v2/full_dataset_test.csv",
+  "train_manifest": "manifests/content_safe_v2/full_dataset_train.csv",
+  "validation_manifest": "manifests/content_safe_v2/full_dataset_validation.csv",
+  "cache": "artifacts/spectrograms",
+  "feature_projection": {
+    "fit_split": "content_safe_v2 train",
+    "standardization": "StandardScaler",
+    "pca_components": 64
+  },
+  "sample_sensitive_metrics": {
+    "resamples": 200,
+    "sample_size_per_species": 128
+  },
+  "copy_risk": {
+    "threshold_source": "content_safe_v2 validation nearest-train distances",
+    "quantile": 0.05
+  },
+  "claim_boundary": [
+    "classifier compatibility",
+    "conditioning",
+    "classifier-feature distribution similarity",
+    "diversity",
+    "coverage",
+    "copying risk",
+    "generation-seed stability"
+  ],
+  "unsupported_claims": [
+    "waveform quality",
+    "human-perceived realism",
+    "native generator test loss",
+    "training stability",
+    "causal augmentation improvement"
+  ]
+}
