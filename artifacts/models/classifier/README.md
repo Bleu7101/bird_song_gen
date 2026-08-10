@@ -11,7 +11,7 @@ same experiment.
 | [`selected_crnn`](selected_crnn/README.md) | Current selected classifier and one held-out evaluation | CRNN seed 777 selected from validation evidence, then evaluated once on 489 test clips |
 | [`architecture_comparison`](architecture_comparison/README.md) | Complete four-architecture, three-seed sweep | Validation only; all 12 checkpoints are retained |
 | [`Harvey_classifier`](Harvey_classifier/README.md) | Legacy residual CNN checkpoint | Previously evaluated held-out baseline used by earlier generator reports |
-| [`augmentation report`](../reports/crnn_synthetic_augmentation_2026-08-09/README.md) | First VAE-v3/diffusion synthetic-data sweep | Ratios selected on validation; selected arms tested once and compared descriptively with the unmatched historical selected CRNN |
+| [`augmentation report`](../../../reports/crnn_synthetic_augmentation_2026-08-09/README.md) | First VAE-v3/diffusion synthetic-data sweep | Ratios selected on validation; selected arms tested once and compared descriptively with the unmatched historical selected CRNN |
 
 `Harvey_classifier` in this table is a retained artifact-directory name. It
 does not refer to an active branch; current repository work is on `main`.

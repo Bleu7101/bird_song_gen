@@ -7,7 +7,7 @@ The shared representation is a normalized `1 x 128 x 128` log-mel tensor.
 ## Main branch overview
 
 `main` is the primary review branch. It contains the shared data pipeline, the
-classifier study, VAE v1/v2/v3 artifacts, and two canonical spectrogram
+classifier study, VAE v1/v2/v3 artifacts, and two historical spectrogram
 generation baselines: the continuous Transformer and WGAN-GP. Decoder research
 and diffusion implementations are kept on separate branches so their different
 model and representation contracts are not mixed into the main workflow. The
@@ -19,7 +19,7 @@ diffusion implementation onto `main`.
 
 | Branch | Purpose |
 |---|---|
-| [`main`](https://github.com/Bleu7101/bird_song_gen/tree/main) | Primary pipeline, classifier evidence, VAE v1/v2/v3 experiments, and the canonical Transformer and WGAN-GP generator baselines |
+| [`main`](https://github.com/Bleu7101/bird_song_gen/tree/main) | Primary pipeline, classifier evidence, VAE v1/v2/v3 experiments, and historical Transformer and WGAN-GP generator baselines |
 | [`BigVGAN_decode`](https://github.com/Bleu7101/bird_song_gen/tree/BigVGAN_decode) | Future work for testing alternative decoders/vocoders that convert generated spectrograms into audio waveforms; the current BigVGAN results are the first recorded decoder experiment |
 | [`Diffusion`](https://github.com/Bleu7101/bird_song_gen/tree/Diffusion), [`Difussion`](https://github.com/Bleu7101/bird_song_gen/tree/Difussion), and [`diffusion_vincent`](https://github.com/Bleu7101/bird_song_gen/tree/diffusion_vincent) | Separate branches containing diffusion-model work; use the documentation, configs, and artifacts on the relevant branch |
 
@@ -27,20 +27,20 @@ Branch names identify isolated workstreams, not additional stages of the
 `main` pipeline. In particular, the decoder branch changes the mel and waveform
 contract, and diffusion code should be evaluated from its own branch.
 
-| Area | Canonical implementation | Evidence/status |
+| Area | Implementation | Evidence/status |
 |---|---|---|
 | Dataset and splits | `scripts/01_create_splits.py` and `manifests/` | Historical v1: 2,339 train, 519 validation, 489 test clips with no recording-ID overlap; `manifests/content_safe_v2/` additionally removes exact-content duplicates for future work |
 | Shared preprocessing | `scripts/02_build_spectrograms.py` and `configs/spectrogram.json` | Content-addressed real cache under local `artifacts/spectrograms/`; 3,347 logical rows reference 3,323 unique arrays |
 | Classifier | `src/bird_song/classifier/` and `scripts/03_*.py` | Four architectures, three seeds each; CRNN selected from validation evidence |
 | CRNN synthetic augmentation v1 | `scripts/14_crnn_synthetic_augmentation.py` and `reports/crnn_synthetic_augmentation_2026-08-09/` | Full-real-data VAE-v3/diffusion ratio sweep; no mean held-out gain demonstrated |
-| Canonical Transformer | `src/bird_song/transformer/` and `scripts/06_*.py` | Fully trained working baseline with a documented caveated verdict |
-| Canonical WGAN-GP | `src/bird_song/generation/wgan_gp.py` and `scripts/08_*.py` | Full-split 20-epoch run with recorded evidence and curated audio |
-| VAE v1/v2/v3 | `notebooks/04_conditional_vae.ipynb`, `artifacts/vae_artifacts/`, and `outputs/conditional_vae*/` | Three recorded VAE versions are preserved on `main`; the notebook is the experiment entry point |
+| Historical Transformer baseline | `src/bird_song/transformer/` and `scripts/06_*.py` | Fully trained working baseline with a documented caveated verdict; run files are archived under `reports/generator_baselines/transformer/` |
+| Historical WGAN-GP baseline | `src/bird_song/generation/wgan_gp.py` and `scripts/08_*.py` | Full-split 20-epoch run with recorded evidence and curated audio under `reports/generator_baselines/wgan_gp/`; bulk runs remain local |
+| VAE v1/v2/v3 | `notebooks/04_conditional_vae.ipynb`, `artifacts/models/vae/`, and `reports/vae/` | Three recorded VAE versions are preserved on `main`; the notebook is retained unchanged as the historical experiment record |
 | Diffusion models | Separate diffusion branches listed above | Implementations remain outside `main`; only the frozen classifier-ready pool used by the v1 augmentation report is cached locally on `main` |
 
 ## Decoder roadmap
 
-The canonical generators on `main` produce normalized `128 x 128` log-mel
+The historical generators on `main` produce normalized `128 x 128` log-mel
 spectrograms, and Griffin-Lim remains the fixed baseline used by the recorded
 main-branch audio demonstrations. Future comparisons of different methods for
 turning generated representations into audio waveforms belong on
@@ -89,10 +89,11 @@ an older cache layout.
 - The merged legacy preprocessing notebook is retained as
   `notebooks/02_preprocess_logmel_legacy_processed.ipynb`; the canonical
   preprocessing companion is `notebooks/02_preprocess_logmel.ipynb`.
-- `classifier_artifacts/` contains versioned model weights and evaluation
-  evidence. Its index explains the validation-versus-held-out boundary.
-- `reports/` contains curated generator evidence. Bulk generated arrays remain
-  local and are ignored.
+- `artifacts/models/classifier/` and `artifacts/models/vae/` contain versioned
+  model packages and reusable banks. Their READMEs explain the
+  validation-versus-held-out boundaries.
+- `reports/` contains curated evidence. `runs/` and `outputs/` are local,
+  ignored workspaces for fresh training and generated samples.
 
 ## Classifier: selection and recorded results
 
@@ -123,18 +124,18 @@ The earlier residual CNN remains available as a legacy held-out baseline with
 transformer and generator reports explicitly used that checkpoint. These are
 real-audio held-out metrics; they are not generated-sample realism scores.
 
-The selected model package is [`classifier_artifacts/selected_crnn`](classifier_artifacts/selected_crnn/README.md).
+The selected model package is [`artifacts/models/classifier/selected_crnn`](artifacts/models/classifier/selected_crnn/README.md).
 The complete sweep is documented in
-[`classifier_artifacts/architecture_comparison`](classifier_artifacts/architecture_comparison/README.md),
+[`artifacts/models/classifier/architecture_comparison`](artifacts/models/classifier/architecture_comparison/README.md),
 and the legacy checkpoint is described in
-[`classifier_artifacts/Harvey_classifier`](classifier_artifacts/Harvey_classifier/README.md).
+[`artifacts/models/classifier/Harvey_classifier`](artifacts/models/classifier/Harvey_classifier/README.md).
 
 Evaluate the selected checkpoint on a new labeled manifest with:
 
 ```powershell
 $env:PYTHONPATH = "src"
 & $py scripts/03_evaluate_classifier.py `
-  --checkpoint classifier_artifacts/selected_crnn/best.pt `
+  --checkpoint artifacts/models/classifier/selected_crnn/best.pt `
   --output-dir runs/selected_crnn_test `
   --workers 0 --device auto
 ```
@@ -203,23 +204,23 @@ train into a fresh run root. Training defaults to `cache_sweep_v2`, while
 `select-evaluate` defaults to the retained historical `cache_sweep` evidence;
 legacy checkpoints are protected from `--overwrite`.
 
-## Canonical generation models and evaluation boundary
+## Historical generation baselines and evaluation boundary
 
-The maintained canonical generator comparison on `main` contains exactly two
-model families: the continuous autoregressive Transformer and WGAN-GP. Shared
+The repository retains exactly two generator baselines for historical
+comparison: the continuous autoregressive Transformer and WGAN-GP. Shared
 evaluation and Griffin-Lim decoding helpers support those models but are not
 additional generators. The VAE-v3/diffusion augmentation report is a separate
-classifier-utility experiment and does not change that canonical selection.
+classifier-utility experiment and is the current evaluation focus.
 
 The continuous autoregressive transformer is documented in
-[`runs/transformer_generator/README.md`](runs/transformer_generator/README.md).
+[`reports/generator_baselines/transformer/README.md`](reports/generator_baselines/transformer/README.md).
 Its best tested temperature-1.0 run achieved 80.73% target-label agreement
 with the legacy residual classifier but only 39.58% with the independent CRNN.
 Classifier agreement is a diagnostic for generated samples, not proof of
 acoustic realism; the model card records the visual and conditioning caveats.
 
 The full-split WGAN-GP run is summarized in
-[`reports/generator_pilot_2026-08-04/README.md`](reports/generator_pilot_2026-08-04/README.md).
+[`reports/generator_baselines/wgan_gp/README.md`](reports/generator_baselines/wgan_gp/README.md).
 That report likewise separates residual-classifier agreement (84.90%) from
 CRNN agreement (40.63%), detail ratios, listening, and visual inspection.
 
@@ -235,7 +236,7 @@ Generated-sample evaluation is run with species-named parent directories:
 ```powershell
 $env:PYTHONPATH = "src"
 & $py scripts/07_evaluate_generated.py `
-  --checkpoint classifier_artifacts/selected_crnn/best.pt `
+  --checkpoint artifacts/models/classifier/selected_crnn/best.pt `
   --input generated_samples --labels-from-parent
 ```
 

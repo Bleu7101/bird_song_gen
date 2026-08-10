@@ -10,7 +10,7 @@ evaluation commands.
 - Seed: 777
 - Selected epoch: 19
 - Trainable parameters: 404,451
-- SHA-256: `60525C2AB3EE2B9FC24D12DB6F591010BFA36FAC2D2804D6946C7A6021121806`
+- SHA-256: recorded in `SHA256SUMS.txt` and the augmentation provenance
 - Validation accuracy: 92.10%
 - Validation macro F1: 92.06%
 
@@ -60,7 +60,7 @@ $env:PYTHONPATH = "src"
 $py = "..\bird_song_venv\Scripts\python.exe"
 & $py scripts/02_build_spectrograms.py --output-dir artifacts/spectrograms
 & $py scripts/03_evaluate_classifier.py `
-  --checkpoint classifier_artifacts/selected_crnn/best.pt `
+  --checkpoint artifacts/models/classifier/selected_crnn/best.pt `
   --output-dir runs/selected_crnn_test `
   --batch-size 128 --workers 0 --device auto
 ```
@@ -78,4 +78,4 @@ on-the-fly WAV path with stochastic transforms, while each augmented condition
 is a three-seed mean trained from fixed cached real spectrograms. Therefore the
 reported negative mean deltas are no demonstrated augmentation gain, not proof
 that synthetic data is harmful. See
-[`reports/crnn_synthetic_augmentation_2026-08-09`](../../reports/crnn_synthetic_augmentation_2026-08-09/README.md).
+[`reports/crnn_synthetic_augmentation_2026-08-09`](../../../../reports/crnn_synthetic_augmentation_2026-08-09/README.md).

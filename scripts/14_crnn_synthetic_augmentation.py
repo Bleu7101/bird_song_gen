@@ -45,7 +45,7 @@ def build_parser() -> argparse.ArgumentParser:
         command.add_argument(
             "--baseline-metrics",
             type=Path,
-            default=PROJECT_ROOT / "classifier_artifacts/selected_crnn/metrics.json",
+            default=PROJECT_ROOT / "artifacts/models/classifier/selected_crnn/metrics.json",
         )
         command.add_argument(
             "--generated-cache",

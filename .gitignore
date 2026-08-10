@@ -30,25 +30,18 @@ bird_song_venv/
 preview_specs_128/
 processed/
 spectrograms/
-outputs/conditional_vae/generated_npy/
-outputs/conditional_vae/classifier_input/
-outputs/conditional_vae_v2/generated_npy/
-outputs/conditional_vae_v3/generated_npy/
-outputs/conditional_vae_v2/classifier_input/
-outputs/conditional_vae_v3/classifier_input/
-processed/
 artifacts/spectrograms/
 artifacts/generated_spectrograms/
 models/
 runs/
+outputs/
+*.pt
 *.ckpt
 *.pth
 
-# Bulk generator samples and listening exports. Curated WGAN evidence lives
-# under reports/generator_pilot_2026-08-04 instead.
-outputs/**/*.npy
-outputs/wgan_gp_real/
-outputs/wgan_gp_real_audio/
+# Versioned model packages are the only tracked checkpoint boundary.
+!artifacts/models/
+!artifacts/models/**
 
 # Retired exploratory pilot outputs stay ignored so existing local artifacts
 # are preserved without making them maintained branch content again.
@@ -57,6 +50,5 @@ outputs/token_transformer_quick_audio/
 outputs/latent_diffusion_quick/
 outputs/latent_diffusion_quick_audio/
 
-# The selected classifier checkpoint is intentionally versioned despite the
-# general local-checkpoint rule above.
-!classifier_artifacts/selected_crnn/best.pt
+# All model checkpoints that belong in the repository live under
+# artifacts/models/ and are explicitly unignored above.

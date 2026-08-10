@@ -15,7 +15,7 @@ Classify real or generated three-second samples as American Robin, Northern Card
 ## Checkpoint
 
 - File: `best.pt` (legacy baseline; not the current selected classifier)
-- SHA-256: `7BE034908A80EF23EC83BF6B1B731B803EE13D6DF1CC548429B35C2DD3E35718`
+- SHA-256: recorded in the package provenance when available
 - Architecture: residual CNN, approximately 1.66 million trainable parameters
 - Selected epoch: 8
 - Validation accuracy: 88.25%
@@ -59,7 +59,7 @@ Confusion matrix, with rows as true labels and columns as predictions:
 ## Stage 7 command
 
 ```powershell
-python scripts/07_evaluate_generated.py --checkpoint classifier_artifacts/Harvey_classifier/best.pt --input generated_samples --labels-from-parent
+python scripts/07_evaluate_generated.py --checkpoint artifacts/models/classifier/Harvey_classifier/best.pt --input generated_samples --labels-from-parent
 ```
 
 The command writes per-file probabilities to CSV and an aggregate JSON summary containing sample count, mean confidence, predicted-class counts, and target-label accuracy when generated samples are stored in species-named parent directories.

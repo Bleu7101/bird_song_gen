@@ -1,7 +1,8 @@
 # WGAN-GP pilot - 2026-08-04
 
-This retained report covers the canonical WGAN-GP experiment only. The report
-directory keeps its historical name so existing links remain valid.
+This retained report covers the historical WGAN-GP baseline only. Bulk training
+outputs and checkpoints remain in the ignored local `runs/` and `outputs/`
+workspaces.
 
 ## Outcome
 
@@ -66,7 +67,7 @@ history file in this directory is the recorded training evidence.
 
 The first CRNN synthetic-augmentation evaluation later tested frozen VAE-v3
 and diffusion pools; it is recorded in
-[`crnn_synthetic_augmentation_2026-08-09`](../crnn_synthetic_augmentation_2026-08-09/README.md).
+[`crnn_synthetic_augmentation_2026-08-09`](../../crnn_synthetic_augmentation_2026-08-09/README.md).
 It did not evaluate WGAN-GP and therefore does not revise this report's
 historical WGAN verdict.
 

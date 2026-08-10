@@ -1,12 +1,12 @@
-# Canonical WGAN-GP track
+# Historical WGAN-GP baseline
 
-This package contains the canonical WGAN-GP spectrogram generator plus shared
+This package contains the historical WGAN-GP spectrogram generator plus shared
 evaluation and Griffin-Lim decoding helpers. It uses the existing classifier
 representation: normalized `[1, 128, 128]` log-mel arrays from
 `artifacts/spectrograms`. The classifier checkpoint and preprocessing are not
 modified.
 
-The other canonical generator is the continuous autoregressive Transformer in
+The other retained baseline is the continuous autoregressive Transformer in
 `src/bird_song/transformer/`. VAE v1/v2/v3 notebook artifacts are preserved on
 `main`. Diffusion models live on the separate `Diffusion`, `Difussion`, and
 `diffusion_vincent` branches and are not part of this package.
@@ -14,7 +14,7 @@ The other canonical generator is the continuous autoregressive Transformer in
 The first VAE-v3/diffusion CRNN augmentation result is documented separately in
 [`reports/crnn_synthetic_augmentation_2026-08-09`](../../../reports/crnn_synthetic_augmentation_2026-08-09/README.md).
 It evaluates whether frozen generated spectrogram pools help a downstream
-classifier; it does not add either model to this canonical WGAN-GP/Transformer
+classifier; it does not add either model to this historical WGAN-GP/Transformer
 comparison or establish audio realism.
 
 ## Train and sample

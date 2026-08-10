@@ -1,0 +1,6 @@
+{
+  "checkpoint": "runs/transformer_generator/best.pt",
+  "checkpoint_sha256": "571C4E5B8CBD05F7D7209CCA0F15B5545A8828CC94AA3BC1955E8BA8B20011F0",
+  "tracking": "local_only",
+  "note": "The historical Transformer checkpoint is intentionally not versioned on main; the local run path remains reproducible when the checkpoint is present."
+}

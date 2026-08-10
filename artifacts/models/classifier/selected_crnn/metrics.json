@@ -1,7 +1,7 @@
 {
   "checkpoint_epoch": 19,
   "checkpoint": {
-    "path": "classifier_artifacts/selected_crnn/best.pt",
+    "path": "artifacts/models/classifier/selected_crnn/best.pt",
     "sha256": "60525C2AB3EE2B9FC24D12DB6F591010BFA36FAC2D2804D6946C7A6021121806",
     "architecture": "crnn",
     "seed": 777,

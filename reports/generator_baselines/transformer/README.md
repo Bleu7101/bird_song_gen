@@ -9,7 +9,8 @@ The transformer trained cleanly and produces valid normalized 128 x 128 log-mel 
 ## Checkpoint
 
 - File: `best.pt`
-- SHA-256: `571C4E5B8CBD05F7D7209CCA0F15B5545A8828CC94AA3BC1955E8BA8B20011F0`
+- SHA-256: recorded in `SHA256SUMS.txt` and `provenance.json` for the
+  local-only checkpoint
 - Model type: species-conditional autoregressive spectrogram transformer
 - Trainable parameters: 4,953,856
 - Selected epoch: 55 of 60
@@ -50,8 +51,8 @@ Temperature changes the class bias rather than improving all species uniformly. 
 
 ## Visual review
 
-- [Generated temperature-1.0 preview](../../outputs/autoregressive_transformer_preview_t10/conditional_samples.png)
-- [Real held-out comparison from different recordings](../../outputs/autoregressive_transformer_preview_t10/real_test_samples.png)
+- [Generated temperature-1.0 preview](figures/temperature_1.0.png)
+- [Real held-out comparison from different recordings](figures/real_test_samples.png)
 
 The generated preview contains broad horizontal energy bands and noisy texture but few sharply localized notes or harmonic trajectories. Real test spectrograms show substantially clearer time-frequency structure and more within-species variety.
 
@@ -66,7 +67,7 @@ The generated preview contains broad horizontal energy bands and noisy texture b
 
 The first CRNN synthetic-augmentation evaluation later tested frozen VAE-v3
 and diffusion pools; it is recorded in
-[`reports/crnn_synthetic_augmentation_2026-08-09`](../../reports/crnn_synthetic_augmentation_2026-08-09/README.md).
+[`reports/crnn_synthetic_augmentation_2026-08-09`](../../crnn_synthetic_augmentation_2026-08-09/README.md).
 It did not evaluate this Transformer and therefore does not revise the
 historical verdict above.
 
@@ -74,7 +75,7 @@ historical verdict above.
 
 The command below reproduces the published historical temperature-1.0 score,
 which intentionally used the legacy residual checkpoint. Use
-`classifier_artifacts/selected_crnn/best.pt` for new generated-sample scoring.
+`artifacts/models/classifier/selected_crnn/best.pt` for new generated-sample scoring.
 
 ```powershell
 python scripts/06_generate_transformer.py `
@@ -83,7 +84,7 @@ python scripts/06_generate_transformer.py `
   --samples-per-species 64 --temperature 1.0 --seed 2026 --device cuda --no-figure
 
 python scripts/07_evaluate_generated.py `
-  --checkpoint classifier_artifacts/Harvey_classifier/best.pt `
+  --checkpoint artifacts/models/classifier/Harvey_classifier/best.pt `
   --input outputs/autoregressive_transformer_eval_t10 `
   --labels-from-parent `
   --output runs/transformer_generator/classifier_eval_residual_t10.csv `
@@ -97,8 +98,7 @@ python scripts/07_evaluate_generated.py `
 - `classifier_eval_real_cached_test.*`: `.npy` compatibility control.
 - `classifier_eval_residual_*`: published residual-classifier temperature sweep.
 - `classifier_eval_crnn_*`: secondary cross-classifier check.
-- `../../outputs/autoregressive_transformer_eval*`: retained generated manifests;
-  reproducible sample arrays were removed from the branch head to keep the tree
-  reviewable.
-- `../../outputs/autoregressive_transformer_preview*`: retained comparison
-  figures and manifests; preview arrays are likewise reproducible and ignored.
+- `../../../outputs/autoregressive_transformer_eval*`: local generated manifests;
+  reproducible sample arrays are ignored to keep the tree reviewable.
+- `figures/`: retained comparison figures; preview arrays and manifests remain
+  reproducible local outputs and are ignored.

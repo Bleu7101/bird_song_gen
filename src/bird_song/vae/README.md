@@ -1,9 +1,11 @@
 # VAE experiments on main
 
 VAE v1, v2, and v3 are preserved on `main`. The experiment entry point is
-`notebooks/04_conditional_vae.ipynb`; versioned checkpoints are under
-`artifacts/vae_artifacts/conditional_vae*/`, and recorded outputs are under
-`outputs/conditional_vae*/`.
+`notebooks/04_conditional_vae.ipynb`, which is intentionally retained unchanged
+as the historical experiment record. Versioned checkpoints are under
+`artifacts/models/vae/conditional_vae*/`. Curated recorded outputs are under
+`reports/vae/conditional_vae*/`; fresh notebook outputs remain under the
+ignored local `outputs/` workspace.
 
 This package directory remains a namespace placeholder rather than a second
 VAE implementation. Use the notebook and its recorded artifacts together so
@@ -17,9 +19,8 @@ The first CRNN synthetic-augmentation evaluation used exactly one reusable V3
 pool at `artifacts/generated_spectrograms/vae_v3/`: 200 classifier-ready
 `[1,128,128]` arrays per species, generated with seed 42 and posterior-bank
 temperature 0.35. The source checkpoint is
-`artifacts/vae_artifacts/conditional_vae_v3/conditional_vae_v3_best.pt`
-(SHA-256
-`AAC87E76F71CAF3D73FA02498B559371BDEB04E3BC217457A8E3B3ED79B6ABAE`).
+`artifacts/models/vae/conditional_vae_v3/conditional_vae_v3_best.pt`.
+Its SHA-256 is recorded in the augmentation report provenance.
 V1 and V2 were not evaluated in this sweep.
 
 Validation selected 200 generated samples per species. Across CRNN seeds 42,
