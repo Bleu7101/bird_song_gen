@@ -5,64 +5,48 @@
     "dirty_worktree_at_packaging": true
   },
   "inputs": {
-    "source_train_manifest_sha256": "12AA4013BEC0C084ED4B88D3201A1832457631B46E19475437A842F45D7DA95C",
-    "validation_manifest_sha256": "52345341ABDDE422886C5F928D67A4D34CA61B3C6BF6C33BA12DB9FD72AD94B8",
-    "test_manifest_sha256": "3394A78B912049442AAB0CB1034C5E0791EBE5BEAE5EEB89E680A99557F0C349",
-    "real_cache_manifest_sha256": "55C096AB061BF033C5C483A0717CC9FF6E48E12D9A26021030479E27C7DDE37E",
-    "spectrogram_config_sha256": "A45E7316B640BE0127BC84866DA7C30E0F142DBF09F479B4FA6EFB59FC3103F0",
-    "evaluation_sha256": "C29257D76493AEFE8824E7FE690CCC7862326AD33F73815415402DC926FD6E51",
-    "input_audit_sha256": "D6E3B02D447C22D60B37BE71D1594B0C06E8957061FDDCF451443CE70B7F48F9"
   },
   "pool_manifests": [
     {
       "model": "vae_v3",
       "seed": 42,
-      "path": "artifacts/generated_spectrograms/vae_v3/manifest.csv",
-      "sha256": "E00F189C6E8524A1753A860999E5545C5511C219E8D9C30223E7AD989C83F4C9"
+      "path": "artifacts/generated_spectrograms/vae_v3/manifest.csv"
     },
     {
       "model": "vae_v3",
       "seed": 123,
-      "path": "runs/generator_checkpoint_evaluation/pools/vae_v3/seed_123/manifest.csv",
-      "sha256": "6FCFAA3AB95FD70787724CC1EC661673956163A0E5D70268060022DB8E646606"
+      "path": "runs/generator_checkpoint_evaluation/pools/vae_v3/seed_123/manifest.csv"
     },
     {
       "model": "vae_v3",
       "seed": 777,
-      "path": "runs/generator_checkpoint_evaluation/pools/vae_v3/seed_777/manifest.csv",
-      "sha256": "6F24C7DF4A0D4678D63239F7C25F2065859A67E4391DB6285C4F78A998C9A123"
+      "path": "runs/generator_checkpoint_evaluation/pools/vae_v3/seed_777/manifest.csv"
     },
     {
       "model": "diffusion",
       "seed": 42,
-      "path": "artifacts/generated_spectrograms/diffusion/manifest.csv",
-      "sha256": "C89C99796BF4F94950985364BD1A0542B54B333FDE603788B73E9C6CA4048EF4"
+      "path": "artifacts/generated_spectrograms/diffusion/manifest.csv"
     },
     {
       "model": "diffusion",
       "seed": 123,
-      "path": "runs/generator_checkpoint_evaluation/pools/diffusion/seed_123/manifest.csv",
-      "sha256": "4A8BC7D96B6991F8CDC1F30C7C25BC3125EA5BFBB407972172D45ECCF7DCEAAF"
+      "path": "runs/generator_checkpoint_evaluation/pools/diffusion/seed_123/manifest.csv"
     },
     {
       "model": "diffusion",
       "seed": 777,
-      "path": "runs/generator_checkpoint_evaluation/pools/diffusion/seed_777/manifest.csv",
-      "sha256": "5464CE71F6A90E7030B2EAF46FE6A1D4DDF506D0131F964407B42966D13AB719"
+      "path": "runs/generator_checkpoint_evaluation/pools/diffusion/seed_777/manifest.csv"
     }
   ],
   "source_files": {
     "experiment_module": {
-      "path": "src/bird_song/augmentation/low_resource.py",
-      "sha256": "8B05C24E30E5611610F0874B98E2FEE231B3510FEE8FD3CD8225FF3AA472545C"
+      "path": "src/bird_song/augmentation/low_resource.py"
     },
     "report_module": {
-      "path": "src/bird_song/augmentation/low_resource_report.py",
-      "sha256": "41F754CF4823ADE2D69F738E1CA8CE23FF86B56BB37AC5E9DE79AF70ACCA675F"
+      "path": "src/bird_song/augmentation/low_resource_report.py"
     },
     "cli": {
-      "path": "scripts/15_crnn_low_resource_augmentation.py",
-      "sha256": "00660EFF387ABEFEEF691B369E31EEA53F5943CC11A780679E4E65BC51398DE3"
+      "path": "scripts/15_crnn_low_resource_augmentation.py"
     }
   }
 }

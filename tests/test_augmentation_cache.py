@@ -17,7 +17,6 @@ from bird_song.augmentation.experiment import (
     select_ratio,
 )
 from bird_song.config import SpectrogramConfig
-from bird_song.spectrogram_cache import array_sha256, sha256_file
 
 
 def _pool(tmp_path: Path) -> tuple[Path, Path, SpectrogramConfig]:
@@ -36,7 +35,6 @@ def _pool(tmp_path: Path) -> tuple[Path, Path, SpectrogramConfig]:
                     "species": species,
                     "relative_path": relative,
                     "pool_rank": rank,
-                    "array_sha256": array_sha256(array),
                 }
             )
     manifest = root / "model" / "manifest.csv"
@@ -53,16 +51,15 @@ def test_generated_dataset_remaps_labels_and_selects_rank_prefix(tmp_path: Path)
     assert all("\\" not in path.as_posix() for path in dataset.paths)
     assert dataset[0][0].shape == (1, 2, 3)
     audit = audit_generated_pool(manifest, root, ("A", "B"), config)
-    assert audit["rows"] == audit["unique_arrays"] == 4
+    assert audit["rows"] == audit["validated_arrays"] == 4
     assert audit["rows_per_species"] == {"A": 2, "B": 2}
 
 
-def test_generated_pool_audit_rejects_hash_mismatch(tmp_path: Path) -> None:
+def test_generated_pool_audit_rejects_missing_array(tmp_path: Path) -> None:
     root, manifest, config = _pool(tmp_path)
     rows = pd.read_csv(manifest)
-    rows.loc[0, "array_sha256"] = "0" * 64
-    rows.to_csv(manifest, index=False)
-    with pytest.raises(ValueError, match="hash does not match"):
+    (root / Path(str(rows.loc[0, "relative_path"]).replace("\\", "/"))).unlink()
+    with pytest.raises(FileNotFoundError, match="missing"):
         audit_generated_pool(manifest, root, ("A", "B"), config)
 
 
@@ -123,7 +120,6 @@ def test_baseline_delta_requires_the_same_logical_test_clips(tmp_path: Path) -> 
     baseline_payload = {
         "manifest": {
             "path": "manifests/baseline.csv",
-            "sha256": sha256_file(baseline_manifest),
             "sample_count": 1,
         }
     }
@@ -134,7 +130,6 @@ def test_baseline_delta_requires_the_same_logical_test_clips(tmp_path: Path) -> 
                 "split": "test",
                 "name": "A",
                 "relative_wav_path": "wavfiles/a.wav",
-                "audio_sha256": "A" * 64,
             }
         ]
     ).to_csv(equivalent, index=False)
@@ -153,7 +148,7 @@ def test_common_run_signature_keeps_protocol_and_drops_only_arm_identity() -> No
         "generator": "vae_v3",
         "ratio_per_species": 50,
         "seed": 42,
-        "pool_manifest_sha256": "A" * 64,
+        "pool_manifest": "pools/vae.csv",
         "steps": 1440,
         "training_protocol": {"optimizer": "AdamW"},
     }
@@ -162,7 +157,7 @@ def test_common_run_signature_keeps_protocol_and_drops_only_arm_identity() -> No
         "generator": "diffusion",
         "ratio_per_species": 200,
         "seed": 777,
-        "pool_manifest_sha256": "B" * 64,
+        "pool_manifest": "pools/diffusion.csv",
     }
     assert _common_run_signature(first) == _common_run_signature(second)
     second["steps"] = 720

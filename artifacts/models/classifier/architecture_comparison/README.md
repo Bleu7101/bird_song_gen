@@ -3,8 +3,7 @@
 This folder preserves the complete four-architecture, three-seed validation
 sweep originally run before `Harvey_classifier` was promoted to `main`. The
 evidence now lives on `main` and contains all 12 selected checkpoints,
-per-epoch histories, portable run configurations, aggregate results, and
-SHA-256 checksums.
+per-epoch histories, portable run configurations, and aggregate results.
 
 ## Outcome
 
@@ -41,8 +40,6 @@ validation, and test counts are 2,315, 519, and 489.
 - `<architecture>/seed_<seed>/best.pt`: selected checkpoint for that run.
 - `<architecture>/seed_<seed>/history.csv`: per-epoch training and validation history.
 - `<architecture>/seed_<seed>/config.json`: portable run configuration.
-- `SHA256SUMS.txt`: integrity hashes for all checkpoints.
-
 ## Reproduce the sweep
 
 From the repository root on a CUDA-capable machine:

@@ -44,5 +44,5 @@ there is no composite score or named winner.
 
 The notebook `notebooks/generator_checkpoint_evaluation.ipynb` reads only this
 package and runs without checkpoints or ignored pools. `protocol.json` and
-`provenance.json` preserve the exact inference boundary; the external diffusion
-checkpoint is identified by SHA-256 but is neither copied nor tracked.
+`provenance.json` preserve the inference boundary; the external diffusion
+checkpoint is neither copied nor tracked.

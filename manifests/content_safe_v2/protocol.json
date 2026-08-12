@@ -1,8 +1,6 @@
 {
   "format_version": 2,
   "source_manifest": "manifests/full_dataset_manifest.csv",
-  "source_manifest_sha256": "C0750E8F19305DBEE9D14EC3E1760488FE232375930C79C83471E4D65BD02D85",
-  "deduplication_key": "SHA-256 of source WAV bytes",
   "retention_priority": [
     "test",
     "validation",
@@ -22,168 +20,144 @@
   "duplicate_group_count": 16,
   "removed_rows": [
     {
-      "audio_sha256": "1FBA5128D47D77E8C1F7873FAC03469CD9506693CF30A52EB9F15589FB4B3DE6",
       "removed_split": "train",
       "removed_relative_wav_path": "wavfiles/408018-3.wav",
       "retained_split": "validation",
       "retained_relative_wav_path": "wavfiles/408810-3.wav"
     },
     {
-      "audio_sha256": "4523BB03C251A9A2734F819AEA521657C02FDC4F967BCF41BDA37458EF02DD90",
       "removed_split": "train",
       "removed_relative_wav_path": "wavfiles/408014-4.wav",
       "retained_split": "validation",
       "retained_relative_wav_path": "wavfiles/408810-4.wav"
     },
     {
-      "audio_sha256": "4523BB03C251A9A2734F819AEA521657C02FDC4F967BCF41BDA37458EF02DD90",
       "removed_split": "train",
       "removed_relative_wav_path": "wavfiles/408018-4.wav",
       "retained_split": "validation",
       "retained_relative_wav_path": "wavfiles/408810-4.wav"
     },
     {
-      "audio_sha256": "4E3F42885B73668797CFE14153AC04D1E7B68FA19C7A4C0A65480AF5D9729AC9",
       "removed_split": "train",
       "removed_relative_wav_path": "wavfiles/366598-4.wav",
       "retained_split": "train",
       "retained_relative_wav_path": "wavfiles/320469-4.wav"
     },
     {
-      "audio_sha256": "651D2ED62272AC90191F2A9FE1308BD49FC7552E98310480206D00F96C81EA23",
       "removed_split": "train",
       "removed_relative_wav_path": "wavfiles/408014-8.wav",
       "retained_split": "validation",
       "retained_relative_wav_path": "wavfiles/408810-8.wav"
     },
     {
-      "audio_sha256": "651D2ED62272AC90191F2A9FE1308BD49FC7552E98310480206D00F96C81EA23",
       "removed_split": "train",
       "removed_relative_wav_path": "wavfiles/408018-8.wav",
       "retained_split": "validation",
       "retained_relative_wav_path": "wavfiles/408810-8.wav"
     },
     {
-      "audio_sha256": "658640D7E9CD00EC7AE73B69995A58F7FA73D186CA0FAEEFF1907E78484720AA",
       "removed_split": "train",
       "removed_relative_wav_path": "wavfiles/366598-0.wav",
       "retained_split": "train",
       "retained_relative_wav_path": "wavfiles/320469-0.wav"
     },
     {
-      "audio_sha256": "690608EA8717EA76529D0A4818EF6D6163BFBD9914FED2DE97F6E4FB8E975930",
       "removed_split": "train",
       "removed_relative_wav_path": "wavfiles/366598-1.wav",
       "retained_split": "train",
       "retained_relative_wav_path": "wavfiles/320469-1.wav"
     },
     {
-      "audio_sha256": "73CA87BFA3BDC29267AFA869C7ED481FB8036BE8AF33B1B2F6E1D5A2DDBB2FD6",
       "removed_split": "train",
       "removed_relative_wav_path": "wavfiles/366598-2.wav",
       "retained_split": "train",
       "retained_relative_wav_path": "wavfiles/320469-2.wav"
     },
     {
-      "audio_sha256": "875F5914ADF1EAF4A96D9440C0D163E1D6F7F0B2ECBDD78DDA525A887B59B415",
       "removed_split": "train",
       "removed_relative_wav_path": "wavfiles/408014-6.wav",
       "retained_split": "validation",
       "retained_relative_wav_path": "wavfiles/408810-6.wav"
     },
     {
-      "audio_sha256": "875F5914ADF1EAF4A96D9440C0D163E1D6F7F0B2ECBDD78DDA525A887B59B415",
       "removed_split": "train",
       "removed_relative_wav_path": "wavfiles/408018-6.wav",
       "retained_split": "validation",
       "retained_relative_wav_path": "wavfiles/408810-6.wav"
     },
     {
-      "audio_sha256": "9883A29A2D32EC8BB40CB40C259BF8AEEDD8B0361EEF19AF2C56D9B229DE440C",
       "removed_split": "train",
       "removed_relative_wav_path": "wavfiles/408014-5.wav",
       "retained_split": "validation",
       "retained_relative_wav_path": "wavfiles/408810-5.wav"
     },
     {
-      "audio_sha256": "9883A29A2D32EC8BB40CB40C259BF8AEEDD8B0361EEF19AF2C56D9B229DE440C",
       "removed_split": "train",
       "removed_relative_wav_path": "wavfiles/408018-5.wav",
       "retained_split": "validation",
       "retained_relative_wav_path": "wavfiles/408810-5.wav"
     },
     {
-      "audio_sha256": "9E9D3040553B17833BEDEAB7B59D477EA630A18D410BCED1161DF1253BE5FD9E",
       "removed_split": "train",
       "removed_relative_wav_path": "wavfiles/408014-0.wav",
       "retained_split": "validation",
       "retained_relative_wav_path": "wavfiles/408810-0.wav"
     },
     {
-      "audio_sha256": "9E9D3040553B17833BEDEAB7B59D477EA630A18D410BCED1161DF1253BE5FD9E",
       "removed_split": "train",
       "removed_relative_wav_path": "wavfiles/408018-0.wav",
       "retained_split": "validation",
       "retained_relative_wav_path": "wavfiles/408810-0.wav"
     },
     {
-      "audio_sha256": "B20111473347D7703651A6D3C2F69244A7BEF6780FE3FF762BE7285E5DBF8F0B",
       "removed_split": "train",
       "removed_relative_wav_path": "wavfiles/366598-6.wav",
       "retained_split": "train",
       "retained_relative_wav_path": "wavfiles/320469-6.wav"
     },
     {
-      "audio_sha256": "D3DDA7E4FD11A5F26C872D4CD560B623D99FAFA2B6B42B2BCB7589B79AC8F7AA",
       "removed_split": "train",
       "removed_relative_wav_path": "wavfiles/366598-3.wav",
       "retained_split": "train",
       "retained_relative_wav_path": "wavfiles/320469-3.wav"
     },
     {
-      "audio_sha256": "E1D85DA55AE1056A3883FDAE423741D57E519D73A3EA4E3F531C3EEFB07C8F89",
       "removed_split": "train",
       "removed_relative_wav_path": "wavfiles/408014-1.wav",
       "retained_split": "validation",
       "retained_relative_wav_path": "wavfiles/408810-1.wav"
     },
     {
-      "audio_sha256": "E1D85DA55AE1056A3883FDAE423741D57E519D73A3EA4E3F531C3EEFB07C8F89",
       "removed_split": "train",
       "removed_relative_wav_path": "wavfiles/408018-1.wav",
       "retained_split": "validation",
       "retained_relative_wav_path": "wavfiles/408810-1.wav"
     },
     {
-      "audio_sha256": "F85B175F1FFAB5C89C83AEE0767009F31132BC18AC79602F942F7CD55C4E159C",
       "removed_split": "train",
       "removed_relative_wav_path": "wavfiles/366598-5.wav",
       "retained_split": "train",
       "retained_relative_wav_path": "wavfiles/320469-5.wav"
     },
     {
-      "audio_sha256": "FDFDAACFB3C6E7B923C98F0FDBB6C777794F7566D094E889D247EFC0F36073EE",
       "removed_split": "train",
       "removed_relative_wav_path": "wavfiles/408014-9.wav",
       "retained_split": "validation",
       "retained_relative_wav_path": "wavfiles/408810-9.wav"
     },
     {
-      "audio_sha256": "FDFDAACFB3C6E7B923C98F0FDBB6C777794F7566D094E889D247EFC0F36073EE",
       "removed_split": "train",
       "removed_relative_wav_path": "wavfiles/408018-9.wav",
       "retained_split": "validation",
       "retained_relative_wav_path": "wavfiles/408810-9.wav"
     },
     {
-      "audio_sha256": "FE9F4C0E5C96D1C7DE0DFB74EC31528070B30D9C0E5196B88CA155DF03312C33",
       "removed_split": "train",
       "removed_relative_wav_path": "wavfiles/408014-2.wav",
       "retained_split": "validation",
       "retained_relative_wav_path": "wavfiles/408810-2.wav"
     },
     {
-      "audio_sha256": "FE9F4C0E5C96D1C7DE0DFB74EC31528070B30D9C0E5196B88CA155DF03312C33",
       "removed_split": "train",
       "removed_relative_wav_path": "wavfiles/408018-2.wav",
       "retained_split": "validation",

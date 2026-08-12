@@ -15,7 +15,6 @@ Classify real or generated three-second samples as American Robin, Northern Card
 ## Checkpoint
 
 - File: `best.pt` (legacy baseline; not the current selected classifier)
-- SHA-256: recorded in the package provenance when available
 - Architecture: residual CNN, approximately 1.66 million trainable parameters
 - Selected epoch: 8
 - Validation accuracy: 88.25%

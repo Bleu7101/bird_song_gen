@@ -26,7 +26,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Pool directory (default: runs/generator_checkpoint_evaluation/pools/<model>/seed_<seed>).",
     )
     parser.add_argument("--chunk-size", type=int, default=8)
-    parser.add_argument("--expected-sha256", default=None, help=argparse.SUPPRESS)
     parser.add_argument("--device", default="auto")
     return parser
 
@@ -44,7 +43,6 @@ def main() -> None:
         device=device,
         posterior_bank=args.posterior_bank,
         chunk_size=args.chunk_size,
-        expected_sha256=args.expected_sha256,
     )
     print(f"pool={manifest}")
 

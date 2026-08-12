@@ -12,7 +12,6 @@ import pandas as pd
 
 from bird_song.augmentation.low_resource import GENERATORS, _portable, pool_reference
 from bird_song.runtime import save_json
-from bird_song.spectrogram_cache import sha256_file
 
 
 matplotlib.use("Agg")
@@ -90,14 +89,6 @@ def _write_report_charts(
     )
     fig.savefig(figure_dir / "paired_test_deltas.png", dpi=160)
     plt.close(fig)
-
-
-def _write_checksums(report_dir: Path) -> None:
-    lines = []
-    for path in sorted(report_dir.rglob("*")):
-        if path.is_file() and path.name != "SHA256SUMS.txt":
-            lines.append(f"{sha256_file(path)}  {path.relative_to(report_dir).as_posix()}")
-    (report_dir / "SHA256SUMS.txt").write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
 def _subset_overlap_table(membership: pd.DataFrame) -> pd.DataFrame:
@@ -178,7 +169,6 @@ def package_report(
                     "name",
                     "id",
                     "relative_wav_path",
-                    "audio_sha256",
                 ]
             ]
         )
@@ -215,13 +205,13 @@ def package_report(
         "schema_version": 1,
         "git": _git_state(project_root),
         "inputs": {
-            "source_train_manifest_sha256": sha256_file(source_train_manifest),
-            "validation_manifest_sha256": sha256_file(validation_manifest),
-            "test_manifest_sha256": sha256_file(test_manifest),
-            "real_cache_manifest_sha256": sha256_file(cache_root / "spectrogram_manifest.csv"),
-            "spectrogram_config_sha256": sha256_file(spectrogram_config_path),
-            "evaluation_sha256": sha256_file(evaluation_path),
-            "input_audit_sha256": sha256_file(input_audit_path),
+            "source_train_manifest": _portable(source_train_manifest, project_root),
+            "validation_manifest": _portable(validation_manifest, project_root),
+            "test_manifest": _portable(test_manifest, project_root),
+            "real_cache_manifest": _portable(cache_root / "spectrogram_manifest.csv", project_root),
+            "spectrogram_config": _portable(spectrogram_config_path, project_root),
+            "evaluation": _portable(evaluation_path, project_root),
+            "input_audit": _portable(input_audit_path, project_root),
         },
         "pool_manifests": [
             {
@@ -231,9 +221,6 @@ def package_report(
                     pool_reference(project_root, pool_root, model, seed).manifest,
                     project_root,
                 ),
-                "sha256": sha256_file(
-                    pool_reference(project_root, pool_root, model, seed).manifest
-                ),
             }
             for model in GENERATORS
             for seed in evaluation["protocol"]["pool_seeds"]
@@ -241,17 +228,12 @@ def package_report(
         "source_files": {
             "experiment_module": {
                 "path": "src/bird_song/augmentation/low_resource.py",
-                "sha256": sha256_file(project_root / "src/bird_song/augmentation/low_resource.py"),
             },
             "report_module": {
                 "path": "src/bird_song/augmentation/low_resource_report.py",
-                "sha256": sha256_file(
-                    project_root / "src/bird_song/augmentation/low_resource_report.py"
-                ),
             },
             "cli": {
                 "path": "scripts/15_crnn_low_resource_augmentation.py",
-                "sha256": sha256_file(project_root / "scripts/15_crnn_low_resource_augmentation.py"),
             },
         },
     }
@@ -368,8 +350,6 @@ history. It also does not establish waveform quality or human-perceived realism.
 - `subset_membership.csv` and `subset_overlap.csv`: exact real-data subsets and
   their pairwise recording-ID overlap.
 - `confusion_matrices/` and `figures/`: bounded diagnostic evidence.
-- `SHA256SUMS.txt`: integrity manifest for the report package.
 """
     (report_dir / "README.md").write_text(readme, encoding="utf-8")
-    _write_checksums(report_dir)
     return report_dir

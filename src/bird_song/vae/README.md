@@ -20,7 +20,6 @@ pool at `artifacts/generated_spectrograms/vae_v3/`: 200 classifier-ready
 `[1,128,128]` arrays per species, generated with seed 42 and posterior-bank
 temperature 0.35. The source checkpoint is
 `artifacts/models/vae/conditional_vae_v3/conditional_vae_v3_best.pt`.
-Its SHA-256 is recorded in the augmentation report provenance.
 V1 and V2 were not evaluated in this sweep.
 
 Validation selected 200 generated samples per species. Across CRNN seeds 42,

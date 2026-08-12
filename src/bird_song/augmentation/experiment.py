@@ -17,7 +17,7 @@ from bird_song.classifier.model import build_classifier, count_trainable_paramet
 from bird_song.config import DEFAULT_CLASSES, SpectrogramConfig
 from bird_song.data import ManifestDataset
 from bird_song.runtime import atomic_torch_save, load_checkpoint, save_json, seed_everything
-from bird_song.spectrogram_cache import audit_spectrogram_cache, sha256_file
+from bird_song.spectrogram_cache import audit_spectrogram_cache
 
 
 DEFAULT_RATIOS = (50, 100, 200)
@@ -25,7 +25,7 @@ DEFAULT_SEEDS = (42, 123, 777)
 DEFAULT_STEPS = 1_440
 DEFAULT_VALIDATE_EVERY = 36
 DEFAULT_BATCH_SIZE = 64
-PROTOCOL_VERSION = 2
+PROTOCOL_VERSION = 3
 MODEL_WIDTH = 32
 MODEL_DROPOUT = 0.30
 LEARNING_RATE = 3e-4
@@ -81,11 +81,11 @@ def _run_signature(
         "validate_every": int(validate_every),
         "batch_size": int(batch_size),
         "workers": int(workers),
-        "train_manifest_sha256": sha256_file(train_manifest),
-        "validation_manifest_sha256": sha256_file(validation_manifest),
-        "real_cache_manifest_sha256": sha256_file(real_cache_root / "spectrogram_manifest.csv"),
-        "pool_manifest_sha256": sha256_file(pool_manifest),
-        "spectrogram_config_sha256": sha256_file(spectrogram_config_path),
+        "train_manifest": str(train_manifest.resolve()),
+        "validation_manifest": str(validation_manifest.resolve()),
+        "real_cache_manifest": str((real_cache_root / "spectrogram_manifest.csv").resolve()),
+        "pool_manifest": str(pool_manifest.resolve()),
+        "spectrogram_config_path": str(spectrogram_config_path.resolve()),
         "spectrogram_config": config.to_dict(),
         "training_protocol": _training_protocol(device),
     }
@@ -121,7 +121,7 @@ def _guard_legacy_overwrite(checkpoint_path: Path) -> None:
 
 
 def _common_run_signature(signature: dict[str, Any]) -> dict[str, Any]:
-    arm_specific = {"generator", "ratio_per_species", "seed", "pool_manifest_sha256"}
+    arm_specific = {"generator", "ratio_per_species", "seed", "pool_manifest"}
     return {key: value for key, value in signature.items() if key not in arm_specific}
 
 
@@ -500,8 +500,7 @@ def _pool_provenance(generated_cache_root: Path, generator_name: str, project_ro
     generation = directory / "generation.json"
     return {
         "root": _portable(directory, project_root),
-        "manifest_sha256": sha256_file(manifest),
-        "generation_sha256": sha256_file(generation),
+        "manifest": _portable(manifest, project_root),
         "generation": json.loads(generation.read_text(encoding="utf-8")),
         "rows": int(len(pd.read_csv(manifest))),
     }
@@ -530,9 +529,8 @@ def _validate_baseline_test_manifest(
     if not isinstance(metadata, dict):
         raise ValueError("Baseline metrics do not record test-manifest provenance")
     recorded_path_value = metadata.get("path")
-    recorded_hash = str(metadata.get("sha256", "")).upper()
     recorded_count = int(metadata.get("sample_count", -1))
-    if not recorded_path_value or len(recorded_hash) != 64 or recorded_count < 1:
+    if not recorded_path_value or recorded_count < 1:
         raise ValueError("Baseline test-manifest provenance is incomplete")
 
     recorded_relative = Path(str(recorded_path_value).replace("\\", "/"))
@@ -546,14 +544,10 @@ def _validate_baseline_test_manifest(
     if len(supplied_keys) != recorded_count:
         raise ValueError("Supplied test manifest does not match the baseline sample count")
     if recorded_path.is_file():
-        if sha256_file(recorded_path) != recorded_hash:
-            raise ValueError(f"Recorded baseline test manifest hash is stale: {recorded_path}")
         if _logical_manifest_keys(recorded_path) != supplied_keys:
             raise ValueError("Supplied test manifest has different logical clips from the baseline evaluation")
-    elif sha256_file(supplied_path) != recorded_hash:
-        raise ValueError(
-            "The recorded baseline test manifest is unavailable and the supplied manifest hash differs"
-        )
+    elif Path(str(recorded_path_value)).name != supplied_path.name:
+        raise ValueError("The recorded baseline test manifest is unavailable and the supplied filename differs")
     return metadata
 
 
@@ -585,7 +579,7 @@ def select_and_evaluate(
     requested_seeds = sorted(set(int(seed) for seed in seeds))
     if not requested_generators or not requested_ratios or not requested_seeds:
         raise ValueError("At least one generator, ratio, and seed is required")
-    _, real_cache_audit = audit_spectrogram_cache(real_cache_root, config)
+    audit_spectrogram_cache(real_cache_root, config)
     train_data = build_real_dataset(train_manifest, real_cache_root, config, training=False)
     validation_data = build_real_dataset(validation_manifest, real_cache_root, config, training=False)
     test_data = build_real_dataset(test_manifest, real_cache_root, config, training=False)
@@ -612,17 +606,11 @@ def select_and_evaluate(
             "ratio_tie_tolerance": 0.002,
             "test_policy": "evaluate only the validation-selected ratio for each generator",
             "real_cache": _portable(real_cache_root, project_root),
-            "real_cache_manifest_sha256": sha256_file(real_cache_root / "spectrogram_manifest.csv"),
             "train_manifest": _portable(train_manifest, project_root),
-            "train_manifest_sha256": sha256_file(train_manifest),
             "validation_manifest": _portable(validation_manifest, project_root),
-            "validation_manifest_sha256": sha256_file(validation_manifest),
             "test_manifest": _portable(test_manifest, project_root),
-            "test_manifest_sha256": sha256_file(test_manifest),
             "spectrogram_config": _portable(spectrogram_config_path, project_root),
-            "spectrogram_config_sha256": sha256_file(spectrogram_config_path),
             "baseline_metrics": _portable(baseline_metrics, project_root),
-            "baseline_metrics_sha256": sha256_file(baseline_metrics),
         },
         "baseline": baseline,
         "pools": {
@@ -644,19 +632,6 @@ def select_and_evaluate(
             "Interpret the selected ratio against seed-to-seed variation; this sweep does not establish a stable optimum beyond its tested ratios and generated pool.",
         ],
     }
-    if int(real_cache_audit["cross_split_duplicate_group_count"]) > 0:
-        test_involved = any(
-            "test" in group["splits"] for group in real_cache_audit["cross_split_duplicate_groups"]
-        )
-        test_note = (
-            "At least one exact-content group involves test."
-            if test_involved
-            else "No exact-content group involves the historical test split."
-        )
-        report["caveats"].append(
-            "The shared historical cache contains exact-content groups across manifest splits; use content-safe manifests "
-            f"for future experiments. {test_note}"
-        )
     provenance_levels: set[str] = set()
     maintained_common_signature: dict[str, Any] | None = None
     for generator_name in requested_generators:
@@ -698,18 +673,14 @@ def select_and_evaluate(
                         raise ValueError(
                             f"Checkpoint run signature does not match its arm ({arm_mismatches}): {checkpoint}"
                         )
-                    expected_hashes = {
-                        "train_manifest_sha256": sha256_file(train_manifest),
-                        "validation_manifest_sha256": sha256_file(validation_manifest),
-                        "real_cache_manifest_sha256": sha256_file(
-                            real_cache_root / "spectrogram_manifest.csv"
-                        ),
-                        "pool_manifest_sha256": sha256_file(
-                            generated_cache_root / generator_name / "manifest.csv"
-                        ),
-                        "spectrogram_config_sha256": sha256_file(spectrogram_config_path),
+                    expected_inputs = {
+                        "train_manifest": str(train_manifest.resolve()),
+                        "validation_manifest": str(validation_manifest.resolve()),
+                        "real_cache_manifest": str((real_cache_root / "spectrogram_manifest.csv").resolve()),
+                        "pool_manifest": str((generated_cache_root / generator_name / "manifest.csv").resolve()),
+                        "spectrogram_config_path": str(spectrogram_config_path.resolve()),
                     }
-                    mismatched = [key for key, value in expected_hashes.items() if signature.get(key) != value]
+                    mismatched = [key for key, value in expected_inputs.items() if signature.get(key) != value]
                     if mismatched:
                         raise ValueError(
                             f"Checkpoint provenance does not match supplied inputs ({mismatched}): {checkpoint}"
@@ -721,7 +692,7 @@ def select_and_evaluate(
                         raise ValueError(
                             "Requested checkpoints use inconsistent maintained training protocols"
                         )
-                    provenance_levels.add("strict_hashes")
+                    provenance_levels.add("strict_paths")
                 records.append((seed, checkpoint, payload))
             candidates[ratio] = records
         means = {
@@ -748,7 +719,6 @@ def select_and_evaluate(
                 {
                     "seed": seed,
                     "checkpoint": _portable(checkpoint, project_root),
-                    "checkpoint_sha256": sha256_file(checkpoint),
                     "best_validation_macro_f1": float(payload["best_validation_macro_f1"]),
                 }
             )

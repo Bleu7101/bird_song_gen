@@ -27,7 +27,6 @@
     },
     "recording_id_overlap_between_splits": 0,
     "exact_content_audit": {
-      "hash_definition": "SHA-256 of source WAV bytes",
       "cross_split_duplicate_groups": 9,
       "logical_rows_in_cross_split_groups": 26,
       "validation_clips_also_present_in_train": 9,
@@ -68,7 +67,6 @@
     "top_db": 80.0,
     "training_input_mode": "fixed_cached_spectrogram",
     "post_cache_training_transforms": "none_recorded",
-    "current_cache_layout": "content_addressed_by_spectrogram_sha256",
     "logical_manifest_rows": 3347,
     "unique_physical_arrays": 3323,
     "duplicate_physical_files_removed": 24,
@@ -141,7 +139,6 @@
       "total_samples": 600,
       "generation_seed": 42,
       "checkpoint_availability": "external_not_packaged",
-      "checkpoint_sha256": "913B6BD7C77B2CBDD4C686FBA5161993A94DF9CDDE0EA848F282927CCDF3B79D",
       "weights": "ema_state_dict",
       "sampler": "ddim",
       "ddim_steps": 100,

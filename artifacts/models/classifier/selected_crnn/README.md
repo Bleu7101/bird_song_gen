@@ -10,7 +10,6 @@ evaluation commands.
 - Seed: 777
 - Selected epoch: 19
 - Trainable parameters: 404,451
-- SHA-256: recorded in `SHA256SUMS.txt` and the augmentation provenance
 - Validation accuracy: 92.10%
 - Validation macro F1: 92.06%
 
@@ -49,7 +48,7 @@ Confusion matrix, rows true and columns predicted:
 
 See [`confusion_matrix.png`](confusion_matrix.png) and
 [`confusion_matrix.csv`](confusion_matrix.csv) for the rendered and raw
-versions. `SHA256SUMS.txt` records the package integrity hashes.
+versions.
 
 ## Reproduce evaluation
 

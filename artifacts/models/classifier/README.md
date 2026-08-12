@@ -17,10 +17,9 @@ same experiment.
 does not refer to an active branch; current repository work is on `main`.
 
 The selected checkpoint is copied unchanged from
-`architecture_comparison/crnn/seed_777/best.pt`. Both copies must retain the
-same SHA-256 hash. Earlier generated-sample reports continue to name the
-legacy residual checkpoint explicitly so their recorded metrics remain
-reproducible.
+`architecture_comparison/crnn/seed_777/best.pt`. Earlier generated-sample
+reports continue to name the legacy residual checkpoint explicitly so their
+recorded metrics remain reproducible.
 
 Do not compare all architecture checkpoints on the held-out test split. The
 test split is for the predeclared selected candidate only.
@@ -28,5 +27,5 @@ test split is for the predeclared selected candidate only.
 An exact-content audit performed after these historical runs found nine of the
 519 validation clips duplicated byte-for-byte in training; no exact duplicate
 reaches the 489-clip test split. The recorded v1 results are retained as-is.
-Future experiments should use `manifests/content_safe_v2/` and the canonical
-content-addressed cache.
+Future experiments should use `manifests/content_safe_v2/` and the
+manifest-backed cache.

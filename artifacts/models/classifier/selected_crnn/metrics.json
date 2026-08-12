@@ -2,7 +2,6 @@
   "checkpoint_epoch": 19,
   "checkpoint": {
     "path": "artifacts/models/classifier/selected_crnn/best.pt",
-    "sha256": "60525C2AB3EE2B9FC24D12DB6F591010BFA36FAC2D2804D6946C7A6021121806",
     "architecture": "crnn",
     "seed": 777,
     "epoch": 19,
@@ -10,7 +9,6 @@
   },
   "manifest": {
     "path": "manifests/full_dataset_test.csv",
-    "sha256": "9B33E5283045D5CAACADFE7A01E4B7C21F8A0779B0780EA5F5993078C8B3EA10",
     "sample_count": 489
   },
   "sample_count": 489,

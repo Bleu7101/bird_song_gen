@@ -90,18 +90,16 @@ only the selected ratio proceeded to test evaluation. All 18 retained run
 configs record `cuda`, confirming that the sweep trained on GPU.
 
 Real inputs came from the historical v1 logical rows in the cache at
-`artifacts/spectrograms/`. The reorganized cache is content-addressed: 3,347
-logical rows now reference 3,323 unique physical arrays, so 24 duplicate files
-are no longer stored twice. Generated inputs came from the reusable local pools
+`artifacts/spectrograms/`. The recorded cache audit found 3,347 logical rows
+referencing 3,323 physical arrays. Generated inputs came from the reusable local pools
 at:
 
 - `artifacts/generated_spectrograms/vae_v3/manifest.csv`
 - `artifacts/generated_spectrograms/diffusion/manifest.csv`
 
 Both manifests contain 600 classifier-ready float32 arrays with shape
-`[1,128,128]`, range `[-1,1]`, 200 arrays per species, 600 unique paths,
-and 600 unique array hashes. At packaging time, all 1,200 arrays existed and
-their contiguous-array SHA-256 values matched the manifest.
+`[1,128,128]`, range `[-1,1]`, and 200 arrays per species. At packaging time,
+all 1,200 arrays existed and passed the recorded shape, dtype, and range checks.
 
 The VAE pool used the committed V3 checkpoint and posterior bank at temperature
 0.35. The diffusion pool used the recorded EMA checkpoint with deterministic
@@ -110,7 +108,7 @@ clamping at 4 standardized units. Labels enter classifier training by species
 name, so the generators' numeric class order is not reused as the CRNN order.
 
 See [protocol.json](protocol.json) for the complete machine-readable design and
-[provenance.json](provenance.json) for source hashes and integrity checks.
+[provenance.json](provenance.json) for source identities and input checks.
 
 ## Limitations and interpretation boundary
 
@@ -136,7 +134,7 @@ See [protocol.json](protocol.json) for the complete machine-readable design and
    leaked, but validation and ratio selection can be optimistic.
 6. **The retained run metadata is incomplete.** The local run configs do not
    record an optimizer specification or a committed run-code revision. This
-   package preserves the recorded outputs and hashes without inventing those
+   package preserves the recorded outputs and metadata without inventing those
    missing fields.
 
 ## Future experiment boundary
@@ -161,6 +159,5 @@ for or against a causal augmentation effect.
 | [protocol.json](protocol.json) | Dataset, representation, pools, and selection design |
 | [validation_summary.csv](validation_summary.csv) | Exact per-seed validation evidence for all ratios |
 | [test_summary.csv](test_summary.csv) | Historical reference, exact per-seed tests, and augmented means |
-| [provenance.json](provenance.json) | Source hashes, pool checks, and known provenance gaps |
+| [provenance.json](provenance.json) | Source identities, pool checks, and known provenance gaps |
 | [cache_audit.json](cache_audit.json) | Physical deduplication and exact-content split audit |
-| [SHA256SUMS.txt](SHA256SUMS.txt) | Integrity hashes for this tracked package |

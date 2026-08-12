@@ -61,4 +61,3 @@ history. It also does not establish waveform quality or human-perceived realism.
 - `subset_membership.csv` and `subset_overlap.csv`: exact real-data subsets and
   their pairwise recording-ID overlap.
 - `confusion_matrices/` and `figures/`: bounded diagnostic evidence.
-- `SHA256SUMS.txt`: integrity manifest for the report package.

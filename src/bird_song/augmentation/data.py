@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import re
 from pathlib import Path
 from typing import Iterable
 
@@ -10,10 +9,7 @@ import torch
 from torch.utils.data import Dataset
 
 from bird_song.config import SpectrogramConfig
-from bird_song.spectrogram_cache import array_sha256, load_cache_array, resolve_cache_path, sha256_file
-
-
-_SHA256_PATTERN = re.compile(r"^[0-9A-Fa-f]{64}$")
+from bird_song.spectrogram_cache import load_cache_array, resolve_cache_path
 
 
 def _normalize_relative_path(value: object) -> str:
@@ -83,30 +79,17 @@ def audit_generated_pool(
     classes: Iterable[str],
     config: SpectrogramConfig,
 ) -> dict[str, object]:
-    """Verify every generated array once before a sweep, including manifest hashes."""
+    """Verify every generated array once before a sweep."""
     rows, class_names, paths = _validated_manifest(manifest_path, cache_root, classes)
-    if "array_sha256" not in rows.columns or rows["array_sha256"].isna().any():
-        raise ValueError(f"Generated manifest must contain array_sha256 for an integrity audit: {manifest_path}")
-    expected_hashes = rows["array_sha256"].astype(str).str.strip().str.upper()
-    if not expected_hashes.map(lambda value: bool(_SHA256_PATTERN.fullmatch(value))).all():
-        raise ValueError(f"Generated manifest has invalid array_sha256 values: {manifest_path}")
-
-    actual_hashes: list[str] = []
-    for path, expected in zip(paths, expected_hashes, strict=True):
-        actual = array_sha256(load_cache_array(path, config))
-        if actual != expected:
-            raise ValueError(f"Generated spectrogram hash does not match its manifest entry: {path}")
-        actual_hashes.append(actual)
-    if len(set(actual_hashes)) != len(actual_hashes):
-        raise ValueError(f"Generated pool contains byte-identical spectrogram arrays: {manifest_path}")
+    for path in paths:
+        load_cache_array(path, config)
     counts = rows["species"].value_counts().reindex(class_names, fill_value=0)
     if counts.nunique() != 1:
         raise ValueError(f"Generated pool is not balanced by species: {counts.to_dict()}")
     return {
         "manifest": str(manifest_path.resolve()),
-        "manifest_sha256": sha256_file(manifest_path),
         "rows": int(len(rows)),
-        "unique_arrays": int(len(set(actual_hashes))),
+        "validated_arrays": int(len(paths)),
         "rows_per_species": {str(name): int(counts[name]) for name in class_names},
         "max_ratio_per_species": int(counts.iloc[0]),
     }

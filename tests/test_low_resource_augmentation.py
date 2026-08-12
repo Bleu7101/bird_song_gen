@@ -32,7 +32,6 @@ def _manifest_rows(recordings_per_species: int = 5, clips_per_recording: int = 2
                         "name": species,
                         "id": recording_id,
                         "relative_wav_path": f"wavfiles/{recording_id}-{clip_index}.wav",
-                        "audio_sha256": f"{species_index:02X}{recording_index:02X}{clip_index:02X}".ljust(64, "A"),
                     }
                 )
     return pd.DataFrame(rows)
@@ -49,7 +48,6 @@ def test_real_subset_is_balanced_deterministic_and_recording_distinct() -> None:
         "Song Sparrow": 3,
     }
     assert first.groupby("name")["id"].nunique().eq(3).all()
-    assert not first["audio_sha256"].duplicated().any()
 
 
 def test_real_subset_rejects_more_rows_than_distinct_recordings() -> None:

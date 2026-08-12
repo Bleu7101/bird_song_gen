@@ -4,6 +4,15 @@ This repository studies conditional generation of three-second bird-song
 log-mel spectrograms for American Robin, Northern Cardinal, and Song Sparrow.
 The shared representation is a normalized `1 x 128 x 128` log-mel tensor.
 
+## Recorded results at a glance
+
+The selected CRNN reached **90.16% held-out macro F1** on real audio. In the
+full-data augmentation study, neither VAE-v3 nor diffusion demonstrated a mean
+gain over the historical CRNN reference. In the matched low-resource study,
+VAE-v3 improved mean held-out macro F1 from **84.75% to 87.69%** across nine
+blocks, while diffusion reached 85.17% and did not show a stable gain. These are
+classifier-utility results, not claims about perceptual audio realism.
+
 ## Main branch overview
 
 `main` is the primary review branch. It contains the shared data pipeline, the
@@ -31,7 +40,7 @@ contract, and diffusion code should be evaluated from its own branch.
 | Area | Implementation | Evidence/status |
 |---|---|---|
 | Dataset and splits | `scripts/01_create_splits.py` and `manifests/` | Historical v1: 2,339 train, 519 validation, 489 test clips with no recording-ID overlap; `manifests/content_safe_v2/` additionally removes exact-content duplicates for future work |
-| Shared preprocessing | `scripts/02_build_spectrograms.py` and `configs/spectrogram.json` | Content-addressed real cache under local `artifacts/spectrograms/`; 3,347 logical rows reference 3,323 unique arrays |
+| Shared preprocessing | `scripts/02_build_spectrograms.py` and `configs/spectrogram.json` | Manifest-backed normalized spectrogram cache under local `artifacts/spectrograms/` |
 | Classifier | `src/bird_song/classifier/` and `scripts/03_*.py` | Four architectures, three seeds each; CRNN selected from validation evidence |
 | CRNN synthetic augmentation v1 | `scripts/14_crnn_synthetic_augmentation.py` and `reports/crnn_synthetic_augmentation_2026-08-09/` | Full-real-data VAE-v3/diffusion ratio sweep; no mean held-out gain demonstrated |
 | Low-resource CRNN augmentation | `scripts/15_crnn_low_resource_augmentation.py` and `reports/crnn_low_resource_augmentation_2026-08-10/` | Matched 50-real/species study using existing three-seed pools; VAE-v3 improved classifier utility, while diffusion did not show a stable gain |
@@ -53,34 +62,6 @@ representation is intentionally different from the `128 x 128` contract on
 `main`, so checkpoints, cached mels, and decoder metrics must not be mixed
 across the two branches. Decoder experiments are waveform-rendering studies,
 not extra generator families.
-
-## Setup and smoke test
-
-The dataset is intentionally not committed. Place the supplied dataset at
-`bird_songs_dataset/` with `wavfiles/` and `bird_songs_metadata.csv`, then run
-from the repository root in PowerShell:
-
-```powershell
-$py = "..\bird_song_venv\Scripts\python.exe"
-$env:PYTHONPATH = (Resolve-Path "src").Path
-& $py -m pip install -r requirements.txt
-& $py -m pip install -e .
-& $py scripts/02_build_spectrograms.py --output-dir artifacts/spectrograms
-& $py -m pytest
-& $py scripts/03_train_classifier.py --architecture crnn --dry-run --workers 0 --device auto
-```
-
-The smoke test loads one batch, checks the `(batch, 1, 128, 128)` input shape,
-and performs no optimizer step. Training and evaluation commands refuse to
-silently overwrite existing run files.
-
-Classifier training and evaluation default to the real-audio cache at
-`artifacts/spectrograms/`; pass `--spectrogram-cache` to use another validated
-cache. The cache is content-addressed, so byte-identical spectrograms have one
-physical `.npy` object even when the historical v1 manifest retains multiple
-logical rows. Audit it without changing files using
-`scripts/02_deduplicate_spectrogram_cache.py`; add `--apply` only when converting
-an older cache layout.
 
 ## Repository roles
 
@@ -313,13 +294,33 @@ $env:PYTHONPATH = "src"
 The classifier is closed-set and cannot reject noise or unknown species, so
 generated-audio conclusions must include listening and spectrogram review.
 
+## Setup and smoke test
+
+The dataset is intentionally not committed. Place the supplied dataset at
+`bird_songs_dataset/` with `wavfiles/` and `bird_songs_metadata.csv`, then run
+from the repository root in PowerShell:
+
+```powershell
+$py = "..\bird_song_venv\Scripts\python.exe"
+$env:PYTHONPATH = (Resolve-Path "src").Path
+& $py -m pip install -r requirements.txt
+& $py -m pip install -e .
+& $py scripts/02_build_spectrograms.py --output-dir artifacts/spectrograms
+& $py -m pytest
+& $py scripts/03_train_classifier.py --architecture crnn --dry-run --workers 0 --device auto
+```
+
+The smoke test loads one batch, checks the `(batch, 1, 128, 128)` input shape,
+and performs no optimizer step. Training and evaluation commands refuse to
+silently overwrite existing run files. Classifier commands default to the
+manifest-backed cache at `artifacts/spectrograms/`; pass `--spectrogram-cache`
+to use another validated cache.
+
 ## Reproducible pipeline commands
 
 ```powershell
 & $py scripts/01_create_splits.py --dry-run
 & $py scripts/02_build_spectrograms.py --limit 8 --output-dir artifacts/spectrograms_smoke
-& $py scripts/01_deduplicate_manifests.py --output-dir manifests/content_safe_v2
-& $py scripts/02_deduplicate_spectrogram_cache.py
 & $py scripts/03_train_classifier.py --architecture crnn --epochs 40 --batch-size 64 --workers 4 --device cuda
 & $py scripts/06_train_transformer.py --epochs 60 --batch-size 32 --workers 4 --device cuda
 & $py scripts/08_train_wgan_gp.py --epochs 20 --critic-steps 2 --batch-size 32 --workers 0 --device cuda

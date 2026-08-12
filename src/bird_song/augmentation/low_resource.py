@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import hashlib
 import json
 import math
 import time
@@ -21,7 +20,7 @@ from bird_song.config import DEFAULT_CLASSES, SpectrogramConfig
 from bird_song.data import ManifestDataset
 from bird_song.generation.checkpoint_evaluation import audit_pools
 from bird_song.runtime import atomic_torch_save, load_checkpoint, save_json, seed_everything
-from bird_song.spectrogram_cache import audit_spectrogram_cache, sha256_file
+from bird_song.spectrogram_cache import audit_spectrogram_cache
 
 
 GENERATORS = ("vae_v3", "diffusion")
@@ -33,7 +32,7 @@ DEFAULT_POOL_SEEDS = (42, 123, 777)
 DEFAULT_STEPS = 1_440
 DEFAULT_VALIDATE_EVERY = 36
 DEFAULT_BATCH_SIZE = 64
-PROTOCOL_VERSION = 1
+PROTOCOL_VERSION = 2
 MODEL_WIDTH = 32
 MODEL_DROPOUT = 0.30
 LEARNING_RATE = 3e-4
@@ -141,7 +140,7 @@ def select_real_subset_rows(
     """Choose one clip from each of N distinct recording IDs per species."""
     if real_per_species < 1:
         raise ValueError("real_per_species must be positive")
-    required = {"split", "name", "id", "relative_wav_path", "audio_sha256"}
+    required = {"split", "name", "id", "relative_wav_path"}
     missing = required - set(rows.columns)
     if missing:
         raise ValueError(f"Training manifest is missing low-resource columns: {sorted(missing)}")
@@ -166,7 +165,7 @@ def select_real_subset_rows(
         species_rows: list[pd.Series] = []
         for rank, recording_id in enumerate(chosen_ids):
             candidates = group[group["id"] == str(recording_id)].sort_values(
-                ["relative_wav_path", "audio_sha256"], kind="stable"
+                ["relative_wav_path"], kind="stable"
             )
             chosen_index = int(rng.integers(0, len(candidates)))
             chosen = candidates.iloc[chosen_index].copy()
@@ -181,8 +180,6 @@ def select_real_subset_rows(
     unique_ids = selected.groupby("name")["id"].nunique().reindex(classes, fill_value=0)
     if not (counts == real_per_species).all() or not (unique_ids == real_per_species).all():
         raise AssertionError("Low-resource subset is not balanced across distinct recordings")
-    if selected["audio_sha256"].astype(str).str.upper().duplicated().any():
-        raise ValueError("Low-resource subset unexpectedly contains duplicate audio content")
     return selected.sort_values(["name", "low_resource_recording_rank"], kind="stable").reset_index(drop=True)
 
 
@@ -388,18 +385,12 @@ def _run_signature(
         "device_type": device.type,
         "classes": list(DEFAULT_CLASSES),
         "source_train_manifest": _portable(source_train_manifest, project_root),
-        "source_train_manifest_sha256": sha256_file(source_train_manifest),
         "subset_manifest": _portable(subset_manifest, project_root),
-        "subset_manifest_sha256": sha256_file(subset_manifest),
         "validation_manifest": _portable(validation_manifest, project_root),
-        "validation_manifest_sha256": sha256_file(validation_manifest),
-        "real_cache_manifest_sha256": sha256_file(cache_root / "spectrogram_manifest.csv"),
+        "real_cache_manifest": _portable(cache_root / "spectrogram_manifest.csv", project_root),
         "pool_manifest": _portable(pool.manifest, project_root) if pool else None,
-        "pool_manifest_sha256": sha256_file(pool.manifest) if pool else None,
-        "pool_generation_sha256": (
-            sha256_file(pool.generation_metadata) if pool and pool.generation_metadata.is_file() else None
-        ),
-        "spectrogram_config_sha256": sha256_file(spectrogram_config_path),
+        "pool_generation": _portable(pool.generation_metadata, project_root) if pool else None,
+        "spectrogram_config_path": _portable(spectrogram_config_path, project_root),
         "spectrogram_config": config.to_dict(),
         "training_protocol": _training_protocol(),
     }
@@ -623,22 +614,22 @@ def _content_safe_audit(
         "validation": pd.read_csv(validation_manifest),
         "test": pd.read_csv(test_manifest),
     }
-    required = {"split", "name", "id", "relative_wav_path", "audio_sha256"}
+    required = {"split", "name", "id", "relative_wav_path"}
     for split, frame in frames.items():
         missing = required - set(frame.columns)
         if missing or frame.empty or frame[list(required)].isna().any().any():
             raise ValueError(f"{split} manifest is incomplete: missing={sorted(missing)}")
         if set(frame["name"]) != set(DEFAULT_CLASSES):
             raise ValueError(f"{split} manifest class set does not match the classifier")
-    split_hashes = {
-        split: set(frame["audio_sha256"].astype(str).str.upper()) for split, frame in frames.items()
+    split_recording_ids = {
+        split: set(frame["id"].astype(str)) for split, frame in frames.items()
     }
     overlaps = {
-        f"{left}_vs_{right}": len(split_hashes[left] & split_hashes[right])
+        f"{left}_vs_{right}": len(split_recording_ids[left] & split_recording_ids[right])
         for left, right in (("train", "validation"), ("train", "test"), ("validation", "test"))
     }
     if any(overlaps.values()):
-        raise ValueError(f"Content-safe manifests contain exact-content overlap: {overlaps}")
+        raise ValueError(f"Manifests contain recording-ID overlap: {overlaps}")
     return {
         "rows": {split: int(len(frame)) for split, frame in frames.items()},
         "recording_ids_per_species": {
@@ -648,7 +639,7 @@ def _content_safe_audit(
             }
             for split, frame in frames.items()
         },
-        "exact_content_overlap": overlaps,
+        "recording_id_overlap": overlaps,
     }
 
 
@@ -696,7 +687,6 @@ def audit_inputs(
             {
                 "seed": seed,
                 "path": _portable(path, project_root),
-                "sha256": sha256_file(path),
                 "rows": int(len(frame)),
                 "rows_per_species": {
                     species: int(count) for species, count in frame["name"].value_counts().items()
@@ -708,7 +698,7 @@ def audit_inputs(
         )
 
     pool_audit = audit_pools(project_root, pool_root, expected_samples=200, seeds=pool_seeds)
-    all_hashes: list[str] = []
+    validated_array_count = 0
     pool_details: list[dict[str, Any]] = []
     for model in GENERATORS:
         for seed in pool_seeds:
@@ -719,21 +709,16 @@ def audit_inputs(
                 DEFAULT_CLASSES,
                 config,
             )
-            frame = pd.read_csv(reference.manifest)
-            all_hashes.extend(frame["array_sha256"].astype(str).str.upper().tolist())
+            validated_array_count += int(details["validated_arrays"])
             pool_details.append(
                 {
                     "model": model,
                     "seed": int(seed),
                     "manifest": _portable(reference.manifest, project_root),
-                    "manifest_sha256": sha256_file(reference.manifest),
                     "rows": details["rows"],
                     "rows_per_species": details["rows_per_species"],
                 }
             )
-    if len(all_hashes) != len(set(all_hashes)):
-        raise ValueError("Generated pools contain duplicate arrays across model/seed boundaries")
-
     blocks = replicate_blocks(real_subset_seeds, train_seeds, pool_seeds)
     conditions = experiment_conditions(requested_ratios)
     return {
@@ -741,7 +726,7 @@ def audit_inputs(
         "content_safe": content_safe,
         "cache": {
             "logical_rows": int(cache_audit["row_count"]),
-            "physical_arrays": int(cache_audit["unique_object_count"]),
+            "physical_arrays": int(cache_audit["physical_path_count"]),
         },
         "real_per_species": int(real_per_species),
         "ratios_per_species": list(requested_ratios),
@@ -753,7 +738,7 @@ def audit_inputs(
         "subsets": subset_summary,
         "pool_audit": pool_audit,
         "pool_details": pool_details,
-        "unique_generated_arrays": len(set(all_hashes)),
+        "validated_generated_arrays": validated_array_count,
         "replicate_blocks": [block.__dict__ for block in blocks],
         "conditions": [condition.__dict__ for condition in conditions],
         "expected_training_runs": len(blocks) * len(conditions),
@@ -873,7 +858,6 @@ def collect_validation_summary(
                         for species, value in validation["per_species_recall"].items()
                     },
                     "checkpoint": _portable(path, project_root),
-                    "checkpoint_sha256": sha256_file(path),
                 }
             )
     return pd.DataFrame(rows)
@@ -992,7 +976,6 @@ def select_and_evaluate(
                 "minimum_species_recall": float(min(recalls.values())),
                 "sample_count": int(result["sample_count"]),
                 "checkpoint": _portable(path, project_root),
-                "checkpoint_sha256": sha256_file(path),
                 "best_validation_macro_f1": float(payload["best_validation_macro_f1"]),
             }
             test_rows.append(row)

@@ -9,7 +9,6 @@ from bird_song.generation.checkpoint_evaluation import (
     audit_pools,
     build_report_charts,
     evaluate,
-    write_checksums,
 )
 from bird_song.generation.checkpoint_pool import verify_checkpoint
 from bird_song.runtime import choose_device
@@ -54,8 +53,6 @@ def main() -> None:
 
     vae_checkpoint = args.vae_checkpoint.resolve()
     diffusion_checkpoint = args.diffusion_checkpoint.resolve()
-    # Hash verification is intentionally quiet on success.  A mismatch raises
-    # one concise error before any generated-sample conclusions are written.
     verify_checkpoint(vae_checkpoint, "vae_v3")
     verify_checkpoint(diffusion_checkpoint, "diffusion")
     device = choose_device(args.device)
@@ -77,7 +74,6 @@ def main() -> None:
     )
     if args.command == "package":
         build_report_charts(args.report_dir.resolve())
-        write_checksums(args.report_dir.resolve())
         print(json.dumps(summary, indent=2))
         print(f"report={args.report_dir.resolve()}")
     else:

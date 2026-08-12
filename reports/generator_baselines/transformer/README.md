@@ -9,8 +9,6 @@ The transformer trained cleanly and produces valid normalized 128 x 128 log-mel 
 ## Checkpoint
 
 - File: `best.pt`
-- SHA-256: recorded in `SHA256SUMS.txt` and `provenance.json` for the
-  local-only checkpoint
 - Model type: species-conditional autoregressive spectrogram transformer
 - Trainable parameters: 4,953,856
 - Selected epoch: 55 of 60

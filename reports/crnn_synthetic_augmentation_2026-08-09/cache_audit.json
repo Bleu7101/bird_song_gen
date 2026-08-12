@@ -8,19 +8,14 @@
     "physical_npy_files": 3347,
     "unique_array_contents": 3323,
     "redundant_physical_files": 24,
-    "duplicate_content_groups": 16,
-    "manifest_sha256": "9FD41FBEE0C4D2D193FA1982128F50A347606DB4941BB5E489F09FA94FD00590",
-    "manifest_hash_role": "manifest used by the recorded v1 augmentation runs"
+    "duplicate_content_groups": 16
   },
   "post_canonicalization": {
-    "layout": "content_addressed_npy_by_spectrogram_sha256",
     "logical_manifest_rows": 3347,
     "physical_npy_objects": 3323,
     "unique_array_contents": 3323,
     "redundant_physical_files": 0,
     "duplicate_logical_references": 24,
-    "manifest_sha256": "55C096AB061BF033C5C483A0717CC9FF6E48E12D9A26021030479E27C7DDE37E",
-    "manifest_hash_role": "current reorganized cache manifest",
     "semantic_effect": "Physical files were deduplicated; all historical v1 logical rows and array values were preserved."
   },
   "historical_v1_split_audit": {
@@ -36,7 +31,6 @@
   },
   "future_content_safe_v2": {
     "manifests_root": "manifests/content_safe_v2",
-    "deduplication_key": "SHA-256 of source WAV bytes",
     "retention_priority": [
       "test",
       "validation",

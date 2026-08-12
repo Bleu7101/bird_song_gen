@@ -10,7 +10,7 @@ from tqdm import tqdm
 from bird_song.audio import LogMelTransform, load_waveform
 from bird_song.config import SpectrogramConfig
 from bird_song.data import resolve_dataset_root
-from bird_song.spectrogram_cache import array_sha256, cache_object_path, canonicalize_spectrogram_cache
+from bird_song.spectrogram_cache import cache_array_path
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -48,23 +48,20 @@ def main() -> None:
     config = SpectrogramConfig.from_json(args.spectrogram_config)
     transform = LogMelTransform(config, training=False)
     output_rows = []
-    for row in tqdm(rows.itertuples(index=False), total=len(rows), desc="Spectrograms"):
+    for row_index, row in enumerate(tqdm(rows.itertuples(index=False), total=len(rows), desc="Spectrograms")):
         waveform = load_waveform(dataset_root / row.relative_wav_path, config, training=False)
         spectrogram = transform(waveform).squeeze(0).numpy().astype(np.float32, copy=False)
-        digest = array_sha256(spectrogram)
-        relative_output = cache_object_path(digest)
+        relative_output = cache_array_path(row_index, str(row.filename))
         destination = args.output_dir / relative_output
         if args.overwrite or not destination.exists():
             destination.parent.mkdir(parents=True, exist_ok=True)
             np.save(destination, spectrogram, allow_pickle=False)
         output = row._asdict()
         output["relative_spectrogram_path"] = relative_output.as_posix()
-        output["spectrogram_sha256"] = digest
         output_rows.append(output)
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
     pd.DataFrame(output_rows).to_csv(cache_manifest, index=False)
-    canonicalize_spectrogram_cache(args.output_dir, config, args.spectrogram_config.resolve(), apply=True)
     print(f"Saved {len(output_rows)} spectrograms with shape ({config.n_mels}, {config.spectrogram_width})")
     print(f"Cache manifest: {cache_manifest}")
 

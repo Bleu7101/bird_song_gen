@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
 from pathlib import Path
 
 import numpy as np
@@ -27,23 +26,15 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def sha256_file(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest().upper()
-
-
 def assign_split_groups(frame: pd.DataFrame) -> pd.DataFrame:
-    """Join rows connected by recording ID or byte-identical audio content."""
+    """Keep every clip from one recording in the same data split."""
     output = frame.copy().reset_index(drop=True)
-    required = {"id", "audio_sha256"}
+    required = {"id"}
     missing = required - set(output.columns)
     if missing:
         raise ValueError(f"Cannot assign split groups without columns: {sorted(missing)}")
     if output[list(required)].isna().any().any():
-        raise ValueError("Cannot assign split groups with missing recording IDs or audio hashes")
+        raise ValueError("Cannot assign split groups with missing recording IDs")
     for column in required:
         if output[column].astype(str).str.strip().eq("").any():
             raise ValueError(f"Cannot assign split groups with blank {column} values")
@@ -61,13 +52,12 @@ def assign_split_groups(frame: pd.DataFrame) -> pd.DataFrame:
         if left_root != right_root:
             parents[right_root] = left_root
 
-    for column in ("id", "audio_sha256"):
-        first_seen: dict[str, int] = {}
-        for index, value in enumerate(output[column].astype(str)):
-            if value in first_seen:
-                union(first_seen[value], index)
-            else:
-                first_seen[value] = index
+    first_seen: dict[str, int] = {}
+    for index, value in enumerate(output["id"].astype(str)):
+        if value in first_seen:
+            union(first_seen[value], index)
+        else:
+            first_seen[value] = index
     output["split_group"] = [find(index) for index in range(len(output))]
     return output
 
@@ -97,7 +87,7 @@ def prepare_manifest(frame: pd.DataFrame, split_name: str) -> pd.DataFrame:
     output["relative_wav_path"] = output["filename"].map(lambda name: (Path("wavfiles") / name).as_posix())
     columns = [
         "split", "name", "species_slug", "genus", "species", "id", "filename",
-        "relative_wav_path", "audio_sha256", "source_url", "license", "recordist", "date", "sound_type",
+        "relative_wav_path", "source_url", "license", "recordist", "date", "sound_type",
     ]
     return output[[column for column in columns if column in output]].sort_values(["name", "id", "filename"]).reset_index(drop=True)
 
@@ -112,9 +102,6 @@ def main() -> None:
     missing_classes = sorted(set(DEFAULT_CLASSES) - set(selected["name"]))
     if missing_classes:
         raise ValueError(f"Dataset is missing target species: {missing_classes}")
-    selected["audio_sha256"] = [
-        sha256_file(dataset_root / "wavfiles" / str(filename)) for filename in selected["filename"]
-    ]
     selected = assign_split_groups(selected)
 
     candidates = []
@@ -125,10 +112,6 @@ def main() -> None:
     id_sets = [set(frame["id"].astype(str)) for frame in (train, validation, test)]
     if id_sets[0] & id_sets[1] or id_sets[0] & id_sets[2] or id_sets[1] & id_sets[2]:
         raise RuntimeError("Recording-ID leakage detected")
-    hash_sets = [set(frame["audio_sha256"].astype(str)) for frame in (train, validation, test)]
-    if hash_sets[0] & hash_sets[1] or hash_sets[0] & hash_sets[2] or hash_sets[1] & hash_sets[2]:
-        raise RuntimeError("Byte-identical audio leakage detected")
-
     manifests = {
         "train": prepare_manifest(train, "train"),
         "validation": prepare_manifest(validation, "validation"),

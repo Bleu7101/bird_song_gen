@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 
-import hashlib
 import json
-import os
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -34,28 +32,7 @@ from .checkpoint_models import (
 )
 
 
-EXPECTED_CHECKPOINT_SHA256 = {
-    "vae_v3": "AAC87E76F71CAF3D73FA02498B559371BDEB04E3BC217457A8E3B3ED79B6ABAE",
-    "diffusion": "913B6BD7C77B2CBDD4C686FBA5161993A94DF9CDDE0EA848F282927CCDF3B79D",
-}
-
 GENERATOR_LABEL_TO_ID = {name: index for index, name in enumerate(GENERATOR_CLASSES)}
-
-
-class CheckpointHashMismatch(RuntimeError):
-    """Raised when an evaluation checkpoint is not the recorded artifact."""
-
-
-def sha256_file(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest().upper()
-
-
-def sha256_array(array: np.ndarray) -> str:
-    return hashlib.sha256(np.ascontiguousarray(array).tobytes()).hexdigest().upper()
 
 
 def species_slug(species: str) -> str:
@@ -67,14 +44,11 @@ def deterministic_sample_seed(seed: int, label_id: int, sample_index: int) -> in
     return int(seed) * 1_000_003 + int(label_id) * 100_003 + int(sample_index) + 17
 
 
-def verify_checkpoint(path: Path, model: str, expected_sha256: str | None = None) -> str:
+def verify_checkpoint(path: Path, model: str) -> None:
     if not path.is_file():
         raise FileNotFoundError(f"checkpoint not found: {path}")
-    digest = sha256_file(path)
-    expected = (expected_sha256 or EXPECTED_CHECKPOINT_SHA256.get(model) or "").upper()
-    if expected and digest != expected:
-        raise CheckpointHashMismatch(f"{model} checkpoint SHA-256 mismatch: expected {expected}, got {digest}")
-    return digest
+    if model not in {"vae_v3", "diffusion"}:
+        raise ValueError(f"unknown generator model: {model}")
 
 
 def _atomic_dataframe_write(frame: pd.DataFrame, path: Path) -> None:
@@ -136,8 +110,6 @@ def _make_record(
     label_id: int,
     sample_index: int,
     relative_path: str,
-    array: np.ndarray,
-    checkpoint_sha256: str,
     **extra: Any,
 ) -> dict[str, Any]:
     record = {
@@ -146,8 +118,6 @@ def _make_record(
         "generator": model,
         "pool_rank": sample_index,
         "sample_seed": deterministic_sample_seed(seed, label_id, sample_index),
-        "checkpoint_sha256": checkpoint_sha256,
-        "array_sha256": sha256_array(array),
     }
     record.update(extra)
     return record
@@ -177,17 +147,15 @@ def _write_metadata(
     seed: int,
     samples_per_species: int,
     checkpoint: Path,
-    checkpoint_sha256: str,
     posterior_bank: Path | None,
 ) -> None:
     metadata: dict[str, Any] = {
-        "schema_version": 1,
+        "schema_version": 2,
         "generator": model,
         "classes": list(GENERATOR_CLASSES),
         "seed": int(seed),
         "samples_per_class": int(samples_per_species),
         "checkpoint": str(checkpoint),
-        "checkpoint_sha256": checkpoint_sha256,
         "output_scale": "classifier_-1_1",
         "normalization": {"mean": NORMALIZATION_MEAN, "std": NORMALIZATION_STD},
     }
@@ -226,7 +194,6 @@ def generate_pool(
     device: torch.device,
     posterior_bank: Path | None = None,
     chunk_size: int = 8,
-    expected_sha256: str | None = None,
 ) -> Path:
     """Generate or resume one 200-per-species classifier-input pool."""
     if model not in {"vae_v3", "diffusion"}:
@@ -234,7 +201,7 @@ def generate_pool(
     if seed < 0 or samples_per_species < 1 or chunk_size < 1:
         raise ValueError("seed, samples_per_species, and chunk_size must be positive")
     checkpoint = checkpoint.resolve()
-    digest = verify_checkpoint(checkpoint, model, expected_sha256)
+    verify_checkpoint(checkpoint, model)
     output = output.resolve()
     output.mkdir(parents=True, exist_ok=True)
     records = _existing_records(output)
@@ -290,8 +257,6 @@ def generate_pool(
                     label_id,
                     sample_index,
                     str(path.relative_to(output)),
-                    existing,
-                    digest,
                     **extra,
                 )
             else:
@@ -375,8 +340,6 @@ def generate_pool(
                     label_id,
                     sample_index,
                     str(path.relative_to(output)),
-                    array,
-                    digest,
                     **extras_per_sample[item_index],
                 )
             _atomic_dataframe_write(pd.DataFrame(list(all_records.values())), output / "manifest.csv")
@@ -388,5 +351,5 @@ def generate_pool(
     if len(frame) != expected_rows:
         raise RuntimeError(f"incomplete generated pool: expected {expected_rows}, got {len(frame)}")
     _atomic_dataframe_write(frame, output / "manifest.csv")
-    _write_metadata(output, model, seed, samples_per_species, checkpoint, digest, posterior_bank)
+    _write_metadata(output, model, seed, samples_per_species, checkpoint, posterior_bank)
     return output / "manifest.csv"

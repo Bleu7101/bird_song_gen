@@ -17,8 +17,7 @@ checkpoint format, and decoder path match.
 `artifacts/generated_spectrograms/diffusion/` solely so the first CRNN
 augmentation pool can be reused by maintained experiments without generating
 duplicate arrays. It contains 200 `[1,128,128]` arrays per species from the
-recorded `diffusion_vincent` EMA checkpoint; its SHA-256 is retained in the
-augmentation report provenance.
+recorded `diffusion_vincent` EMA checkpoint.
 The pool used deterministic 100-step DDIM sampling, eta 0, guidance weight 3.0,
 and clean-sample clamping at 4 standardized units. The checkpoint itself is
 external and is not packaged on `main`.

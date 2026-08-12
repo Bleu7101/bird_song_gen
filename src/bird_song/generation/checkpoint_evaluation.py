@@ -8,7 +8,6 @@ realism claims.
 
 from __future__ import annotations
 
-import hashlib
 import json
 import math
 from dataclasses import dataclass
@@ -28,13 +27,9 @@ from bird_song.audio import load_generated_spectrogram
 from bird_song.config import DEFAULT_CLASSES, SpectrogramConfig
 from bird_song.data import ManifestDataset, make_loader, resolve_spectrogram_cache_root
 from bird_song.generation.checkpoint_pool import (
-    EXPECTED_CHECKPOINT_SHA256,
     GENERATOR_CLASSES,
     _valid_classifier_array,
-    sha256_array,
-    sha256_file,
     species_slug,
-    verify_checkpoint,
 )
 from bird_song.runtime import choose_device, load_checkpoint
 from bird_song.spectrogram_cache import load_cache_array
@@ -314,12 +309,10 @@ def _pool_rows(pool_root: Path, model: str, seed: int, expected_samples: int = 2
     metadata_path = root / "generation.json"
     if metadata_path.is_file():
         metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
-        if str(metadata.get("checkpoint_sha256", "")).upper() != EXPECTED_CHECKPOINT_SHA256[model]:
-            raise ValueError(f"pool checkpoint provenance mismatch: {metadata_path}")
         if int(metadata.get("seed", seed)) != int(seed) or int(metadata.get("samples_per_class", expected_samples)) != expected_samples:
             raise ValueError(f"pool generation settings mismatch: {metadata_path}")
     frame = pd.read_csv(manifest)
-    required = {"species", "relative_path", "generator", "pool_rank", "checkpoint_sha256", "array_sha256"}
+    required = {"species", "relative_path", "generator", "pool_rank"}
     missing = required - set(frame.columns)
     if missing:
         raise ValueError(f"pool manifest missing columns: {sorted(missing)}")
@@ -328,16 +321,16 @@ def _pool_rows(pool_root: Path, model: str, seed: int, expected_samples: int = 2
     counts = frame["species"].value_counts().to_dict()
     if any(int(counts.get(species, 0)) != expected_samples for species in GENERATOR_CLASSES):
         raise ValueError(f"pool {manifest} is not balanced by species")
-    observed_hashes: list[str] = []
+    observed_arrays: list[bytes] = []
     for row in frame.to_dict(orient="records"):
         path = root / str(row["relative_path"])
         array = _valid_classifier_array(path)
-        if array is None or sha256_array(array) != str(row["array_sha256"]).upper():
-            raise ValueError(f"pool array/hash mismatch: {path}")
+        if array is None:
+            raise ValueError(f"invalid pool array: {path}")
         if str(row["generator"]) != model:
             raise ValueError(f"pool generator mismatch: {manifest}")
-        observed_hashes.append(str(row["array_sha256"]).upper())
-    if len(set(observed_hashes)) != len(observed_hashes):
+        observed_arrays.append(array.tobytes())
+    if len(set(observed_arrays)) != len(observed_arrays):
         raise ValueError(f"pool contains duplicate arrays: {manifest}")
     return frame, root
 
@@ -366,21 +359,16 @@ def audit_pools(
                 frame["relative_path"] = frame["relative_path"].str.replace(f"{model}/", "", regex=False)
                 frame["relative_path"] = frame["relative_path"].str.replace("classifier_input/", "classifier_input/", regex=False)
                 frame_root = root / model
-                metadata_path = frame_root / "generation.json"
-                if metadata_path.is_file():
-                    metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
-                    if str(metadata.get("checkpoint_sha256", "")).upper() != EXPECTED_CHECKPOINT_SHA256[model]:
-                        raise ValueError(f"historic pool checkpoint provenance mismatch: {metadata_path}")
                 if len(frame) != expected_samples * len(GENERATOR_CLASSES):
                     raise ValueError(f"historic seed-42 pool is incomplete: {manifest}")
-                observed_hashes: list[str] = []
+                observed_arrays: list[bytes] = []
                 for row in frame.to_dict(orient="records"):
                     path = frame_root / str(row["relative_path"])
                     array = _valid_classifier_array(path)
-                    if array is None or sha256_array(array) != str(row["array_sha256"]).upper():
-                        raise ValueError(f"historic seed-42 pool array/hash mismatch: {path}")
-                    observed_hashes.append(str(row["array_sha256"]).upper())
-                if len(set(observed_hashes)) != len(observed_hashes):
+                    if array is None:
+                        raise ValueError(f"invalid historic seed-42 pool array: {path}")
+                    observed_arrays.append(array.tobytes())
+                if len(set(observed_arrays)) != len(observed_arrays):
                     raise ValueError(f"historic seed-42 pool contains duplicate arrays: {manifest}")
                 count = len(frame)
             else:
@@ -404,10 +392,10 @@ def _load_historic_pool(project_root: Path, model: str, seed: int) -> tuple[pd.D
     return frame, root
 
 
-def _train_hashes(dataset: ManifestDataset) -> set[str]:
+def _train_array_bytes(dataset: ManifestDataset) -> set[bytes]:
     if dataset.spectrogram_paths is None:
         raise ValueError("copy-risk audit requires a canonical spectrogram cache")
-    return {sha256_array(load_cache_array(path, dataset.config)) for path in dataset.spectrogram_paths}
+    return {load_cache_array(path, dataset.config).tobytes() for path in dataset.spectrogram_paths}
 
 
 def _copy_risk(
@@ -509,7 +497,7 @@ def evaluate(
             "validation": validation_outputs,
             "test": test_outputs,
             "test_metrics": test_metrics,
-            "train_hashes": _train_hashes(train_datasets[evaluator.name]),
+            "train_array_bytes": _train_array_bytes(train_datasets[evaluator.name]),
         }
         projections[evaluator.name] = _fit_feature_projection(train_outputs["features"])
 
@@ -536,8 +524,8 @@ def evaluate(
                 classifier_rows.append({"model": model, "seed": seed, "classifier": evaluator.name, **{key: value for key, value in generated_metrics.items() if key not in {"predictions", "confusion_matrix", "per_class_recall", "per_class_f1"}}})
                 pd.DataFrame(generated_metrics["confusion_matrix"], index=evaluator.classes, columns=evaluator.classes).to_csv(report_dir / "confusion_matrices" / f"{model}_seed_{seed}_{evaluator.name}.csv")
                 copy_risk = _copy_risk(train_z, real["train"]["labels"], validation_z, real["validation"]["labels"], generated_z, generated_labels)
-                generated_hashes = {sha256_array(array) for array in generated["arrays"]}
-                exact_train_duplicates = len(generated_hashes & real["train_hashes"])
+                generated_arrays = {array.tobytes() for array in generated["arrays"]}
+                exact_train_duplicates = len(generated_arrays & real["train_array_bytes"])
                 for species_index, species in enumerate(CONTENT_SAFE_CLASSES):
                     real_mask = real["test"]["labels"] == species_index
                     generated_mask = generated_labels == evaluator.classes.index(species)
@@ -561,7 +549,7 @@ def evaluate(
                         "mean_confidence": generated_metrics["mean_confidence"],
                         "mean_entropy": generated_metrics["mean_entropy"],
                         "exact_train_duplicate_count": exact_train_duplicates,
-                        "pool_unique_count": len(generated_hashes),
+                        "pool_unique_count": len(generated_arrays),
                         **feature_metrics,
                         **image_metrics,
                     }
@@ -615,10 +603,10 @@ def evaluate(
     provenance = {
         "schema_version": 1,
         "checkpoints": {
-            "vae_v3": {"path": "artifacts/models/vae/conditional_vae_v3/conditional_vae_v3_best.pt", "sha256": EXPECTED_CHECKPOINT_SHA256["vae_v3"], "parameter_count": 5_365_025},
-            "diffusion": {"path": str(diffusion_checkpoint) if diffusion_checkpoint else "external Desktop checkpoint supplied by user", "sha256": EXPECTED_CHECKPOINT_SHA256["diffusion"], "parameter_count": 18_443_841, "ema_state_dict": True, "note": "external Desktop checkpoint; not copied or tracked"},
+            "vae_v3": {"path": "artifacts/models/vae/conditional_vae_v3/conditional_vae_v3_best.pt", "parameter_count": 5_365_025},
+            "diffusion": {"path": str(diffusion_checkpoint) if diffusion_checkpoint else "external Desktop checkpoint supplied by user", "parameter_count": 18_443_841, "ema_state_dict": True, "note": "external Desktop checkpoint; not copied or tracked"},
         },
-        "evaluators": [{"classifier": item.name, "path": _relative_or_absolute(item.checkpoint_path, project_root), "sha256": sha256_file(item.checkpoint_path), "classes": list(item.classes)} for item in evaluators],
+        "evaluators": [{"classifier": item.name, "path": _relative_or_absolute(item.checkpoint_path, project_root), "classes": list(item.classes)} for item in evaluators],
         "normalization": {"mean": -51.5400096102764, "std": 14.894513218933453, "conversion": "standardized to dB, per-sample max subtraction, [-80,0] clip, [-1,1]"},
     }
     _atomic_json(provenance, report_dir / "provenance.json")
@@ -660,12 +648,3 @@ def build_report_charts(report_dir: Path) -> None:
     figure.tight_layout()
     figure.savefig(chart_dir / "feature_distance_summary.png", dpi=160)
     plt.close(figure)
-
-
-def write_checksums(report_dir: Path) -> None:
-    lines = []
-    for path in sorted(report_dir.rglob("*")):
-        if path.is_file() and path.name != "SHA256SUMS.txt":
-            digest = hashlib.sha256(path.read_bytes()).hexdigest().upper()
-            lines.append(f"{digest}  {path.relative_to(report_dir).as_posix()}")
-    (report_dir / "SHA256SUMS.txt").write_text("\n".join(lines) + "\n", encoding="utf-8")

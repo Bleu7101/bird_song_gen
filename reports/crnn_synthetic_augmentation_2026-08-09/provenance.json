@@ -10,107 +10,89 @@
     "exact_rerun_established": false,
     "note": "This package adds only derived report files and does not claim that the dirty working tree is the exact run source."
   },
-  "hash_algorithm": "SHA-256",
   "source_artifacts": [
     {
       "path": "runs/crnn_synthetic_augmentation/cache_sweep/selection_evaluation.json",
       "role": "full local selection and test report",
       "byte_size": 102617,
-      "sha256": "EF69C11F361813F9DEA23EE3C8D1B5A14AF1669262933F29ACFEC01D839CCCEE",
       "tracked": false
     },
     {
       "path": "artifacts/generated_spectrograms/vae_v3/manifest.csv",
       "role": "VAE-v3 generated-pool manifest",
       "byte_size": 131730,
-      "sha256": "E00F189C6E8524A1753A860999E5545C5511C219E8D9C30223E7AD989C83F4C9",
       "tracked": false
     },
     {
       "path": "artifacts/generated_spectrograms/vae_v3/generation.json",
       "role": "VAE-v3 generation settings",
       "byte_size": 282,
-      "sha256": "DE4456878BC7236A45EC887715C98087D1430248ADB15359B1153DF9FBC549E3",
       "tracked": false
     },
     {
       "path": "artifacts/generated_spectrograms/diffusion/manifest.csv",
       "role": "diffusion generated-pool manifest",
       "byte_size": 142956,
-      "sha256": "C89C99796BF4F94950985364BD1A0542B54B333FDE603788B73E9C6CA4048EF4",
       "tracked": false
     },
     {
       "path": "artifacts/generated_spectrograms/diffusion/generation.json",
       "role": "diffusion generation settings",
       "byte_size": 417,
-      "sha256": "28572BD74F12D10474B4156C7687A86A7C2BE712AC1B3CB6A3F70F14767E2D27",
       "tracked": false
     },
     {
       "path": "artifacts/spectrograms/spectrogram_manifest.csv",
       "role": "real-spectrogram cache manifest used at run time, before physical canonicalization",
       "byte_size": 807174,
-      "sha256": "9FD41FBEE0C4D2D193FA1982128F50A347606DB4941BB5E489F09FA94FD00590",
-      "tracked": false,
-      "hash_scope": "run_time_pre_canonical_manifest",
-      "current_reorganized_manifest_sha256": "55C096AB061BF033C5C483A0717CC9FF6E48E12D9A26021030479E27C7DDE37E",
-      "reorganization_note": "The current manifest points the same 3347 logical rows to 3323 content-addressed objects; its path text and hash changed without changing array content."
+      "tracked": false
     },
     {
       "path": "configs/spectrogram.json",
       "role": "shared 128-by-128 representation configuration",
       "byte_size": 193,
-      "sha256": "A45E7316B640BE0127BC84866DA7C30E0F142DBF09F479B4FA6EFB59FC3103F0",
       "tracked": true
     },
     {
       "path": "manifests/full_dataset_train.csv",
       "role": "historical v1 recording-ID-isolated training manifest",
       "byte_size": 481412,
-      "sha256": "854D3E90549351910E4A9AFF376631B267886552508E02E0D1ABA1F0C758DD2E",
       "tracked": true
     },
     {
       "path": "manifests/full_dataset_validation.csv",
       "role": "historical v1 recording-ID-isolated validation manifest",
       "byte_size": 109538,
-      "sha256": "AFB9A3B784AF4B1489FDFA6A6645429664EDE3B05CF5F8613F231A8BA3973AF3",
       "tracked": true
     },
     {
       "path": "manifests/full_dataset_test.csv",
       "role": "historical v1 recording-ID-isolated test manifest",
       "byte_size": 99386,
-      "sha256": "9B33E5283045D5CAACADFE7A01E4B7C21F8A0779B0780EA5F5993078C8B3EA10",
       "tracked": true
     },
     {
       "path": "classifier_artifacts/selected_crnn/best.pt",
       "role": "historical selected-CRNN reference checkpoint",
       "byte_size": 1639510,
-      "sha256": "60525C2AB3EE2B9FC24D12DB6F591010BFA36FAC2D2804D6946C7A6021121806",
       "tracked": true
     },
     {
       "path": "artifacts/vae_artifacts/conditional_vae_v3/conditional_vae_v3_best.pt",
       "role": "VAE-v3 source checkpoint",
       "byte_size": 64544711,
-      "sha256": "AAC87E76F71CAF3D73FA02498B559371BDEB04E3BC217457A8E3B3ED79B6ABAE",
       "tracked": true
     },
     {
       "path": "outputs/conditional_vae_v3/class_conditional_posterior_bank.pt",
       "role": "VAE-v3 train-split posterior anchor bank",
       "byte_size": 25259841,
-      "sha256": "D23FF11BDF4013E5DD782B3A22D60B0FE2DDDB9BD745CCC0E56006ACAAA77FDB",
       "tracked": true
     },
     {
       "path": null,
       "role": "external diffusion EMA source checkpoint",
       "byte_size": 295543368,
-      "sha256": "913B6BD7C77B2CBDD4C686FBA5161993A94DF9CDDE0EA848F282927CCDF3B79D",
       "tracked": false,
       "availability": "external_not_packaged"
     }
@@ -137,9 +119,6 @@
         "validation": 519,
         "test": 489
       },
-      "per_array_sha256_available": true,
-      "run_time_manifest_sha256": "9FD41FBEE0C4D2D193FA1982128F50A347606DB4941BB5E489F09FA94FD00590",
-      "current_manifest_sha256": "55C096AB061BF033C5C483A0717CC9FF6E48E12D9A26021030479E27C7DDE37E",
       "cross_split_duplicate_groups": 9,
       "logical_rows_in_cross_split_groups": 26,
       "validation_clips_also_in_train": 9,
@@ -149,9 +128,7 @@
       "manifest_rows": 600,
       "rows_per_species": 200,
       "unique_relative_paths": 600,
-      "unique_array_hashes": 600,
       "missing_files": 0,
-      "array_hash_mismatches": 0,
       "observed_shapes": [
         [
           1,
@@ -160,16 +137,13 @@
         ]
       ],
       "observed_min": -1.0,
-      "observed_max": 1.0,
-      "array_hash_definition": "SHA-256 of contiguous loaded array bytes, not the .npy file container"
+      "observed_max": 1.0
     },
     "diffusion_pool": {
       "manifest_rows": 600,
       "rows_per_species": 200,
       "unique_relative_paths": 600,
-      "unique_array_hashes": 600,
       "missing_files": 0,
-      "array_hash_mismatches": 0,
       "observed_shapes": [
         [
           1,
@@ -178,16 +152,13 @@
         ]
       ],
       "observed_min": -1.0,
-      "observed_max": 1.0,
-      "array_hash_definition": "SHA-256 of contiguous loaded array bytes, not the .npy file container"
+      "observed_max": 1.0
     }
   },
   "known_gaps": [
     "The retained cache-sweep outputs do not identify a committed run-code revision.",
     "The retained per-run configs do not record the optimizer specification.",
-    "The external diffusion checkpoint is identified by hash but is not included in this repository.",
     "The historical v1 validation split contains nine clips duplicated byte-for-byte in training; no identified duplicate reaches test.",
-    "The real cache was physically canonicalized after the recorded run; the pre- and post-canonical manifest hashes are preserved separately.",
     "Bulk cache arrays, generated arrays, sweep checkpoints, and full prediction lists remain local and ignored."
   ]
 }

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 from pathlib import Path
 
@@ -16,14 +15,6 @@ from bird_song.runtime import choose_device, load_checkpoint
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
-
-
-def sha256_file(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest().upper()
 
 
 def parse_args() -> argparse.Namespace:
@@ -82,7 +73,6 @@ def main() -> None:
         "path": checkpoint_path.relative_to(PROJECT_ROOT).as_posix()
         if checkpoint_path.is_relative_to(PROJECT_ROOT)
         else checkpoint_path.as_posix(),
-        "sha256": sha256_file(checkpoint_path),
         "architecture": architecture,
         "seed": checkpoint.get("seed"),
         "epoch": checkpoint.get("epoch"),
@@ -92,7 +82,6 @@ def main() -> None:
         "path": manifest_path.relative_to(PROJECT_ROOT).as_posix()
         if manifest_path.is_relative_to(PROJECT_ROOT)
         else manifest_path.as_posix(),
-        "sha256": sha256_file(manifest_path),
         "sample_count": len(dataset),
     }
     (args.output_dir / "metrics.json").write_text(
