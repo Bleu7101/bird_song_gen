@@ -9,12 +9,12 @@
 - **Target compiled length:** Approximately 4.7 pages, leaving about 0.3 pages of formatting margin.
 - **Current source of project facts:** the current `main` tree, including the completed protocol-4 low-resource study, CRNN-only generator-quality package, generator-only speed package, and the separate VAE-v3 generated-to-test MSE evidence package.
 - **Current writing scope:** Data preparation, Residual CNN, CRNN, and VAE.
-- **Deferred scope:** Do not use the implementation details from `diffusion_vincent` yet. Keep the corresponding Diffusion model headings empty for later completion, while defining the shared comparison and timing protocol now.
+- **Deferred scope:** Vincent Wang owns the canonical Diffusion method and citations. Keep the corresponding model headings empty until his material is supplied, while retaining the completed shared comparison and timing protocol.
 
 ### Approved compression plan
 
 - Keep the main body at or below five pages; references and appendices may extend the compiled document beyond five pages.
-- Keep only the pipeline figure, a generated-sample figure rebuilt from the corrected VAE pool, and the primary low-resource protocol/result table in the main body.
+- Keep the pipeline and generated-sample figures, the primary low-resource result table, and compact quality/timing tables in the main body; move detailed diagnostics and protocols to the appendix or tracked evidence packages.
 - Describe the V1--V3 evolution in compact prose rather than a separate table.
 - Retain one compact VAE objective equation; move architecture minutiae, complete loss derivations, training hyperparameters, leakage audit details, and the full timing procedure to the appendix. State the corrected sampling equation in the main method.
 - Merge repeated limitations across methodology, results, discussion, and conclusion.
@@ -302,7 +302,7 @@ The posterior-anchor method creates stochastic variants around encoded training 
 
 ### 4.5 Diffusion Model
 
-<!-- Intentionally left blank until the diffusion_vincent implementation is included. -->
+<!-- Intentionally left blank for Vincent Wang's canonical Diffusion method and citations. -->
 
 ---
 
@@ -418,21 +418,21 @@ Real-to-real leave-one-out nearest-neighbor MSE:
 | Northern Cardinal | 162 | 0.3650 | 0.1816 | 0.3435 | 0.2290 | 0.4625 | 0.0063 | 0.9368 |
 | Song Sparrow | 182 | 0.3175 | 0.1005 | 0.3064 | 0.2421 | 0.3756 | 0.1419 | 0.7630 |
 
-The pool was reconstructed under [`runs/generated_to_test_mse_v1/vae_v3_notebook_seed42/`](../../runs/generated_to_test_mse_v1/vae_v3_notebook_seed42/) from the existing [`conditional_vae_v3_best.pt`](../../artifacts/models/vae/conditional_vae_v3/conditional_vae_v3_best.pt) checkpoint and [`04_conditional_vae.ipynb`](../../notebooks/04_conditional_vae.ipynb). It used seed 42, generation-stream seed 142, temperature `0.35`, CUDA, 16 samples per species, and the existing posterior bank fitted on the train split only. [`protocol.json`](../../reports/generated_to_test_mse_v1/vae_v3_notebook_seed42/protocol.json) records the input hashes and confirms that the test set was used only for this final frozen evaluation. This is the existing notebook-generated pool, not Harvey's corrected canonical pool and not an evaluation involving Harvey's current CRNN.
+The pool was reconstructed during the frozen evaluation from the existing [`conditional_vae_v3_best.pt`](../../artifacts/models/vae/conditional_vae_v3/conditional_vae_v3_best.pt) checkpoint and [`04_conditional_vae.ipynb`](../../notebooks/04_conditional_vae.ipynb). It used seed 42, generation-stream seed 142, temperature `0.35`, CUDA, 16 samples per species, and the existing posterior bank fitted on the train split only. The durable evidence is packaged in [`protocol.json`](../../reports/generated_to_test_mse_v1/vae_v3_notebook_seed42/protocol.json), which records the input hashes and confirms that the test set was used only for this final frozen evaluation. This is the existing notebook-generated pool, not Harvey's corrected canonical pool and not an evaluation involving Harvey's current CRNN.
 
-The generated-to-test mean (`0.5120`) is higher than the real-to-real reference (`0.3350`) by approximately `0.1770` in this pixel representation. This is only a same-species, unpaired nearest-neighbor proximity diagnostic: it does not establish perceptual realism, waveform quality, or downstream usefulness. A very low nearest-neighbor MSE can reward copying or limited diversity, so the result must be interpreted with diversity and copy-risk evidence rather than as a standalone realism score. Per-species paired reconstruction MSE remains a separate unfinished item.
+The generated-to-test mean (`0.5120`) is higher than the real-to-real reference (`0.3350`) by approximately `0.1770` in this pixel representation. This is only a same-species, unpaired nearest-neighbor proximity diagnostic: it does not establish perceptual realism, waveform quality, or downstream usefulness. A very low nearest-neighbor MSE can reward copying or limited diversity, so the result must be interpreted with diversity and copy-risk evidence rather than as a standalone realism score. The recorded overall paired test-reconstruction MSE (`0.028063`) is sufficient for the VAE reconstruction diagnostic; a per-species paired-reconstruction breakdown is optional appendix analysis, not a required report output.
 
 #### Presentation feedback: generated-result images
 
-Use a compact `3 species x 3 samples` figure in the main body:
+Use the existing `3 species x 4 samples` VAE-v3 notebook figure in the main body:
 
-- One row per species and three generated samples per row.
-- Shared color scale across panels.
-- Minimal repeated axes to save space.
+- One row per species and four generated samples per row.
+- The existing panels are independently color-normalized; disclose this rather
+  than claiming a shared scale.
 - Caption must identify these as posterior-anchor generated samples, not test reconstructions.
 - Caption must state that spectrogram appearance alone does not establish waveform realism.
 
-Source placeholder: assemble this figure from the regenerated corrected-temperature VAE pool and cite the generated-pool manifest and evaluation output used to create it. Do not reuse the previous generated-sample figure.
+Source: [`conditional_samples.png`](../../reports/vae/conditional_vae_v3/conditional_samples.png), with the 48-row notebook-pool inventory in [`generated_manifest.csv`](../../reports/vae/conditional_vae_v3/generated_manifest.csv). This figure uses the existing notebook pool at temperature `0.35`, not Harvey's corrected canonical pool.
 
 Put the full original/reconstruction/residual grid in the appendix: [`test_reconstructions.png`](../../reports/vae/conditional_vae_v3/test_reconstructions.png).
 
@@ -566,9 +566,9 @@ The appendix can contain:
 
 | Feedback item | Required report response | Planned location | Status |
 |---|---|---|---|
-| VAE needs MSE on the test set | Report paired test reconstruction MSE (`0.028063`) | Section 6.2 | Recorded |
+| VAE needs MSE on the test set | Report overall paired test reconstruction MSE (`0.028063`) | Section 6.2 | Recorded; per-species paired-reconstruction MSE is optional |
 | Compare generated samples with original real test data | Compute same-species generated-to-test nearest-neighbor MSE plus real-to-real baseline | Section 6.2 | Completed for Shenghao's separate VAE-v3 notebook seed-42 pool |
-| Show generated results | Include compact three-species generated-spectrogram grid | Section 6.2 | Rebuild from the fresh corrected VAE pool |
+| Show generated results | Include compact three-species generated-spectrogram grid | Section 6.2 | Completed using the existing VAE-v3 notebook figure; independent panel normalization is disclosed |
 | Apply VAE temperature inside reparameterization | Use `z = mu + 0.35*std*epsilon`; do not retrain the checkpoint; filter the existing bank and regenerate VAE pools | Sections 4.3 and 6.2 | Recorded: bank 256/247/256; all three VAE pools regenerated |
 | Compare VAE and Diffusion time for the same number of spectrogram samples | Generate 600 samples/model/repeat for five synchronized repeats; report generator-only seconds, throughput, peak accelerator memory, absolute gap, and time ratio | Sections 5.4 and 6.4; presented by Harvey | Recorded; sequential measurement sequence disclosed |
 | Avoid new Diffusion generation | Reuse the three audited DDIM pools and retain the completed Diffusion benchmark | Sections 5.4 and 6.2 | Recorded; no Diffusion spectrogram generation rerun |
@@ -605,9 +605,9 @@ Add every additional question from the presentation to this table before submiss
 
 - [`04_conditional_vae.ipynb`](../../notebooks/04_conditional_vae.ipynb)
 - [`conditional_vae_v3/run_summary.json`](../../reports/vae/conditional_vae_v3/run_summary.json)
-- Compact generated-sample figure and source manifest (pending assembly from the regenerated VAE pool)
+- [`conditional_samples.png`](../../reports/vae/conditional_vae_v3/conditional_samples.png) and its [`generated_manifest.csv`](../../reports/vae/conditional_vae_v3/generated_manifest.csv)
 - [`test_reconstructions.png`](../../reports/vae/conditional_vae_v3/test_reconstructions.png)
-- [`Generated-to-test MSE reference`](Generated_to_test_MSE_reference.md)
+- [`Generated-to-test MSE reference`](../../docs/Generated_to_test_MSE_reference.md)
 - [`Generated-to-test MSE summary`](../../reports/generated_to_test_mse_v1/vae_v3_notebook_seed42/summary.csv)
 - [`Generated-to-test MSE protocol`](../../reports/generated_to_test_mse_v1/vae_v3_notebook_seed42/protocol.json)
 - [`Generated-to-test MSE per-sample audit`](../../reports/generated_to_test_mse_v1/vae_v3_notebook_seed42/per_sample.csv)
@@ -624,11 +624,11 @@ Add every additional question from the presentation to this table before submiss
 
 ---
 
-## Inputs still needed for a complete final-report draft
+## Final-report completion status
 
-The Data Preparation, Residual CNN architecture comparison, CRNN, VAE method, recorded reconstruction, and low-resource outcome can be drafted from the current repository now. The following items are still required before the report is complete:
+The Data Preparation, Residual CNN architecture comparison, CRNN, VAE method, recorded reconstruction, and low-resource outcome are supported by the current repository. The table distinguishes completed evidence from the remaining owner inputs and team decisions.
 
-| Priority | Required input or decision | Owner | What must be provided or recorded | Current status |
+| Item | Input or decision | Owner | What must be provided or recorded | Current status |
 |---:|---|---|---|---|
 | 1 | Final author block | Team | Final title; exact names; department/program; affiliation; submission email addresses | Completed |
 | 2 | Portable VAE temperature alignment | Harvey | Match the sampler with `z = mu + 0.35 * sigma * epsilon` and retain a regression test | Completed and integrated on `main` |
@@ -636,9 +636,9 @@ The Data Preparation, Residual CNN architecture comparison, CRNN, VAE method, re
 | 4 | Generated-to-test MSE package | Shenghao | Implement same-species generated-to-test nearest-neighbor MSE, the test-to-test leave-one-out baseline, overall/per-species summaries, and distribution statistics | Completed and verified for the existing VAE-v3 notebook seed-42 pool; rerun only if the final report switches to Harvey's corrected pool |
 | 5 | Diffusion evaluation evidence package | Harvey, using Vincent's model evidence | Checkpoint and DDIM settings; reused-pool provenance; CRNN-only quality metrics and figures; limitations | Completed without regenerating Diffusion spectrograms |
 | 6 | Equal-count generator-only timing package | Harvey | Five 600-output repeats/model; measurement sequence; seeds; hardware/software; batch size; precision; warm-up/synchronization; peak memory; sampler settings | Completed and packaged with repeat-level evidence |
-| 7 | Remaining VAE feedback outputs | Shenghao / report integration | Per-species test reconstruction MSE and a compact shared-scale generated figure produced from the corrected canonical pool | Partially ready; the canonical pool is available, while these remaining outputs are pending |
-| 8 | Complete presentation feedback | Team | Confirm that the three recorded questions plus equal-count runtime are the complete feedback list, or provide the missing questions and requested additions | Awaiting team confirmation |
-| 9 | Final method references | Model owners | Sources for VAE/CVAE, FiLM, KL stabilization, feature-consistency loss, CRNN, the final Diffusion formulation, and any borrowed implementation or benchmark | In progress |
+| 7 | Complete presentation feedback | Team | Confirm that the three recorded questions plus equal-count runtime are the complete feedback list, or provide the missing questions and requested additions | Awaiting team confirmation |
+| 8 | Diffusion method and references | Vincent Wang | Canonical architecture, training objective, conditioning/sampling description, and supporting citations | Awaiting Vincent's material |
+| 9 | Final title scope | Team | Decide whether to retain “Rare Species Classification” or rename it to emphasize the simulated low-resource/label-scarcity setting | Pending |
 
 The professor-confirmed runtime scope is generator-only spectrogram sampling. Do not broaden the comparison beyond that boundary.
 
@@ -648,19 +648,21 @@ The professor-confirmed runtime scope is generator-only spectrogram sampling. Do
 
 - [x] Confirm final title, author affiliations, and email addresses.
 - [x] Align and integrate the portable VAE pool sampler with the temperature-`0.35` formula.
+- [x] Bind future pool resumes to checkpoint SHA-256, posterior-bank SHA-256, and Git revision; legacy schema-3 metadata is not reusable under the new schema-4 guard.
 - [x] Regenerate seeds 42, 123, and 777 in fresh canonical VAE pool directories using the filtered posterior bank.
 - [x] Rerun the affected low-resource CRNN experiment from a fresh run root using the corrected pools.
-- [ ] Compute per-species test reconstruction MSE.
+- [x] Use the recorded overall test-reconstruction MSE for the VAE diagnostic; treat a per-species paired-reconstruction breakdown as optional appendix analysis rather than a required output.
 - [x] Implement generated-to-test and real-to-real baseline MSE metrics.
 - [x] Run and verify the metrics for the existing VAE-v3 notebook seed-42 pool; record overall and per-species distributions.
-- [ ] If the final report replaces this notebook pool with Harvey's corrected canonical pool, rerun the same MSE protocol and replace the reported values.
-- [ ] Produce the compact shared-scale generated-sample figure.
+- [x] Keep the existing notebook-pool MSE evidence; no corrected-pool MSE rerun or raw-pool inclusion is required for the report.
+- [x] Insert the existing VAE-v3 `3 x 4` generated-sample figure and disclose its independently normalized panels and notebook-pool provenance.
 - [x] Use generator-only spectrogram sampling as the sole runtime boundary.
 - [x] Record five fresh in-memory 600-sample repeats per model with raw timings, measurement sequence, seeds, hardware/software metadata, peak memory, and exact sampler settings.
 - [x] Compute the 412.0032-second VAE--Diffusion generator-only time gap and 1348.09 x Diffusion/VAE time ratio; Harvey owns and presents this result.
 - [x] Complete and package the exact nine-block low-resource study: 63 validation runs, 27 held-out evaluations, and protocol-4 provenance.
-- [ ] Decide whether the VAE-v2 comparison remains in the five-page body or moves to the appendix.
-- [ ] Add the canonical Diffusion model-method description and citations supplied by the model owner; retain the completed shared evaluation results and protocol unchanged.
+- [x] Keep the V1--V3 engineering progression as compact prose in the five-page body; omit the full comparison table.
+- [ ] Vincent: add the canonical Diffusion model-method description and citations; retain the completed shared evaluation results and protocol unchanged.
 - [ ] Add all presentation feedback items and verify that each is addressed.
-- [ ] Build the PDF and iteratively reduce the compiled main body to at most five pages.
-- [ ] Verify every numerical claim against a tracked artifact or a documented fresh run.
+- [ ] Team: decide whether the final title retains “Rare Species Classification” or explicitly says “Low-Resource Classification.”
+- [x] Build and visually inspect the PDF: five main-body pages, one reference page, and one appendix page (seven pages total).
+- [x] Verify the report's numerical claims against the tracked manifests, model summaries, evaluation CSV/JSON packages, and documented timing run.

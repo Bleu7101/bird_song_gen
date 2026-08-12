@@ -7,14 +7,16 @@ You are drafting the Generated-to-test MSE subsection of the bird-song project r
 
 ## Read these files first
 
-1. `doc/Project_Report_Template/Generated_to_test_MSE_reference.md`
+1. `docs/Generated_to_test_MSE_reference.md`
 2. `reports/generated_to_test_mse_v1/vae_v3_notebook_seed42/summary.csv`
 3. `reports/generated_to_test_mse_v1/vae_v3_notebook_seed42/protocol.json`
-4. `runs/generated_to_test_mse_v1/vae_v3_notebook_seed42/generation.json`
-5. `reports/generated_to_test_mse_v1/vae_v3_notebook_seed42/per_sample.csv`
-6. `runs/generated_to_test_mse_v1/vae_v3_notebook_seed42/manifest.csv`
-7. `runs/generated_to_test_mse_v1/vae_v3_notebook_seed42/array_hashes.csv`
-8. `doc/Project_Report_Template/Report_Outline.md`
+4. `reports/generated_to_test_mse_v1/vae_v3_notebook_seed42/per_sample.csv`
+5. `doc/Project_Report_Template/Report_Outline.md`
+
+The original `runs/generated_to_test_mse_v1/vae_v3_notebook_seed42/` directory
+is not tracked in the current checkout. Do not treat its absent
+`generation.json`, `manifest.csv`, or `array_hashes.csv` as readable inputs;
+use the hashes and provenance retained in `protocol.json`.
 
 Use the implementation only to understand definitions if needed:
 `src/bird_song/evaluation/generated_to_test_mse.py`,
@@ -25,9 +27,9 @@ Use the implementation only to understand definitions if needed:
 
 - Use `summary.csv` for all reported numerical values.
 - Use `protocol.json` for the MSE definitions, numerical-domain contract, input hashes, and test-set policy.
-- Use `generation.json` for the VAEv3 checkpoint, posterior bank, notebook, seed, temperature, device, and pool provenance.
+- Use `protocol.json` for the retained VAEv3 checkpoint, posterior bank, notebook, seed, temperature, device, and pool provenance.
 - Use `per_sample.csv` only for individual examples, nearest-neighbor paths, or an appendix-level distribution audit.
-- Treat any older wording in `Report_Outline.md` saying that generated-to-test MSE is “not yet computed” as stale after the files above have been verified.
+- Preserve the outline's distinction between this notebook-pool diagnostic and Harvey's corrected canonical pools.
 
 ## Facts that must appear in the draft
 

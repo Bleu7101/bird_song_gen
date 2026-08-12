@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 
@@ -84,6 +85,15 @@ def test_legacy_vae_record_is_not_reused_under_corrected_sampling_contract() -> 
 
 
 def test_vae_generation_metadata_records_corrected_formula(tmp_path: Path) -> None:
+    checkpoint = tmp_path / "vae.pt"
+    posterior = tmp_path / "posterior.pt"
+    checkpoint.write_bytes(b"checkpoint-bytes")
+    posterior.write_bytes(b"posterior-bytes")
+    generation_identity = {
+        "checkpoint_sha256": hashlib.sha256(b"checkpoint-bytes").hexdigest(),
+        "posterior_bank_sha256": hashlib.sha256(b"posterior-bytes").hexdigest(),
+        "generation_source_revision": "test-revision",
+    }
     counts = {0: 256, 1: 247, 2: 256}
     bank = {
         label_id: {
@@ -98,15 +108,19 @@ def test_vae_generation_metadata_records_corrected_formula(tmp_path: Path) -> No
         "vae_v3",
         seed=42,
         samples_per_species=200,
-        checkpoint=Path("vae.pt"),
-        posterior_bank=Path("posterior.pt"),
+        checkpoint=checkpoint,
+        posterior_bank=posterior,
         generation_batch_size=8,
+        generation_identity=generation_identity,
         bank=bank,
     )
     metadata_text = (tmp_path / "generation.json").read_text(encoding="utf-8")
     metadata = json.loads(metadata_text)
 
-    assert metadata["schema_version"] == 3
+    assert metadata["schema_version"] == 4
+    assert metadata["checkpoint_sha256"] == generation_identity["checkpoint_sha256"]
+    assert metadata["posterior_bank_sha256"] == generation_identity["posterior_bank_sha256"]
+    assert metadata["generation_source_revision"] == "test-revision"
     assert metadata["temperature"] == VAE_TEMPERATURE
     assert metadata["reparameterization"] == VAE_REPARAMETERIZATION
     assert metadata["generation_batch_size"] == 8
@@ -122,6 +136,81 @@ def test_vae_generation_metadata_records_corrected_formula(tmp_path: Path) -> No
         "wavfiles/"
     )
     assert metadata["vae_checkpoint_retrained"] is False
+
+
+def test_generation_identity_hashes_inputs_and_records_revision(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    checkpoint = tmp_path / "checkpoint.pt"
+    posterior = tmp_path / "posterior.pt"
+    checkpoint.write_bytes(b"checkpoint")
+    posterior.write_bytes(b"posterior")
+    monkeypatch.setattr(checkpoint_pool, "git_revision", lambda _root: "abc123")
+
+    identity = checkpoint_pool._generation_identity(checkpoint, posterior)
+
+    assert identity == {
+        "checkpoint_sha256": hashlib.sha256(b"checkpoint").hexdigest(),
+        "posterior_bank_sha256": hashlib.sha256(b"posterior").hexdigest(),
+        "generation_source_revision": "abc123",
+    }
+
+
+def test_pool_resume_requires_matching_generation_identity(tmp_path: Path) -> None:
+    identity = {
+        "checkpoint_sha256": "checkpoint-a",
+        "posterior_bank_sha256": "posterior-a",
+        "generation_source_revision": "revision-a",
+    }
+    metadata = {"schema_version": 4, **identity}
+    (tmp_path / "generation.json").write_text(json.dumps(metadata), encoding="utf-8")
+    pd.DataFrame(
+        [
+            {
+                "species": "Northern Cardinal",
+                "relative_path": "classifier_input/northern_cardinal/0000.npy",
+                "pool_rank": 0,
+            }
+        ]
+    ).to_csv(tmp_path / "manifest.csv", index=False)
+
+    assert checkpoint_pool._existing_records(tmp_path, identity)
+    assert checkpoint_pool._existing_records(
+        tmp_path,
+        {**identity, "checkpoint_sha256": "checkpoint-b"},
+    ) == {}
+    assert checkpoint_pool._existing_records(
+        tmp_path,
+        {**identity, "posterior_bank_sha256": "posterior-b"},
+    ) == {}
+    assert checkpoint_pool._existing_records(
+        tmp_path,
+        {**identity, "generation_source_revision": "revision-b"},
+    ) == {}
+
+
+def test_pool_resume_rejects_legacy_metadata_without_generation_identity(tmp_path: Path) -> None:
+    (tmp_path / "generation.json").write_text(
+        json.dumps({"schema_version": 3}),
+        encoding="utf-8",
+    )
+    pd.DataFrame(
+        [
+            {
+                "species": "Northern Cardinal",
+                "relative_path": "classifier_input/northern_cardinal/0000.npy",
+                "pool_rank": 0,
+            }
+        ]
+    ).to_csv(tmp_path / "manifest.csv", index=False)
+
+    expected = {
+        "checkpoint_sha256": "checkpoint-a",
+        "posterior_bank_sha256": None,
+        "generation_source_revision": "revision-a",
+    }
+    assert checkpoint_pool._existing_records(tmp_path, expected) == {}
 
 
 def test_existing_posterior_bank_filter_preserves_only_unique_train_anchors() -> None:

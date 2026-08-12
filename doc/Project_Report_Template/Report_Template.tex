@@ -16,16 +16,14 @@
 \usepackage{xcolor}
 \usetikzlibrary{arrows.meta}
 
-\newcommand{\drafttodo}[1]{\textcolor{red!70!black}{\textbf{Draft note:} #1}}
-
 \title{BirdGEN: Conditional Bird-Song Spectrogram Generation for Rare Species Classification}
 
 \author{%
   Shenghao Jin \quad Harvey Li \quad Vincent Wang\\
   Department of Electrical and Computer Engineering, University of Toronto\\
   {\small\texttt{shenghao.jin@mail.utoronto.ca} \quad
-  \texttt{harv.li@mail.utoronto.ca}\\
-  \texttt{vz.wang@mail.utoronto.ca}}
+  \texttt{harv.li@mail.utoronto.ca}}\\
+  {\small\texttt{vz.wang@mail.utoronto.ca}}
 }
 
 \begin{document}
@@ -144,7 +142,8 @@ condition trains a fresh CRNN and uses the same real test set.
 The 1.66-M-parameter Residual CNN uses six residual blocks and global
 average/max pooling. It is retained as an architecture-comparison reference,
 and its frozen features and logits guide VAE-v3 training. It does not score or
-compare generated samples. The selected 404-k-parameter CRNN combines
+compare VAE and Diffusion in the maintained independent evaluation. The selected
+404-k-parameter CRNN combines
 convolutional spectral features with a bidirectional GRU and temporal pooling
 \cite{cakir2017crnn}. An independent frozen CRNN supplies generation-quality
 diagnostics, while freshly initialized CRNNs provide the downstream
@@ -195,7 +194,7 @@ regenerated with this corrected equation. The three audited Diffusion pools
 were reused without new Diffusion spectrogram generation.
 
 \subsection{Diffusion Model}
-% Intentionally left blank until the canonical Diffusion implementation is supplied.
+% Intentionally left blank for Vincent Wang's canonical Diffusion method and citations.
 
 \section{Experimental Methodology}
 
@@ -236,11 +235,11 @@ between independently generated and real examples.
 
 \begin{figure}[t]
   \centering
-  \fbox{\parbox{0.88\linewidth}{\centering
-  \drafttodo{Insert a shared-scale $3\times3$ grid built from the fresh
-  corrected-temperature VAE pool and cite its source manifest.}}}
-  \caption{Placeholder for fresh VAE-v3 posterior-anchor samples. The previous
-  generated-sample figure is not reused.}
+  \includegraphics[width=\linewidth]{../../reports/vae/conditional_vae_v3/conditional_samples.png}
+  \caption{Existing VAE-v3 notebook posterior-anchor samples at temperature
+  0.35: four examples per species (48 samples were saved in total). Panels are
+  independently color-normalized; spectrogram appearance alone does not
+  establish waveform realism.}
   \label{fig:vae-samples}
 \end{figure}
 
@@ -259,13 +258,13 @@ copying. This hash-recorded diagnostic used the original notebook sampler at
 temperature 0.35 with a train-only posterior bank, not Harvey's corrected
 canonical pool.
 The Residual CNN remains a frozen VAE training teacher and supplies no
-generated-sample evaluation. Table~\ref{tab:quality} reports the current
+independent VAE--Diffusion evaluation. Table~\ref{tab:quality} reports the current
 audited pools using the selected CRNN and its shared feature space. Values
 are three-generation-seed means; the feature rows additionally average the
 three species.
 
 \begin{table}[t]
-  \caption{Fresh CRNN-view and feature-space generated-sample diagnostics.}
+  \caption{Frozen selected-CRNN and feature-space generated-sample diagnostics.}
   \label{tab:quality}
   \centering
   \small
@@ -348,7 +347,8 @@ to newly initialized low-resource CRNNs, not the historical full-data CRNN.
 Reconstruction MSE rewards pixel proximity, the Residual CNN is coupled to
 V3 training and therefore restricted to its teacher role, and a closed-set
 independent CRNN cannot reject unknown or noisy inputs. Spectrogram and
-classifier metrics also do not replace listening. VAE-v3 has higher CRNN target
+classifier metrics also do not replace listening or waveform-level evaluation
+\cite{bhatia2022birdsong}. VAE-v3 has higher CRNN target
 compatibility, lower macro-species Fr\'echet distance, and higher feature
 precision/coverage in these pools, but it also has a much larger near-training
 feature fraction. Diffusion has a diversity ratio nearer one and lower

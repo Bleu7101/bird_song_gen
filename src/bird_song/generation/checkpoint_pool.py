@@ -12,6 +12,7 @@ import numpy as np
 import pandas as pd
 import torch
 
+from ..evaluation.provenance import git_revision, sha256_file
 from .checkpoint_models import (
     DIFFUSION_CLAMP,
     DIFFUSION_DDIM_ETA,
@@ -181,9 +182,34 @@ def _make_record(
     return record
 
 
-def _existing_records(output: Path) -> dict[tuple[int, int], dict[str, Any]]:
+def _generation_identity(
+    checkpoint: Path,
+    posterior_bank: Path | None,
+) -> dict[str, str | None]:
+    """Bind resumable arrays to the exact model inputs and source revision."""
+    project_root = Path(__file__).resolve().parents[3]
+    return {
+        "checkpoint_sha256": sha256_file(checkpoint),
+        "posterior_bank_sha256": sha256_file(posterior_bank) if posterior_bank else None,
+        "generation_source_revision": git_revision(project_root),
+    }
+
+
+def _existing_records(
+    output: Path,
+    generation_identity: Mapping[str, Any],
+) -> dict[tuple[int, int], dict[str, Any]]:
     manifest = output / "manifest.csv"
     if not manifest.exists():
+        return {}
+    metadata_path = output / "generation.json"
+    try:
+        metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError, TypeError):
+        return {}
+    if int(metadata.get("schema_version", -1)) < 4:
+        return {}
+    if any(metadata.get(key) != value for key, value in generation_identity.items()):
         return {}
     frame = pd.read_csv(manifest)
     required = {"species", "relative_path", "pool_rank"}
@@ -268,11 +294,12 @@ def _write_metadata(
     checkpoint: Path,
     posterior_bank: Path | None,
     generation_batch_size: int,
+    generation_identity: Mapping[str, Any],
     checkpoint_data: Mapping[str, Any] | None = None,
     bank: Mapping[int, Mapping[str, Any]] | None = None,
 ) -> None:
     metadata: dict[str, Any] = {
-        "schema_version": 3,
+        "schema_version": 4,
         "generator": model,
         "classes": list(GENERATOR_CLASSES),
         "seed": int(seed),
@@ -281,6 +308,7 @@ def _write_metadata(
         "output_scale": "classifier_-1_1",
         "normalization": {"mean": NORMALIZATION_MEAN, "std": NORMALIZATION_STD},
         "generation_batch_size": int(generation_batch_size),
+        **generation_identity,
     }
     if model == "vae_v3":
         if bank is None:
@@ -657,7 +685,8 @@ def generate_pool(
     posterior_bank = posterior_bank.resolve() if posterior_bank is not None else None
     output = output.resolve()
     output.mkdir(parents=True, exist_ok=True)
-    records = _existing_records(output)
+    generation_identity = _generation_identity(checkpoint, posterior_bank)
+    records = _existing_records(output, generation_identity)
     generator_model, bank, schedule, checkpoint_data = _prepare_generator(
         model, checkpoint, device, posterior_bank
     )
@@ -751,6 +780,7 @@ def generate_pool(
         checkpoint,
         posterior_bank,
         generation_batch_size,
+        generation_identity,
         checkpoint_data,
         bank,
     )
