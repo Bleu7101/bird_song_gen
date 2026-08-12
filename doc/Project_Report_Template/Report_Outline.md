@@ -7,9 +7,18 @@
 - **Submission deadline:** August 14, 11:30 PM.
 - **Main-body limit:** At most 5 pages. Appendices and references are excluded.
 - **Target compiled length:** Approximately 4.7 pages, leaving about 0.3 pages of formatting margin.
-- **Current source of project facts:** `main` at commit `5a79085`.
+- **Current source of project facts:** `main` at commit `89c3bcc`; the current technical implementation is inherited from `5a79085`.
 - **Current writing scope:** Data preparation, Residual CNN, CRNN, and VAE.
-- **Deferred scope:** Do not use the implementation details from `diffusion_vincent` yet. Keep the corresponding Diffusion headings empty for later completion.
+- **Deferred scope:** Do not use the implementation details from `diffusion_vincent` yet. Keep the corresponding Diffusion model headings empty for later completion, while defining the shared comparison and timing protocol now.
+
+### Approved compression plan
+
+- Keep the main body at or below five pages; references and appendices may extend the compiled document beyond five pages.
+- Keep only the pipeline figure, the VAE generated-sample figure, and the primary low-resource result table in the main body.
+- Describe the V1--V3 evolution in compact prose rather than a separate table.
+- Retain one compact VAE objective equation; move architecture minutiae, complete loss derivations, training hyperparameters, leakage audit details, sampling-temperature provenance, and the full timing procedure to the appendix.
+- Merge repeated limitations across methodology, results, discussion, and conclusion.
+- Target approximately seven compiled pages including references and a short appendix.
 
 ## Confirmed reporting strategy
 
@@ -25,9 +34,9 @@ The primary endpoint is the change in macro-F1 of a newly initialized CRNN evalu
 
 ### Secondary research question
 
-> How do VAE and Diffusion differ in generated-sample quality?
+> Under a matched protocol, how do VAE and Diffusion differ in generated-sample quality and in the time required to generate the same number of samples?
 
-The final comparison should consider class conditioning, distribution similarity, diversity and coverage, copying risk, generation-seed stability, spectrogram inspection, and listening. The VAE side can be drafted now; the Diffusion implementation and results remain empty until that work is added.
+The quality comparison should consider class conditioning, distribution similarity, diversity and coverage, copying risk, generation-seed stability, spectrogram inspection, and listening. Generation efficiency must be reported separately as both an absolute time gap and a Diffusion-to-VAE time ratio under identical hardware, output count, batch size, precision, and timing boundaries. The VAE side and common protocol can be drafted now; the Diffusion implementation and measured comparison remain empty until that work is added.
 
 ### Claim boundary
 
@@ -35,6 +44,8 @@ The final comparison should consider class conditioning, distribution similarity
 - VAE reconstruction metrics and generated-sample diagnostics must be kept separate from downstream CRNN macro-F1.
 - Agreement with a classifier that participated in VAE training is a consistency diagnostic, not independent evidence of realism.
 - The low-resource study simulates label scarcity for three project species while using pretrained generators. It is not a strict rare- or unseen-species experiment.
+- A faster generator is not necessarily a better generator; quality, downstream utility, and runtime are three separate outcomes.
+- The current generators natively produce log-mel spectrograms. A claim about **audio-file generation time** must additionally include the same spectrogram-to-waveform decoder for both models.
 
 ## Main-body page budget
 
@@ -57,11 +68,15 @@ References and appendices are outside this budget.
 
 ### Working title
 
-**Conditional Bird-Song Spectrogram Generation for Low-Resource Classification**
+**BirdGEN: Conditional Bird-Song Spectrogram Generation for Rare Species Classification**
 
-Possible expanded title if the final Diffusion comparison is substantial:
+In the report text, clarify that rare-species recognition is the intended application, whereas the recorded experiment simulates labeled-data scarcity for three project species using pretrained generators. Do not convert the title into a claim that the generator was trained on truly rare or unseen species.
 
-**Conditional Bird-Song Generation with VAE and Diffusion Models for Low-Resource Classification**
+### Confirmed author block
+
+- **Shenghao Jin**, Department of Electrical and Computer Engineering, University of Toronto, `shenghao.jin@mail.utoronto.ca`
+- **Harvey Li**, Department of Electrical and Computer Engineering, University of Toronto, `harv.li@mail.utoronto.ca`
+- **Vincent Wang**, Department of Electrical and Computer Engineering, University of Toronto, `vz.wang@mail.utoronto.ca`
 
 ### Abstract
 
@@ -78,7 +93,7 @@ Avoid putting an exact generated-to-test MSE in the abstract until that metric h
 
 Correct the template heading from `Assentation` to `Attestation` and use the following concise paragraph:
 
-> Shenghao Jin contributed to data preparation and to the development and evaluation of the conditional VAE. Harvey Li contributed to data preparation, developed and evaluated the Residual CNN and CRNN classifiers, and conducted the low-resource synthetic augmentation experiments. Vincent Wang developed and evaluated the conditional diffusion model. All members contributed to the preparation and revision of the final report.
+> Shenghao Jin contributed to data preparation and to the development and evaluation of the conditional VAE. Harvey Li contributed to data preparation, developed and evaluated the Residual CNN and CRNN classifiers, conducted the low-resource synthetic augmentation experiments, and conducted the matched VAE--Diffusion generation-time comparison. Vincent Wang developed and evaluated the conditional diffusion model. All members contributed to the preparation and revision of the final report.
 
 ---
 
@@ -105,6 +120,7 @@ Correct the template heading from `Assentation` to `Attestation` and use the fol
 3. Developed a species-conditioned spatial VAE with detail-aware and classifier-consistency objectives.
 4. Evaluated whether synthetic samples improve a freshly trained CRNN under a matched low-resource protocol.
 5. Defined a common generated-sample quality protocol that can later compare VAE and Diffusion.
+6. Designed an equal-count benchmark that separates model sampling time from shared spectrogram-to-waveform decoding time.
 
 ---
 
@@ -206,9 +222,12 @@ flowchart LR
     C --> D["Residual CNN teacher"]
     C --> E["Conditional VAE-v3"]
     D --> E
-    E --> F["Generated spectrograms"]
+    E --> F["Generated spectrograms (VAE)"]
+    C --> J["Diffusion model"]
+    J --> K["Generated spectrograms (Diffusion)"]
     C --> G["Real-only or real-plus-generated training set"]
     F --> G
+    K --> G
     G --> H["Fresh CRNN"]
     H --> I["Fixed real test set"]
 ```
@@ -243,6 +262,16 @@ The report must distinguish two uses:
 2. A newly initialized CRNN is trained for every augmentation condition and supplies the primary downstream macro-F1 result.
 
 ### 4.4 Conditional VAE-v3
+
+Begin the VAE introduction with a compact evolution table:
+
+| Version | Main change | Reason for the change |
+|---|---|---|
+| VAE-v1 | First working CVAE: flat 128-value latent, species embeddings concatenated at the encoder/decoder, MSE plus KL, and standard-normal sampling | Established the conditional-generation pipeline, but the compressed vector and pixel-MSE objective blurred narrow calls, pitch tracks, and transient structure |
+| VAE-v2 | Replaced the flat bottleneck with a `16 x 8 x 8` spatial latent; added residual FiLM blocks, resize-convolution, event-weighted multiscale/gradient reconstruction, and a per-species moment-matched posterior Gaussian | Preserved time-frequency location and local detail while reducing the train-posterior versus standard-normal sampling mismatch |
+| VAE-v3 | Expanded the latent to `16 x 16 x 16`; added per-channel free bits, longer/lower-weight KL warmup, frozen-classifier feature/label consistency, and a 256-anchor-per-species posterior mixture at nominal temperature `0.35` | Targeted the remaining loss of fine detail and species-discriminative structure, while retaining neighboring latent correlations during sampling |
+
+The evolution should be presented as an engineering response to observed limitations, not as a controlled causal ablation: architecture, loss, and sampling method changed together.
 
 - Input: `[1,128,128]` globally standardized log-mel spectrogram.
 - Spatial latent: `[16,16,16]`, or 4,096 latent values.
@@ -293,9 +322,30 @@ Keep three evidence categories separate:
 - Use the same CRNN architecture, real validation/test sets, optimizer-step budget, and masking policy for every matched condition.
 - Select the augmentation ratio on validation only; evaluate only the baseline and selected condition on test.
 
-### 5.4 Common VAE-Diffusion quality protocol
+### 5.4 Common VAE-Diffusion quality and generation-time protocol
 
-The later comparison should use the same sample count per species, generation seeds, preprocessing conversion, frozen evaluators, and real reference sets. VAE and Diffusion values must remain separate by seed rather than pooling away generation instability.
+The later quality comparison should use the same sample count per species, generation seeds, preprocessing conversion, frozen evaluators, and real reference sets. VAE and Diffusion values must remain separate by seed rather than pooling away generation instability.
+
+For the generation-time comparison, use the same balanced count already specified for one checkpoint-evaluation seed: 200 samples per species and therefore 600 samples per model in each timed repeat. The quality study still uses seeds 42, 123, and 777, or 1,800 samples per model in total; those three generation seeds must not be treated as a substitute for repeated system timing. Benchmark both models on the same machine with batch size 8, the same numerical precision, identical output shape, and no cached/resumed samples. Record the GPU/CPU model, software versions, sampler settings, and peak accelerator memory.
+
+Use two explicitly separated timing boundaries:
+
+1. **Generator-only spectrogram time:** Start with the frozen checkpoint and any VAE posterior bank already loaded; after five unmeasured warm-up batches and device synchronization, time class-conditioned sampling through the final normalized `128 x 128` log-mel tensor. Exclude checkpoint loading, cache validation, NumPy/WAV writing, plotting, and metric computation.
+2. **End-to-end audio-export time:** Starting from the same generation request, include spectrogram generation, the same deterministic 32-iteration Griffin-Lim decoder for both models, and WAV writing. Report decoder-only time as well so that shared waveform-rendering cost is not mistaken for model sampling cost.
+
+Synchronize CUDA immediately before and after each timed region. Run at least five complete 600-sample repeats per model, alternate which model is measured first, and rotate the generation seed independently of the repeat index. Retain every repeat-level timing and report the median and interquartile range, seconds per 600 samples, milliseconds per sample, samples per second, the paired absolute gap
+
+\[
+\Delta T = T_{\mathrm{Diffusion}} - T_{\mathrm{VAE}},
+\]
+
+and the paired slowdown factor
+
+\[
+R_T = \frac{T_{\mathrm{Diffusion}}}{T_{\mathrm{VAE}}}.
+\]
+
+The benchmark should use the final verified VAE sampler and the final reported Diffusion sampler. Any change in VAE temperature, Diffusion step count, guidance, batch size, precision, or waveform decoder requires a new timing run. **Reporting owner: Harvey Li.**
 
 ---
 
@@ -395,9 +445,21 @@ Recommended main result figure: [`paired_test_deltas.png`](../../reports/crnn_lo
 
 Interpret this as repeatable evidence of classifier utility in the recorded matched design. Do not describe it as proof of perceptual realism or as strict low-resource generator training.
 
-### 6.4 VAE-Diffusion Generation Quality Comparison
+### 6.4 VAE-Diffusion Generation Quality and Equal-Count Runtime Comparison
 
-<!-- Intentionally left blank until the Diffusion implementation and results are included. -->
+Keep the quality results empty until the Diffusion implementation and comparable outputs are included. Do not combine heterogeneous quality metrics into a single unsupported ranking.
+
+#### Presentation feedback: time to generate the same number of audio samples
+
+The current repository records equal sample counts but does **not** record generation wall-clock time, so no numerical speed claim is currently supported. After running the protocol in Section 5.4, include one compact table:
+
+| Model | Outputs per timed repeat | Generator sampler | Generator-only time (s) | ms/sample | samples/s | Griffin-Lim decode time (s) | End-to-end WAV time (s) |
+|---|---:|---|---:|---:|---:|---:|---:|
+| VAE-v3 | 600 (200/species) | Verified posterior-anchor sampler | TBD | TBD | TBD | TBD | TBD |
+| Diffusion | 600 (200/species) | Final reported sampler | TBD | TBD | TBD | TBD | TBD |
+| Diffusion minus VAE / ratio | Same count | Matched comparison | `TBD` / `TBD x` |  |  | `TBD` / `TBD x` | `TBD` / `TBD x` |
+
+Report repeat-level raw values and generation seeds in the appendix. In the main text, state both the absolute difference and the slowdown factor, and explain that iterative Diffusion sampling and a single VAE decoder pass have different computational structures. Do not call spectrogram-only latency “audio generation time”; use that wording only for the end-to-end WAV measurement. **This result will be presented by Harvey Li.**
 
 ---
 
@@ -409,7 +471,7 @@ The recorded matched experiment supports the claim that VAE-v3 samples can impro
 
 ### 7.2 Answer to the secondary question
 
-The VAE side can discuss reconstruction fidelity, generated-to-real similarity, conditioning, feature-space distribution, diversity, and copying risk. A complete VAE-Diffusion conclusion must wait until the Diffusion section is filled using the same evaluation protocol.
+The VAE side can discuss reconstruction fidelity, generated-to-real similarity, conditioning, feature-space distribution, diversity, copying risk, and generation efficiency. A complete VAE-Diffusion conclusion must wait until the Diffusion section is filled and both models are evaluated using the same quality and timing protocols. The final conclusion should state the quality trade-off and the measured generator-only and end-to-end runtime gaps separately.
 
 ### 7.3 Limitations and validity boundaries
 
@@ -422,6 +484,7 @@ The VAE side can discuss reconstruction fidelity, generated-to-real similarity, 
 - **Preprocessing drift:** Historical VAE and maintained classifier pipelines share geometry but not identical numerical normalization.
 - **Unpaired MSE limitation:** Generated-to-test nearest-neighbor MSE measures proximity and can reward copying; it must be interpreted with diversity and copy-risk diagnostics.
 - **Waveform boundary:** Spectrogram and classifier metrics do not replace listening or waveform-quality evaluation.
+- **Timing boundary:** Runtime depends on hardware, batch size, precision, sampler configuration, warm-up, synchronization, and whether loading, decoding, or file I/O is included; timing claims are valid only for the documented benchmark setting.
 - **Reproducibility gap:** The portable three-seed VAE pool generator records temperature `0.35`, but the current portable reparameterization call does not multiply the sampled standard deviation by that temperature. The untracked pools and missing generation-code hash prevent confirming the exact sampling formula used for every recorded pool. Resolve or explicitly disclose this before presenting the three-seed pools as a verified `0.35` experiment.
 
 ---
@@ -431,7 +494,7 @@ The VAE side can discuss reconstruction fidelity, generated-to-real similarity, 
 The conclusion should answer both research questions in two short paragraphs:
 
 1. **Primary question:** The recorded VAE-v3 augmentation experiment improved fresh-CRNN performance on the fixed real test set in the matched label-scarcity setting.
-2. **Secondary question:** VAE quality evidence is available, but the full VAE-Diffusion comparison remains incomplete until Diffusion is evaluated under the same protocol.
+2. **Secondary question:** VAE quality evidence is available, but the full VAE-Diffusion quality and generation-time comparison remains incomplete until both models are measured under the same protocol.
 
 End with one forward-looking sentence about verified generation pipelines, perceptual listening, and extending the protocol to genuinely rare or unseen species.
 
@@ -467,6 +530,7 @@ The appendix can contain:
 - Latent PCA
 - Detailed generated-to-test MSE distributions
 - Diversity, coverage, and nearest-neighbor copy-risk results
+- Repeat-level generator-only, decoder-only, and end-to-end runtime measurements, together with generation seeds, model order, hardware, and software details
 - Data and provenance audits
 - A checklist mapping every presentation feedback item to its final-report location
 
@@ -479,6 +543,7 @@ The appendix can contain:
 | VAE needs MSE on the test set | Report paired test reconstruction MSE (`0.028063`) | Section 6.2 | Recorded |
 | Compare generated samples with original real test data | Compute same-species generated-to-test nearest-neighbor MSE plus real-to-real baseline | Section 6.2 | Not yet computed |
 | Show generated results | Include compact three-species generated-spectrogram grid | Section 6.2 | Existing source figure available; final layout pending |
+| Compare VAE and Diffusion time for the same number of audio samples | Generate 600 samples/model/repeat for at least five matched repeats; report generator-only, common Griffin-Lim decode, end-to-end WAV time, absolute gap, and time ratio | Sections 5.4 and 6.4; presented by Harvey | Not yet measured |
 
 Add every additional question from the presentation to this table before submission.
 
@@ -515,6 +580,9 @@ Add every additional question from the presentation to this table before submiss
 - [`test_reconstructions.png`](../../reports/vae/conditional_vae_v3/test_reconstructions.png)
 - [`checkpoint_models.py`](../../src/bird_song/generation/checkpoint_models.py)
 - [`checkpoint_pool.py`](../../src/bird_song/generation/checkpoint_pool.py)
+- [`checkpoint-evaluation protocol`](../../reports/generator_checkpoint_evaluation_2026-08-10/protocol.json)
+- [`audio_decode.py`](../../src/bird_song/generation/audio_decode.py)
+- [`12_decode_generated_audio.py`](../../scripts/12_decode_generated_audio.py)
 
 ### Low-resource evaluation
 
@@ -525,13 +593,34 @@ Add every additional question from the presentation to this table before submiss
 
 ---
 
-## Open items before drafting the final LaTeX
+## Inputs still needed for a complete final-report draft
+
+The Data Preparation, Residual CNN, CRNN, VAE-method, recorded reconstruction, and low-resource-result prose can be drafted from the current repository now. The following items do not block that partial draft, but they are required before the full report can be finalized:
+
+| Priority | Required input or decision | Suggested owner | What must be provided or recorded |
+|---:|---|---|---|
+| 1 | Final author block | Team | Final title; exact names; department/program; affiliation; submission email addresses |
+| 2 | Canonical Diffusion evidence package | Vincent | Branch/commit; architecture; objective, conditioning, noise schedule and sampler; training and checkpoint-selection settings; checkpoint identity; quality results; comparable figures; limitations; citations |
+| 3 | Equal-count timing package | Harvey | At least five matched 600-output repeats/model; generator-only, decoder-only, and end-to-end times; model order; seeds; GPU/CPU, software, batch, precision, warm-up/synchronization, peak memory, sampler settings, and checkpoint/code hashes |
+| 4 | Canonical VAE sampling decision | Shenghao | Resolve and verify the recorded `0.35` temperature mismatch, identify the final checkpoint/posterior bank, and regenerate the canonical pool used by the MSE, image, timing, and augmentation claims |
+| 5 | Remaining VAE feedback results | Shenghao / report integration | Per-species test reconstruction MSE; generated-to-nearest-same-class-test MSE; real-to-real leave-one-out baseline; compact shared-scale generated figure |
+| 6 | Complete presentation feedback | Team | Confirm that the three recorded questions plus equal-count runtime are the complete feedback list, or provide the missing questions and requested additions |
+| 7 | Final method references | Model owners | Sources for VAE/CVAE, FiLM, KL stabilization, feature-consistency loss, CRNN, the final Diffusion formulation, and any borrowed implementation or benchmark |
+
+If “audio generation” was intended only as shorthand for generated spectrogram samples, the report should use generator-only latency. If it literally means WAV files, retain the shared Griffin-Lim decoder and end-to-end timing columns. Reporting both is the recommended choice because it answers both interpretations without conflating model speed with waveform decoding.
+
+---
+
+## Open items before finalizing the LaTeX
 
 - [ ] Confirm final title, author affiliations, and email addresses.
 - [ ] Regenerate a canonical VAE sample set after resolving the temperature mismatch.
 - [ ] Compute per-species test reconstruction MSE.
 - [ ] Compute generated-to-test and real-to-real baseline MSE values.
 - [ ] Produce the compact shared-scale generated-sample figure.
+- [ ] Decide whether “generation time” means generator-only spectrogram latency, literal end-to-end WAV export, or both; the recommended report presents both separately.
+- [ ] Run at least five matched 600-sample-per-model timing repeats without cache hits and save repeat-level raw timings, model order, seeds, hardware/software metadata, peak memory, and exact sampler settings.
+- [ ] Compute the absolute VAE--Diffusion time gap and Diffusion/VAE time ratio for generator-only and end-to-end audio export; Harvey owns and presents this result.
 - [ ] Decide whether the VAE-v2 comparison remains in the five-page body or moves to the appendix.
 - [ ] Add Diffusion methodology and results without changing the common evaluation protocol.
 - [ ] Add all presentation feedback items and verify that each is addressed.
