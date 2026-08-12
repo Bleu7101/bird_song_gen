@@ -46,8 +46,8 @@ label-scarcity setting, but do not alone establish perceptual audio realism.
 \section*{Attestation of Teamwork}
 Shenghao Jin contributed to data preparation and the conditional VAE. Harvey
 Li contributed to data preparation, the Residual CNN and CRNN classifiers,
-the low-resource augmentation experiment, and the VAE--Diffusion timing
-comparison. Vincent Wang developed and evaluated the conditional Diffusion
+the low-resource augmentation experiment, and is responsible for the matched
+VAE--Diffusion timing comparison. Vincent Wang developed and evaluated the conditional Diffusion
 model. All members contributed to the preparation and revision of the final
 report.
 
@@ -183,9 +183,10 @@ Classifier architectures were selected on validation data across seeds 42,
 123, and 777, then evaluated on held-out test recordings. VAE evidence is
 separated into paired deterministic reconstruction, unpaired generated-sample
 quality, and downstream classifier utility. To address the presentation
-feedback, generated-to-test MSE will use each sample's nearest same-species test
-spectrogram and a leave-one-out real-test baseline; diversity and nearest-train
-checks are required because low MSE can also indicate copying.
+feedback, each frozen generated sample was compared with its nearest
+same-species test spectrogram in the standardized-logmel domain, with a
+leave-one-out real-test reference. The test set was used only for this final
+evaluation; low MSE can also indicate copying or limited diversity.
 
 For the primary experiment, each fresh CRNN sees 50 real examples per species.
 Three real-subset seeds crossed with three classifier seeds give nine matched
@@ -219,8 +220,17 @@ time-detail ratios were 0.770--0.833 and frequency-detail ratios were
 The 48 historical samples achieved 100\% target agreement under the Residual
 teacher (mean confidence 0.915), but that classifier also contributes to
 Eq.~\eqref{eq:vae-loss}; the result is not an independent realism score.
-\drafttodo{Insert verified generated-to-test and real-to-real MSE after the
-canonical VAE pool is regenerated.}
+For the separately verified seed-42 notebook pool (16 samples/species), the
+same-species generated-to-test nearest-neighbor MSE was 0.5120 on average
+(SD 0.1998; median 0.4501; IQR 0.3878--0.6231), versus 0.3350 for the
+leave-one-out real-to-real reference (SD 0.1419; median 0.3185; IQR
+0.2368--0.4154). Generated/real means were 0.4308/0.3237 for American Robin,
+0.5579/0.3650 for Northern Cardinal, and 0.5474/0.3175 for Song Sparrow.
+These are unpaired pixel-space summaries (48 versus 489 queries), not a
+perceptual-realism or waveform-quality score; nearest-neighbor MSE can reward
+copying. This hash-recorded diagnostic used the original notebook sampler at
+temperature 0.35 with a train-only posterior bank, not Harvey's corrected
+canonical pool.
 
 \paragraph{Low-resource augmentation.}
 \begin{table}[t]
@@ -321,10 +331,14 @@ using neural vocoders,'' in \emph{Speech and Computer}, pp. 64--74, 2022.
 
 VAE-v3 used AdamW with learning rate $2\times10^{-4}$, batch size 24, a
 20-epoch KL warm-up, and checkpoint selection by the complete validation
-objective. The historical notebook implements sampling temperature 0.35, but
-the portable pool generator currently records 0.35 while omitting this factor
-from reparameterization. The final generated-to-test MSE and timing comparison
-must therefore use a corrected, hash-recorded pool.
+objective. The portable pool generator now applies the notebook's sampling
+temperature 0.35 explicitly; however, previously generated untracked pools do
+not contain a generation-code hash, so their exact formula remains unverified.
+The reported generated-to-test MSE instead uses a separate, hash-recorded
+seed-42 pool reconstructed with the original notebook, 16 samples per species,
+and the train-only posterior bank. It does not verify the historical three-seed
+augmentation pools; the low-resource experiment must still be rerun if the
+report claims that it used Harvey's corrected canonical sampler.
 
 For the equal-count timing study, each model will generate 600 spectrograms
 (200 per species) in FP32 with batch size 8 on the same hardware. Five warm-up
