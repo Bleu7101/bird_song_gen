@@ -1,0 +1,104 @@
+{
+  "schema_version": 1,
+  "benchmark_type": "generator_only_cuda_synchronized",
+  "generator": "diffusion",
+  "checkpoint": "C:\\Users\\Harvey\\Desktop\\conditional_diffusion\\conditional_diffusion_best_low_batch_100_eps_weighted.pt",
+  "seed": 20260812,
+  "classes": [
+    "Northern Cardinal",
+    "Song Sparrow",
+    "American Robin"
+  ],
+  "samples_per_species": 200,
+  "samples_per_repeat": 600,
+  "balanced_by_species": true,
+  "fresh_in_memory_generation_each_repeat": true,
+  "existing_arrays_used": false,
+  "warmup_batches": 5,
+  "repeat_count": 5,
+  "batch_size": 8,
+  "precision": "float32",
+  "cuda_synchronized": true,
+  "timing_boundary": "fresh in-memory generator sampling only; includes VAE posterior-anchor selection, latent sampling, and decoder forward or diffusion initial-noise construction and DDIM sampling; excludes checkpoint and posterior-bank loading, warm-up, classifier-scale conversion, CPU transfer, array serialization, and manifest/metadata I/O",
+  "settings": {
+    "sampler": "ddim",
+    "timesteps": 1000,
+    "ddim_steps": 100,
+    "ddim_eta": 0.0,
+    "guidance_weight": 3.0,
+    "clamp_samples": 4.0,
+    "beta_schedule": "cosine",
+    "ema_state_dict": true,
+    "checkpoint_epoch": 34,
+    "checkpoint_best_validation_loss": 0.14470337276743556,
+    "checkpoint_selection": "validation_best",
+    "stored_sampler_overridden": "ddpm"
+  },
+  "hardware": {
+    "device": "cuda",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "processor": "AMD64 Family 26 Model 68 Stepping 0, AuthenticAMD",
+    "torch_version": "2.11.0+cu128",
+    "cuda_runtime": "12.8",
+    "cuda_device_index": 0,
+    "cuda_device_name": "NVIDIA GeForce RTX 4070 SUPER",
+    "cuda_capability": [
+      8,
+      9
+    ],
+    "cuda_total_memory_bytes": 12878086144,
+    "cuda_multiprocessor_count": 56
+  },
+  "repeat_results": [
+    {
+      "repeat": 1,
+      "sample_count": 600,
+      "seconds": 417.33151160000034,
+      "samples_per_second": 1.4377059563503125,
+      "peak_cuda_memory_bytes": 357850112,
+      "incremental_peak_cuda_memory_bytes": 272641536
+    },
+    {
+      "repeat": 2,
+      "sample_count": 600,
+      "seconds": 410.86057900000014,
+      "samples_per_second": 1.4603493999359811,
+      "peak_cuda_memory_bytes": 357850112,
+      "incremental_peak_cuda_memory_bytes": 272641536
+    },
+    {
+      "repeat": 3,
+      "sample_count": 600,
+      "seconds": 411.1813863999996,
+      "samples_per_second": 1.459210022256009,
+      "peak_cuda_memory_bytes": 357850112,
+      "incremental_peak_cuda_memory_bytes": 272641536
+    },
+    {
+      "repeat": 4,
+      "sample_count": 600,
+      "seconds": 411.2319186000004,
+      "samples_per_second": 1.4590307144509658,
+      "peak_cuda_memory_bytes": 357850112,
+      "incremental_peak_cuda_memory_bytes": 272641536
+    },
+    {
+      "repeat": 5,
+      "sample_count": 600,
+      "seconds": 410.9396476999991,
+      "samples_per_second": 1.4600684148102006,
+      "peak_cuda_memory_bytes": 357850112,
+      "incremental_peak_cuda_memory_bytes": 272641536
+    }
+  ],
+  "aggregate": {
+    "seconds_mean": 412.3090086599999,
+    "seconds_sample_sd": 2.8120405695709736,
+    "seconds_min": 410.86057900000014,
+    "seconds_max": 417.33151160000034,
+    "samples_per_second_mean": 1.4552729015606936,
+    "samples_per_second_sample_sd": 0.009835997969103094,
+    "peak_cuda_memory_bytes_max": 357850112,
+    "incremental_peak_cuda_memory_bytes_max": 272641536
+  }
+}

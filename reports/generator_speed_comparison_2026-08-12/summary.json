@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "title": "Matched VAE-v3 and diffusion generator-only speed comparison",
+  "sample_count_per_repeat": 600,
+  "samples_per_species": 200,
+  "repeat_count_per_model": 5,
+  "warmup_batches_per_model": 5,
+  "batch_size": 8,
+  "precision": "float32",
+  "cuda_synchronized": true,
+  "timing_boundary": "fresh in-memory generator sampling only; includes VAE posterior-anchor selection, latent sampling, and decoder forward or diffusion initial-noise construction and DDIM sampling; excludes checkpoint and posterior-bank loading, warm-up, classifier-scale conversion, CPU transfer, array serialization, and manifest/metadata I/O",
+  "hardware": {
+    "device": "cuda",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "processor": "AMD64 Family 26 Model 68 Stepping 0, AuthenticAMD",
+    "torch_version": "2.11.0+cu128",
+    "cuda_runtime": "12.8",
+    "cuda_device_index": 0,
+    "cuda_device_name": "NVIDIA GeForce RTX 4070 SUPER",
+    "cuda_capability": [
+      8,
+      9
+    ],
+    "cuda_total_memory_bytes": 12878086144,
+    "cuda_multiprocessor_count": 56
+  },
+  "models": {
+    "vae_v3": {
+      "seconds_mean": 0.3058469200001127,
+      "seconds_sample_sd": 0.00959206461503214,
+      "seconds_median": 0.3045541999999841,
+      "seconds_q1": 0.2982899999988149,
+      "seconds_q3": 0.307629500000985,
+      "seconds_min": 0.2975249999999505,
+      "seconds_max": 0.32123590000082913,
+      "samples_per_second_mean": 1963.2759347761446,
+      "samples_per_second_sample_sd": 60.2084604921955,
+      "samples_per_second_median": 1970.0926797267327,
+      "peak_cuda_memory_bytes_max": 199008768,
+      "incremental_peak_cuda_memory_bytes_max": 75867136
+    },
+    "diffusion": {
+      "seconds_mean": 412.3090086599999,
+      "seconds_sample_sd": 2.8120405695709736,
+      "seconds_median": 411.1813863999996,
+      "seconds_q1": 410.9396476999991,
+      "seconds_q3": 411.2319186000004,
+      "seconds_min": 410.86057900000014,
+      "seconds_max": 417.33151160000034,
+      "samples_per_second_mean": 1.4552729015606936,
+      "samples_per_second_sample_sd": 0.009835997969103094,
+      "samples_per_second_median": 1.459210022256009,
+      "peak_cuda_memory_bytes_max": 357850112,
+      "incremental_peak_cuda_memory_bytes_max": 272641536
+    }
+  },
+  "comparison": {
+    "absolute_seconds_difference": 412.00316173999977,
+    "diffusion_to_vae_time_ratio": 1348.089458150659,
+    "vae_to_diffusion_throughput_ratio": 1349.077504755739
+  },
+  "interpretation_boundary": [
+    "generator-only spectrogram sampling on the recorded hardware",
+    "excludes checkpoint loading, conversion to classifier scale, CPU transfer, file I/O, and waveform decoding",
+    "runtime values are system measurements, not model-quality metrics",
+    "models were benchmarked sequentially rather than interleaved",
+    "repeats reuse the same deterministic sample streams, so timing variation is system variation"
+  ],
+  "measurement_sequence_note": "The completed diffusion benchmark was retained; VAE-v3 was remeasured afterward using the filtered 759-anchor bank. No diffusion sampling was rerun."
+}

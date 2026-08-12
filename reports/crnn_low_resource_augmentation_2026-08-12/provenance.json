@@ -1,0 +1,243 @@
+{
+  "schema_version": 2,
+  "protocol_version": 4,
+  "git": {
+    "revision": "097ff87a774fa41b5d6d98ce6a49b60430b73412",
+    "dirty_worktree_at_packaging": true
+  },
+  "evidence_boundaries": {
+    "checkpoint_count": 63,
+    "generator_safe_validation_rows": 510,
+    "held_out_test_rows": 489,
+    "validation_protocol_identity": {
+      "format_version": 1,
+      "protocol": "manifests/content_safe_v2/full_dataset_validation_generator_safe.protocol.json",
+      "source_validation_manifest": "manifests/content_safe_v2/full_dataset_validation.csv",
+      "output_validation_manifest": "manifests/content_safe_v2/full_dataset_validation_generator_safe.csv",
+      "exact_duplicate_protocol": "manifests/content_safe_v2/protocol.json",
+      "historical_manifest": "manifests/full_dataset_manifest.csv",
+      "rule": "Exclude each validation row identified by the content_safe_v2 exact-audio duplicate ledger as the retained counterpart of one or more rows from the historical training split.",
+      "validation_counts": {
+        "before": {
+          "rows": 519,
+          "species": {
+            "American Robin": 163,
+            "Northern Cardinal": 172,
+            "Song Sparrow": 184
+          }
+        },
+        "after": {
+          "rows": 510,
+          "species": {
+            "American Robin": 163,
+            "Northern Cardinal": 172,
+            "Song Sparrow": 175
+          }
+        }
+      },
+      "excluded_validation_relative_wav_paths": [
+        "wavfiles/408810-0.wav",
+        "wavfiles/408810-1.wav",
+        "wavfiles/408810-2.wav",
+        "wavfiles/408810-3.wav",
+        "wavfiles/408810-4.wav",
+        "wavfiles/408810-5.wav",
+        "wavfiles/408810-6.wav",
+        "wavfiles/408810-8.wav",
+        "wavfiles/408810-9.wav"
+      ],
+      "historical_train_counterparts": [
+        {
+          "excluded_validation_relative_wav_path": "wavfiles/408810-0.wav",
+          "historical_train_relative_wav_path": "wavfiles/408014-0.wav"
+        },
+        {
+          "excluded_validation_relative_wav_path": "wavfiles/408810-0.wav",
+          "historical_train_relative_wav_path": "wavfiles/408018-0.wav"
+        },
+        {
+          "excluded_validation_relative_wav_path": "wavfiles/408810-1.wav",
+          "historical_train_relative_wav_path": "wavfiles/408014-1.wav"
+        },
+        {
+          "excluded_validation_relative_wav_path": "wavfiles/408810-1.wav",
+          "historical_train_relative_wav_path": "wavfiles/408018-1.wav"
+        },
+        {
+          "excluded_validation_relative_wav_path": "wavfiles/408810-2.wav",
+          "historical_train_relative_wav_path": "wavfiles/408014-2.wav"
+        },
+        {
+          "excluded_validation_relative_wav_path": "wavfiles/408810-2.wav",
+          "historical_train_relative_wav_path": "wavfiles/408018-2.wav"
+        },
+        {
+          "excluded_validation_relative_wav_path": "wavfiles/408810-3.wav",
+          "historical_train_relative_wav_path": "wavfiles/408018-3.wav"
+        },
+        {
+          "excluded_validation_relative_wav_path": "wavfiles/408810-4.wav",
+          "historical_train_relative_wav_path": "wavfiles/408014-4.wav"
+        },
+        {
+          "excluded_validation_relative_wav_path": "wavfiles/408810-4.wav",
+          "historical_train_relative_wav_path": "wavfiles/408018-4.wav"
+        },
+        {
+          "excluded_validation_relative_wav_path": "wavfiles/408810-5.wav",
+          "historical_train_relative_wav_path": "wavfiles/408014-5.wav"
+        },
+        {
+          "excluded_validation_relative_wav_path": "wavfiles/408810-5.wav",
+          "historical_train_relative_wav_path": "wavfiles/408018-5.wav"
+        },
+        {
+          "excluded_validation_relative_wav_path": "wavfiles/408810-6.wav",
+          "historical_train_relative_wav_path": "wavfiles/408014-6.wav"
+        },
+        {
+          "excluded_validation_relative_wav_path": "wavfiles/408810-6.wav",
+          "historical_train_relative_wav_path": "wavfiles/408018-6.wav"
+        },
+        {
+          "excluded_validation_relative_wav_path": "wavfiles/408810-8.wav",
+          "historical_train_relative_wav_path": "wavfiles/408014-8.wav"
+        },
+        {
+          "excluded_validation_relative_wav_path": "wavfiles/408810-8.wav",
+          "historical_train_relative_wav_path": "wavfiles/408018-8.wav"
+        },
+        {
+          "excluded_validation_relative_wav_path": "wavfiles/408810-9.wav",
+          "historical_train_relative_wav_path": "wavfiles/408014-9.wav"
+        },
+        {
+          "excluded_validation_relative_wav_path": "wavfiles/408810-9.wav",
+          "historical_train_relative_wav_path": "wavfiles/408018-9.wav"
+        }
+      ],
+      "test_unchanged": {
+        "manifest": "manifests/content_safe_v2/full_dataset_test.csv",
+        "assertion": "The preparation is validation-only: the test manifest is read-only, no test rows are excluded or rewritten, and all 489 rows remain the held-out test set.",
+        "rows": 489,
+        "excluded_rows": 0,
+        "species": {
+          "American Robin": 145,
+          "Northern Cardinal": 162,
+          "Song Sparrow": 182
+        }
+      },
+      "caveat": "This boundary removes only the nine exact historical-train duplicate relationships already recorded in the content_safe_v2 ledger. It does not detect near-duplicates, perceptually similar recordings, or other semantic overlap, and validation results based on 510 rows are not directly interchangeable with earlier 519-row validation results."
+    }
+  },
+  "pool_provenance": {
+    "source_protocol": "reports/generator_checkpoint_evaluation_2026-08-12/protocol.json",
+    "source_schema_version": 3,
+    "low_resource_pool_generation_performed": false,
+    "models": {
+      "vae_v3": {
+        "pool_seeds": [
+          42,
+          123,
+          777
+        ],
+        "samples_per_pool": 600,
+        "generation_contract": {
+          "sampling_type": "per_species_posterior_anchor_mixture",
+          "temperature": 0.35,
+          "reparameterization": "mu + temperature * exp(0.5 * logvar) * epsilon",
+          "posterior_bank_contract": "content_safe_v2_train_filtered_existing_bank_v1",
+          "posterior_bank_source_manifest": "manifests/content_safe_v2/full_dataset_train.csv",
+          "posterior_bank_counts": {
+            "Northern Cardinal": 256,
+            "Song Sparrow": 247,
+            "American Robin": 256
+          },
+          "posterior_bank_derivation": "filtered_existing_posterior_bank",
+          "vae_checkpoint_retrained": false,
+          "generation_batch_size": 8
+        },
+        "pool_reused_after_vae_bank_filter": false,
+        "spectrograms_regenerated_after_vae_bank_filter": true,
+        "checkpoint_not_retrained": true
+      },
+      "diffusion": {
+        "pool_seeds": [
+          42,
+          123,
+          777
+        ],
+        "samples_per_pool": 600,
+        "generation_contract": {
+          "sampler": "ddim",
+          "timesteps": 1000,
+          "ddim_steps": 100,
+          "ddim_eta": 0.0,
+          "guidance_weight": 3.0,
+          "clamp_samples": 4.0,
+          "ema_state_dict": true,
+          "checkpoint_epoch": 34,
+          "checkpoint_best_validation_loss": 0.14470337276743556,
+          "checkpoint_selection": "validation_best",
+          "stored_sampler_overridden": "ddpm",
+          "generation_batch_size": 8
+        },
+        "pool_reused_after_vae_bank_filter": true,
+        "spectrograms_regenerated_after_vae_bank_filter": false
+      }
+    }
+  },
+  "inputs": {
+    "source_train_manifest": "manifests/content_safe_v2/full_dataset_train.csv",
+    "validation_manifest": "manifests/content_safe_v2/full_dataset_validation_generator_safe.csv",
+    "test_manifest": "manifests/content_safe_v2/full_dataset_test.csv",
+    "real_cache_manifest": "artifacts/spectrograms/spectrogram_manifest.csv",
+    "spectrogram_config": "configs/spectrogram.json",
+    "evaluation": "runs/crnn_low_resource_augmentation/v3/evaluation.json",
+    "input_audit": "runs/crnn_low_resource_augmentation/v3/input_audit.json",
+    "generator_evaluation_protocol": "reports/generator_checkpoint_evaluation_2026-08-12/protocol.json"
+  },
+  "pool_manifests": [
+    {
+      "model": "vae_v3",
+      "seed": 42,
+      "path": "runs/generator_checkpoint_evaluation/pools/vae_v3/seed_42/manifest.csv"
+    },
+    {
+      "model": "vae_v3",
+      "seed": 123,
+      "path": "runs/generator_checkpoint_evaluation/pools/vae_v3/seed_123/manifest.csv"
+    },
+    {
+      "model": "vae_v3",
+      "seed": 777,
+      "path": "runs/generator_checkpoint_evaluation/pools/vae_v3/seed_777/manifest.csv"
+    },
+    {
+      "model": "diffusion",
+      "seed": 42,
+      "path": "runs/generator_checkpoint_evaluation/pools/diffusion/seed_42/manifest.csv"
+    },
+    {
+      "model": "diffusion",
+      "seed": 123,
+      "path": "runs/generator_checkpoint_evaluation/pools/diffusion/seed_123/manifest.csv"
+    },
+    {
+      "model": "diffusion",
+      "seed": 777,
+      "path": "runs/generator_checkpoint_evaluation/pools/diffusion/seed_777/manifest.csv"
+    }
+  ],
+  "source_files": {
+    "experiment_module": {
+      "path": "src/bird_song/augmentation/low_resource.py"
+    },
+    "report_module": {
+      "path": "src/bird_song/augmentation/low_resource_report.py"
+    },
+    "cli": {
+      "path": "scripts/15_crnn_low_resource_augmentation.py"
+    }
+  }
+}

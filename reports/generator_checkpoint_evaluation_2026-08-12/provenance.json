@@ -1,0 +1,51 @@
+{
+  "schema_version": 3,
+  "checkpoints": {
+    "vae_v3": {
+      "path": "artifacts/models/vae/conditional_vae_v3/conditional_vae_v3_best.pt",
+      "parameter_count": 5365025,
+      "checkpoint_retrained_for_refresh": false,
+      "posterior_bank": "artifacts/models/vae/conditional_vae_v3/class_conditional_posterior_bank.pt",
+      "posterior_bank_contract": "content_safe_v2_train_filtered_existing_bank_v1",
+      "posterior_bank_counts": {
+        "Northern Cardinal": 256,
+        "Song Sparrow": 247,
+        "American Robin": 256
+      }
+    },
+    "diffusion": {
+      "path": "C:\\Users\\Harvey\\Desktop\\conditional_diffusion\\conditional_diffusion_best_low_batch_100_eps_weighted.pt",
+      "parameter_count": 18443841,
+      "ema_state_dict": true,
+      "checkpoint_epoch": 34,
+      "checkpoint_best_validation_loss": 0.14470337276743556,
+      "checkpoint_selection": "validation_best",
+      "stored_sampler_overridden": "ddpm",
+      "pool_reused_after_vae_bank_filter": true,
+      "spectrograms_regenerated_after_vae_bank_filter": false,
+      "note": "external Desktop checkpoint; not copied or tracked"
+    }
+  },
+  "evaluators": [
+    {
+      "classifier": "crnn",
+      "path": "artifacts/models/classifier/selected_crnn/best.pt",
+      "classes": [
+        "American Robin",
+        "Northern Cardinal",
+        "Song Sparrow"
+      ]
+    }
+  ],
+  "validation_protocol": {
+    "path": "manifests/content_safe_v2/full_dataset_validation_generator_safe.protocol.json",
+    "validation_rows": 510,
+    "excluded_exact_historical_train_counterparts": 9,
+    "test_rows_unchanged": 489
+  },
+  "normalization": {
+    "mean": -51.5400096102764,
+    "std": 14.894513218933453,
+    "conversion": "standardized to dB, per-sample max subtraction, [-80,0] clip, [-1,1]"
+  }
+}

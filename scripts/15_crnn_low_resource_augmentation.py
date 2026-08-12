@@ -24,8 +24,11 @@ from bird_song.runtime import choose_device, save_json
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_RUN_ROOT = PROJECT_ROOT / "runs/crnn_low_resource_augmentation/v1"
-DEFAULT_REPORT_DIR = PROJECT_ROOT / "reports/crnn_low_resource_augmentation_2026-08-10"
+DEFAULT_RUN_ROOT = PROJECT_ROOT / "runs/crnn_low_resource_augmentation/v3"
+DEFAULT_REPORT_DIR = PROJECT_ROOT / "reports/crnn_low_resource_augmentation_2026-08-12"
+DEFAULT_GENERATOR_EVALUATION_PROTOCOL = (
+    PROJECT_ROOT / "reports/generator_checkpoint_evaluation_2026-08-12/protocol.json"
+)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -49,7 +52,10 @@ def build_parser() -> argparse.ArgumentParser:
         command.add_argument(
             "--validation-manifest",
             type=Path,
-            default=PROJECT_ROOT / "manifests/content_safe_v2/full_dataset_validation.csv",
+            default=(
+                PROJECT_ROOT
+                / "manifests/content_safe_v2/full_dataset_validation_generator_safe.csv"
+            ),
         )
         command.add_argument(
             "--test-manifest",
@@ -95,6 +101,13 @@ def build_parser() -> argparse.ArgumentParser:
             help="Evaluation JSON (default: <run-root>/evaluation.json).",
         )
         command.add_argument("--overwrite-report", action="store_true")
+    for name in ("package", "run"):
+        subparsers.choices[name].add_argument(
+            "--generator-evaluation-protocol",
+            type=Path,
+            default=DEFAULT_GENERATOR_EVALUATION_PROTOCOL,
+            help="Schema-3 generator-evaluation protocol that records pool refresh actions.",
+        )
     return parser
 
 
@@ -110,6 +123,11 @@ def _resolved_inputs(args: argparse.Namespace) -> dict[str, Path]:
         "cache_root": resolve_spectrogram_cache_root(project_root, args.real_cache),
         "pool_root": args.pool_root.resolve(),
         "spectrogram_config_path": args.spectrogram_config.resolve(),
+        "generator_evaluation_protocol": getattr(
+            args,
+            "generator_evaluation_protocol",
+            DEFAULT_GENERATOR_EVALUATION_PROTOCOL,
+        ).resolve(),
     }
 
 
@@ -149,7 +167,7 @@ def main() -> None:
         save_json(paths["run_root"] / "input_audit.json", audit)
         print(
             f"audit_ok training_runs={audit['expected_training_runs']} "
-            f"generated_arrays={audit['unique_generated_arrays']}",
+            f"generated_arrays={audit['validated_generated_arrays']}",
             flush=True,
         )
         device = choose_device(args.device)
@@ -212,6 +230,7 @@ def main() -> None:
             cache_root=paths["cache_root"],
             pool_root=paths["pool_root"],
             spectrogram_config_path=paths["spectrogram_config_path"],
+            generator_evaluation_protocol=paths["generator_evaluation_protocol"],
             overwrite=args.overwrite_report,
         )
         print(f"report={report}")

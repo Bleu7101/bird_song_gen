@@ -1,0 +1,32 @@
+{
+  "schema_version": 3,
+  "title": "Three-seed checkpoint generator evaluation",
+  "seed_count": 3,
+  "generated_arrays_total": 3600,
+  "calibration": [
+    {
+      "classifier": "crnn",
+      "split": "test",
+      "sample_count": 489,
+      "accuracy": 0.8997955010224948,
+      "macro_f1": 0.9016177383860278,
+      "macro_recall": 0.9017844082978183,
+      "mean_confidence": 0.9209489822387695,
+      "mean_entropy": 0.263263463973999,
+      "expected_accuracy": 0.8997955010224948,
+      "expected_macro_f1": 0.9016177383860278
+    }
+  ],
+  "classifier": "crnn",
+  "refresh_actions": {
+    "vae_v3": "filtered posterior bank and regenerated all three pools",
+    "diffusion": "reused audited DDIM pools; no diffusion spectrogram regeneration"
+  },
+  "selection": "No composite score or winner; report three-seed mean, sample standard deviation, and range.",
+  "metric_files": [
+    "metrics_per_seed.csv",
+    "metrics_aggregate.csv",
+    "classifier_scores.csv",
+    "nearest_neighbor_summary.csv"
+  ]
+}

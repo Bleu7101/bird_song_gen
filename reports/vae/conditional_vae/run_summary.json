@@ -38,5 +38,5 @@
   "peak_allocated_cuda_gb": 0.3807058334350586,
   "device": "cuda",
   "smoke_test": false,
-  "best_checkpoint": "C:\\Users\\sheng\\Documents\\1508_project\\bird_song_gen\\checkpoints\\conditional_vae\\conditional_vae_best.pt"
+  "best_checkpoint": "artifacts/models/vae/conditional_vae/conditional_vae_best.pt"
 }

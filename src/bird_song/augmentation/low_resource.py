@@ -18,7 +18,25 @@ from bird_song.augmentation.experiment import evaluate_model, select_ratio
 from bird_song.classifier.model import build_classifier, count_trainable_parameters
 from bird_song.config import DEFAULT_CLASSES, SpectrogramConfig
 from bird_song.data import ManifestDataset
-from bird_song.generation.checkpoint_evaluation import audit_pools
+from bird_song.generation.checkpoint_pool import deterministic_sample_seed
+from bird_song.generation.checkpoint_models import (
+    DIFFUSION_CLAMP,
+    DIFFUSION_CHECKPOINT_BEST_VALIDATION_LOSS,
+    DIFFUSION_CHECKPOINT_EPOCH,
+    DIFFUSION_DDIM_ETA,
+    DIFFUSION_DDIM_STEPS,
+    DIFFUSION_GUIDANCE,
+    DIFFUSION_STORED_SAMPLER,
+    GENERATOR_CLASSES,
+    VAE_REPARAMETERIZATION,
+    VAE_TEMPERATURE,
+)
+from bird_song.generation.posterior_bank_filter import (
+    POSTERIOR_BANK_CONTRACT,
+    POSTERIOR_BANK_EXPECTED_COUNTS,
+    POSTERIOR_BANK_SOURCE_MANIFEST,
+)
+from bird_song.generator_safe_validation import load_generator_safe_validation_identity
 from bird_song.runtime import atomic_torch_save, load_checkpoint, save_json, seed_everything
 from bird_song.spectrogram_cache import audit_spectrogram_cache
 
@@ -29,10 +47,11 @@ DEFAULT_RATIOS = (50, 100, 200)
 DEFAULT_REAL_SUBSET_SEEDS = (101, 202, 303)
 DEFAULT_TRAIN_SEEDS = (42, 123, 777)
 DEFAULT_POOL_SEEDS = (42, 123, 777)
+CANONICAL_POOL_SAMPLES_PER_CLASS = 200
 DEFAULT_STEPS = 1_440
 DEFAULT_VALIDATE_EVERY = 36
 DEFAULT_BATCH_SIZE = 64
-PROTOCOL_VERSION = 2
+PROTOCOL_VERSION = 4
 MODEL_WIDTH = 32
 MODEL_DROPOUT = 0.30
 LEARNING_RATE = 3e-4
@@ -41,6 +60,54 @@ LABEL_SMOOTHING = 0.05
 GRAD_CLIP_NORM = 5.0
 RATIO_TIE_TOLERANCE = 0.002
 BOOTSTRAP_RESAMPLES = 10_000
+
+GENERATION_IDENTITY_FIELDS = (
+    "schema_version",
+    "generator",
+    "classes",
+    "seed",
+    "samples_per_class",
+    "output_scale",
+    "normalization",
+    "generation_batch_size",
+    "temperature",
+    "reparameterization",
+    "sampling_type",
+    "posterior_bank_contract",
+    "posterior_bank_source_manifest",
+    "posterior_bank_derivation",
+    "posterior_bank_counts",
+    "posterior_bank_inventory",
+    "vae_checkpoint_retrained",
+    "timesteps",
+    "beta_schedule",
+    "sampler",
+    "ddim_steps",
+    "ddim_eta",
+    "guidance_weight",
+    "clamp_samples",
+    "ema_state_dict",
+    "chunk_independent",
+    "stored_sampler_overridden",
+    "checkpoint_epoch",
+    "checkpoint_best_validation_loss",
+    "checkpoint_selection",
+    "parameter_count",
+    "model_config",
+    "sampling_config",
+)
+MANIFEST_CONFIG_FIELDS = (
+    "generator",
+    "vae_temperature",
+    "vae_reparameterization",
+    "vae_posterior_bank_contract",
+    "vae_bank_class_count",
+    "sampler",
+    "ddim_steps",
+    "ddim_eta",
+    "guidance_weight",
+    "clamp_samples",
+)
 
 
 @dataclass(frozen=True)
@@ -212,19 +279,270 @@ def prepare_real_subsets(
 def pool_reference(project_root: Path, pool_root: Path, model: str, seed: int) -> PoolReference:
     if model not in GENERATORS:
         raise ValueError(f"Unknown generator {model!r}; choose from {GENERATORS}")
-    if int(seed) == 42:
-        cache_root = project_root / "artifacts/generated_spectrograms"
-        model_root = cache_root / model
-    else:
-        model_root = pool_root / model / f"seed_{int(seed)}"
-        cache_root = model_root
+    model_root = pool_root / model / f"seed_{int(seed)}"
     return PoolReference(
         model=model,
         seed=int(seed),
         manifest=model_root / "manifest.csv",
-        cache_root=cache_root,
+        cache_root=model_root,
         generation_metadata=model_root / "generation.json",
     )
+
+
+def _manifest_values(frame: pd.DataFrame, column: str) -> list[Any]:
+    values: list[Any] = []
+    for value in frame[column].dropna().unique().tolist():
+        if isinstance(value, np.generic):
+            value = value.item()
+        values.append(value)
+    return sorted(values, key=lambda value: json.dumps(value, sort_keys=True))
+
+
+def _require_manifest_numeric_value(
+    frame: pd.DataFrame,
+    column: str,
+    expected: float,
+    reference: PoolReference,
+) -> None:
+    if column not in frame.columns:
+        raise ValueError(f"Pool manifest is missing {column}: {reference.manifest}")
+    values = pd.to_numeric(frame[column], errors="coerce").to_numpy(dtype=float)
+    if not np.isfinite(values).all() or not np.allclose(values, expected, rtol=0.0, atol=1e-8):
+        raise ValueError(
+            f"Pool manifest has non-canonical {column}; expected {expected}: {reference.manifest}"
+        )
+
+
+def _require_manifest_text_value(
+    frame: pd.DataFrame,
+    column: str,
+    expected: str,
+    reference: PoolReference,
+    *,
+    case_insensitive: bool = False,
+) -> None:
+    if column not in frame.columns:
+        raise ValueError(f"Pool manifest is missing {column}: {reference.manifest}")
+    values = frame[column].astype(str)
+    matches = values.str.lower().eq(expected.lower()) if case_insensitive else values.eq(expected)
+    if not matches.all():
+        raise ValueError(
+            f"Pool manifest has non-canonical {column}; expected {expected!r}: "
+            f"{reference.manifest}"
+        )
+
+
+def _validate_pool_generation_contract(
+    reference: PoolReference,
+    metadata: dict[str, Any],
+    frame: pd.DataFrame,
+) -> None:
+    """Reject generated pools that do not match the frozen canonical samplers."""
+    common_expected = {
+        "schema_version": 3,
+        "generator": reference.model,
+        "classes": list(GENERATOR_CLASSES),
+        "seed": reference.seed,
+        "samples_per_class": CANONICAL_POOL_SAMPLES_PER_CLASS,
+        "generation_batch_size": 8,
+    }
+    common_mismatches = [
+        field for field, expected in common_expected.items() if metadata.get(field) != expected
+    ]
+    if common_mismatches:
+        raise ValueError(
+            f"Pool generation metadata does not match the canonical identity "
+            f"({common_mismatches}): {reference.generation_metadata}"
+        )
+
+    counts = frame["species"].astype(str).value_counts().to_dict()
+    expected_counts = {
+        species: CANONICAL_POOL_SAMPLES_PER_CLASS for species in DEFAULT_CLASSES
+    }
+    if counts != expected_counts:
+        raise ValueError(
+            f"Pool manifest does not contain exactly {CANONICAL_POOL_SAMPLES_PER_CLASS} rows "
+            f"for each canonical class: {reference.manifest}"
+        )
+    _require_manifest_text_value(frame, "generator", reference.model, reference)
+    try:
+        ranks = pd.to_numeric(frame["pool_rank"], errors="raise").to_numpy(dtype=float)
+        sample_seeds = pd.to_numeric(frame["sample_seed"], errors="raise").to_numpy(dtype=float)
+    except (TypeError, ValueError) as error:
+        raise ValueError(
+            f"Pool manifest has non-numeric pool_rank/sample_seed values: {reference.manifest}"
+        ) from error
+    if (
+        not np.isfinite(ranks).all()
+        or not np.equal(ranks, np.floor(ranks)).all()
+        or not np.isfinite(sample_seeds).all()
+        or not np.equal(sample_seeds, np.floor(sample_seeds)).all()
+    ):
+        raise ValueError(
+            f"Pool manifest pool_rank/sample_seed values must be finite integers: "
+            f"{reference.manifest}"
+        )
+    frame = frame.copy()
+    frame["pool_rank"] = ranks.astype(np.int64)
+    frame["sample_seed"] = sample_seeds.astype(np.int64)
+    label_ids = {species: index for index, species in enumerate(GENERATOR_CLASSES)}
+    for species, group in frame.groupby("species"):
+        observed_ranks = sorted(group["pool_rank"].tolist())
+        if observed_ranks != list(range(CANONICAL_POOL_SAMPLES_PER_CLASS)):
+            raise ValueError(
+                f"Pool manifest ranks for {species} must be exactly 0 through "
+                f"{CANONICAL_POOL_SAMPLES_PER_CLASS - 1}: {reference.manifest}"
+            )
+        expected_seeds = group["pool_rank"].map(
+            lambda rank: deterministic_sample_seed(reference.seed, label_ids[str(species)], rank)
+        )
+        if not group["sample_seed"].eq(expected_seeds).all():
+            raise ValueError(
+                f"Pool manifest has non-canonical sample_seed values for seed {reference.seed}: "
+                f"{reference.manifest}"
+            )
+
+    if reference.model == "vae_v3":
+        if (
+            metadata.get("temperature") != VAE_TEMPERATURE
+            or metadata.get("reparameterization") != VAE_REPARAMETERIZATION
+            or metadata.get("posterior_bank_contract") != POSTERIOR_BANK_CONTRACT
+            or metadata.get("posterior_bank_source_manifest")
+            != POSTERIOR_BANK_SOURCE_MANIFEST
+            or metadata.get("posterior_bank_counts") != POSTERIOR_BANK_EXPECTED_COUNTS
+            or metadata.get("vae_checkpoint_retrained") is not False
+        ):
+            raise ValueError(
+                f"VAE pool does not use the canonical filtered posterior-bank contract: "
+                f"{reference.generation_metadata}"
+            )
+        _require_manifest_numeric_value(frame, "vae_temperature", VAE_TEMPERATURE, reference)
+        _require_manifest_text_value(
+            frame,
+            "vae_reparameterization",
+            VAE_REPARAMETERIZATION,
+            reference,
+        )
+        _require_manifest_text_value(
+            frame,
+            "vae_posterior_bank_contract",
+            POSTERIOR_BANK_CONTRACT,
+            reference,
+        )
+        if not {
+            "vae_bank_class_count",
+            "vae_anchor_source_index",
+            "vae_anchor_relative_wav_path",
+        }.issubset(frame.columns):
+            raise ValueError(f"Pool manifest is missing VAE anchor provenance: {reference.manifest}")
+        class_counts = pd.to_numeric(frame["vae_bank_class_count"], errors="coerce")
+        source_indices = pd.to_numeric(frame["vae_anchor_source_index"], errors="coerce")
+        expected_class_counts = frame["species"].map(POSTERIOR_BANK_EXPECTED_COUNTS)
+        relative_wav_paths = frame["vae_anchor_relative_wav_path"].astype(str)
+        if (
+            class_counts.isna().any()
+            or not np.equal(class_counts, np.floor(class_counts)).all()
+            or not class_counts.eq(expected_class_counts).all()
+            or source_indices.isna().any()
+            or not np.equal(source_indices, np.floor(source_indices)).all()
+            or not source_indices.ge(0).all()
+            or not relative_wav_paths.str.startswith("wavfiles/").all()
+        ):
+            raise ValueError(
+                f"Pool manifest has non-canonical VAE anchor provenance: {reference.manifest}"
+            )
+        return
+
+    if reference.model != "diffusion":
+        raise ValueError(f"Unknown generator {reference.model!r}; choose from {GENERATORS}")
+    diffusion_matches = (
+        str(metadata.get("sampler", "")).lower() == "ddim"
+        and metadata.get("ddim_steps") == DIFFUSION_DDIM_STEPS
+        and metadata.get("ddim_eta") == DIFFUSION_DDIM_ETA
+        and metadata.get("guidance_weight") == DIFFUSION_GUIDANCE
+        and metadata.get("clamp_samples") == DIFFUSION_CLAMP
+        and metadata.get("ema_state_dict") is True
+        and metadata.get("checkpoint_epoch") == DIFFUSION_CHECKPOINT_EPOCH
+        and metadata.get("checkpoint_best_validation_loss")
+        == DIFFUSION_CHECKPOINT_BEST_VALIDATION_LOSS
+        and metadata.get("checkpoint_selection") == "validation_best"
+        and metadata.get("stored_sampler_overridden") == DIFFUSION_STORED_SAMPLER
+    )
+    if not diffusion_matches:
+        raise ValueError(
+            f"Diffusion pool does not use the canonical DDIM/EMA sampling contract: "
+            f"{reference.generation_metadata}"
+        )
+    _require_manifest_text_value(
+        frame,
+        "sampler",
+        "ddim",
+        reference,
+        case_insensitive=True,
+    )
+    _require_manifest_numeric_value(frame, "ddim_steps", DIFFUSION_DDIM_STEPS, reference)
+    _require_manifest_numeric_value(frame, "ddim_eta", DIFFUSION_DDIM_ETA, reference)
+    _require_manifest_numeric_value(frame, "guidance_weight", DIFFUSION_GUIDANCE, reference)
+    _require_manifest_numeric_value(frame, "clamp_samples", DIFFUSION_CLAMP, reference)
+
+
+def _pool_generation_identity(reference: PoolReference) -> dict[str, Any]:
+    """Return the semantic generation identity used for run compatibility."""
+    if not reference.generation_metadata.is_file():
+        raise FileNotFoundError(
+            f"Pool generation metadata is missing: {reference.generation_metadata}"
+        )
+    if not reference.manifest.is_file():
+        raise FileNotFoundError(f"Pool manifest is missing: {reference.manifest}")
+
+    metadata = json.loads(reference.generation_metadata.read_text(encoding="utf-8"))
+    if not isinstance(metadata, dict):
+        raise ValueError(f"Pool generation metadata must be an object: {reference.generation_metadata}")
+    frame = pd.read_csv(reference.manifest)
+    required = {"species", "relative_path", "pool_rank", "sample_seed", "generator"}
+    missing = required - set(frame.columns)
+    if missing or frame.empty:
+        raise ValueError(
+            f"Pool manifest is empty or missing identity columns {sorted(missing)}: "
+            f"{reference.manifest}"
+        )
+    _validate_pool_generation_contract(reference, metadata, frame)
+    manifest_config = {
+        column: _manifest_values(frame, column)
+        for column in MANIFEST_CONFIG_FIELDS
+        if column in frame.columns
+    }
+    rows_per_species = {
+        str(species): int(count)
+        for species, count in sorted(frame["species"].astype(str).value_counts().items())
+    }
+    anchor_provenance = None
+    if reference.model == "vae_v3":
+        anchor_provenance = (
+            frame[
+                [
+                    "species",
+                    "pool_rank",
+                    "vae_anchor_source_index",
+                    "vae_anchor_relative_wav_path",
+                ]
+            ]
+            .sort_values(["species", "pool_rank"], kind="stable")
+            .to_dict(orient="records")
+        )
+    return {
+        "generation": {
+            field: metadata[field]
+            for field in GENERATION_IDENTITY_FIELDS
+            if field in metadata
+        },
+        "manifest_config": {
+            "row_count": int(len(frame)),
+            "rows_per_species": rows_per_species,
+            "values": manifest_config,
+            "vae_anchor_provenance": anchor_provenance,
+        },
+    }
 
 
 def condition_run_dir(run_root: Path, block: ReplicateBlock, condition: ExperimentCondition) -> Path:
@@ -369,6 +687,10 @@ def _run_signature(
     real_per_species: int,
     device: torch.device,
 ) -> dict[str, Any]:
+    validation_protocol_identity = load_generator_safe_validation_identity(
+        validation_manifest,
+        project_root,
+    )
     return {
         "protocol_version": PROTOCOL_VERSION,
         "condition": condition.condition,
@@ -387,9 +709,12 @@ def _run_signature(
         "source_train_manifest": _portable(source_train_manifest, project_root),
         "subset_manifest": _portable(subset_manifest, project_root),
         "validation_manifest": _portable(validation_manifest, project_root),
+        "validation_protocol": validation_protocol_identity["protocol"],
+        "validation_protocol_identity": validation_protocol_identity,
         "real_cache_manifest": _portable(cache_root / "spectrogram_manifest.csv", project_root),
         "pool_manifest": _portable(pool.manifest, project_root) if pool else None,
         "pool_generation": _portable(pool.generation_metadata, project_root) if pool else None,
+        "pool_generation_identity": _pool_generation_identity(pool) if pool else None,
         "spectrogram_config_path": _portable(spectrogram_config_path, project_root),
         "spectrogram_config": config.to_dict(),
         "training_protocol": _training_protocol(),
@@ -664,6 +989,10 @@ def audit_inputs(
         raise ValueError("Existing generated pools support at most 200 rows per species and pool seed")
     config = SpectrogramConfig.from_json(spectrogram_config_path)
     content_safe = _content_safe_audit(source_train_manifest, validation_manifest, test_manifest)
+    validation_protocol_identity = load_generator_safe_validation_identity(
+        validation_manifest,
+        project_root,
+    )
     _, cache_audit = audit_spectrogram_cache(cache_root, config)
     for manifest in (source_train_manifest, validation_manifest, test_manifest):
         ManifestDataset(
@@ -697,10 +1026,15 @@ def audit_inputs(
             }
         )
 
-    pool_audit = audit_pools(project_root, pool_root, expected_samples=200, seeds=pool_seeds)
+    pool_audit: dict[str, Any] = {
+        "schema_version": 2,
+        "seeds": [int(seed) for seed in pool_seeds],
+        "models": {},
+    }
     validated_array_count = 0
     pool_details: list[dict[str, Any]] = []
     for model in GENERATORS:
+        model_pools: list[dict[str, int]] = []
         for seed in pool_seeds:
             reference = pool_reference(project_root, pool_root, model, int(seed))
             details = audit_generated_pool(
@@ -710,6 +1044,8 @@ def audit_inputs(
                 config,
             )
             validated_array_count += int(details["validated_arrays"])
+            generation_identity = _pool_generation_identity(reference)
+            model_pools.append({"seed": int(seed), "sample_count": int(details["rows"])})
             pool_details.append(
                 {
                     "model": model,
@@ -717,13 +1053,18 @@ def audit_inputs(
                     "manifest": _portable(reference.manifest, project_root),
                     "rows": details["rows"],
                     "rows_per_species": details["rows_per_species"],
+                    "generation_identity": generation_identity,
                 }
             )
+        pool_audit["models"][model] = {"pools": model_pools}
     blocks = replicate_blocks(real_subset_seeds, train_seeds, pool_seeds)
     conditions = experiment_conditions(requested_ratios)
     return {
-        "schema_version": 1,
+        "schema_version": 2,
+        "protocol_version": PROTOCOL_VERSION,
         "content_safe": content_safe,
+        "validation_protocol": validation_protocol_identity["protocol"],
+        "validation_protocol_identity": validation_protocol_identity,
         "cache": {
             "logical_rows": int(cache_audit["row_count"]),
             "physical_arrays": int(cache_audit["physical_path_count"]),
@@ -822,9 +1163,73 @@ def _checkpoint_payload(path: Path, block: ReplicateBlock, condition: Experiment
         "pool_seed": block.pool_seed if condition.generator else None,
     }
     mismatched = [key for key, value in expected.items() if payload.get(key) != value]
-    if mismatched or payload.get("run_signature") is None:
+    signature = payload.get("run_signature")
+    if not isinstance(signature, dict):
+        mismatched.append("run_signature")
+    else:
+        signature_expected = {
+            "condition": condition.condition,
+            "generator": condition.generator,
+            "ratio_per_species": condition.ratio_per_species,
+            "real_subset_seed": block.real_subset_seed,
+            "train_seed": block.train_seed,
+            "pool_seed": block.pool_seed if condition.generator else None,
+            "protocol_version": PROTOCOL_VERSION,
+            "training_protocol": _training_protocol(),
+        }
+        mismatched.extend(
+            f"run_signature.{key}"
+            for key, value in signature_expected.items()
+            if signature.get(key) != value
+        )
+        mismatched.extend(
+            f"run_signature.{key}"
+            for key in (
+                "validation_manifest",
+                "validation_protocol",
+                "validation_protocol_identity",
+            )
+            if not signature.get(key)
+        )
+    if mismatched:
         raise ValueError(f"Low-resource checkpoint metadata mismatch ({mismatched}): {path}")
     return payload
+
+
+def _checkpoint_evidence_contract(
+    *,
+    run_root: Path,
+    ratios: Sequence[int] = DEFAULT_RATIOS,
+    real_subset_seeds: Sequence[int] = DEFAULT_REAL_SUBSET_SEEDS,
+    train_seeds: Sequence[int] = DEFAULT_TRAIN_SEEDS,
+    pool_seeds: Sequence[int] = DEFAULT_POOL_SEEDS,
+) -> dict[str, Any]:
+    """Require one protocol-4 training and validation identity across every expected run."""
+    shared: dict[str, Any] | None = None
+    checkpoint_count = 0
+    for block in replicate_blocks(real_subset_seeds, train_seeds, pool_seeds):
+        for condition in experiment_conditions(ratios):
+            path = condition_run_dir(run_root, block, condition) / "best.pt"
+            payload = _checkpoint_payload(path, block, condition)
+            signature = payload["run_signature"]
+            current = {
+                "protocol_version": signature["protocol_version"],
+                "training_protocol": signature["training_protocol"],
+                "validation_manifest": signature["validation_manifest"],
+                "validation_protocol": signature["validation_protocol"],
+                "validation_protocol_identity": signature["validation_protocol_identity"],
+            }
+            if shared is None:
+                shared = current
+            elif current != shared:
+                raise ValueError(
+                    "Low-resource checkpoints do not share one protocol/training/validation "
+                    f"identity: {path}"
+                )
+            checkpoint_count += 1
+    if shared is None:
+        raise ValueError("The low-resource checkpoint matrix is empty")
+    return {**shared, "checkpoint_count": checkpoint_count}
 
 
 def collect_validation_summary(
@@ -907,6 +1312,13 @@ def select_and_evaluate(
 ) -> Path:
     if output_path.exists() and not overwrite:
         raise FileExistsError(f"Evaluation already exists: {output_path}; pass --overwrite-report intentionally")
+    checkpoint_contract = _checkpoint_evidence_contract(
+        run_root=run_root,
+        ratios=ratios,
+        real_subset_seeds=real_subset_seeds,
+        train_seeds=train_seeds,
+        pool_seeds=pool_seeds,
+    )
     validation = collect_validation_summary(
         project_root=project_root,
         run_root=run_root,
@@ -1062,10 +1474,16 @@ def select_and_evaluate(
 
     blocks = replicate_blocks(real_subset_seeds, train_seeds, pool_seeds)
     block_count = len(blocks)
+    tested_ratios = sorted({int(value) for value in ratios})
+    selected_ratio_summary = ", ".join(
+        f"{generator}=+{selections[generator]}/species" for generator in GENERATORS
+    )
     payload = {
         "schema_version": 1,
+        "protocol_version": PROTOCOL_VERSION,
         "title": "Low-resource CRNN synthetic-augmentation evaluation",
         "protocol": {
+            "protocol_version": PROTOCOL_VERSION,
             "question": (
                 "When CRNN training is restricted to 50 labeled real spectrograms per species, "
                 "does adding pretrained generated spectrograms improve held-out real classification?"
@@ -1087,7 +1505,13 @@ def select_and_evaluate(
                 f"{BOOTSTRAP_RESAMPLES} deterministic bootstrap resamples over "
                 f"{block_count} matched blocks"
             ),
-            "training_protocol": _training_protocol(),
+            "checkpoint_count": checkpoint_contract["checkpoint_count"],
+            "validation_manifest": checkpoint_contract["validation_manifest"],
+            "validation_protocol": checkpoint_contract["validation_protocol"],
+            "validation_protocol_identity": checkpoint_contract[
+                "validation_protocol_identity"
+            ],
+            "training_protocol": checkpoint_contract["training_protocol"],
         },
         "selected_ratios": selections,
         "validation_selection": selection_rows,
@@ -1109,8 +1533,9 @@ def select_and_evaluate(
                 "separate every interaction among subset, training, and pool seeds."
             ),
             (
-                "The selected 200-per-species ratio is the largest amount available in the existing "
-                "pools, so it is the best tested ratio rather than an estimated optimum."
+                f"Validation selected {selected_ratio_summary} from the tested generated ratios "
+                f"{tested_ratios}; these are best tested choices under the predeclared tie rule, "
+                "not estimates of an optimum beyond the tested grid."
             ),
         ],
     }

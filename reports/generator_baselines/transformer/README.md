@@ -4,7 +4,12 @@
 
 **Overall assessment: working baseline, share with caveats.**
 
-The transformer trained cleanly and produces valid normalized 128 x 128 log-mel spectrograms that the repository classifiers can read directly. Its validation likelihood is stable, and the published residual classifier recognizes many generated samples as the requested species. However, the images remain visibly diffuse and lack much of the crisp chirp, sweep, and harmonic structure found in real recordings. Northern Cardinal conditioning is the principal weakness. Do not present classifier agreement as proof of acoustic realism.
+The transformer trained cleanly and produces valid normalized 128 x 128 log-mel
+spectrograms that the selected CRNN can read directly. Its validation likelihood
+is stable, but CRNN target-label agreement is weak and the images remain visibly
+diffuse, without much of the crisp chirp, sweep, and harmonic structure found in
+real recordings. Northern Cardinal and Song Sparrow conditioning are the main
+weaknesses. Do not present classifier agreement as proof of acoustic realism.
 
 ## Checkpoint
 
@@ -21,31 +26,29 @@ The transformer trained cleanly and produces valid normalized 128 x 128 log-mel 
 
 The final training loss was -0.574484. Validation remaining slightly better than training is consistent with dropout being active during training and disabled for validation; the curve does not show obvious overfitting or numerical instability.
 
-## Classifier compatibility control
-
-The published residual classifier was evaluated through the same `.npy` loading path on 489 real cached held-out spectrograms. It reproduced its recorded test accuracy exactly: **442/489 = 90.39%**, with 86.93% mean confidence. This confirms that generated `.npy` files, resizing, normalization, and classifier input shape are wired correctly.
-
 ## Generated-sample evaluation
 
-Each temperature used 64 newly generated samples per species with generation seed 2026. The metric below is forced-choice classifier agreement with the requested species, not perceptual realism.
+Each retained setting used 64 newly generated samples per species with generation
+seed 2026. The metric below is forced-choice agreement from the selected CRNN,
+not perceptual realism.
 
 | Temperature | Target-label agreement | Mean confidence |
 |---:|---:|---:|
-| 0.4 | 33.85% | 60.83% |
-| 0.6 | 55.73% | 64.45% |
-| 0.8 | 66.15% | 74.16% |
-| **1.0** | **80.73%** | **74.87%** |
-| 1.2 | 75.52% | 69.47% |
+| 0.8 | 37.50% | 66.25% |
+| **1.0** | **39.58%** | **73.04%** |
 
-At temperature 1.0, the published residual classifier agreed with the target on 155 of 192 samples:
+At temperature 1.0, the selected CRNN agreed with the target on 76 of 192
+samples and predicted American Robin for 180 of them:
 
 | Intended species | Agreement | Correct / total |
 |---|---:|---:|
-| American Robin | 95.31% | 61 / 64 |
-| Northern Cardinal | 48.44% | 31 / 64 |
-| Song Sparrow | 98.44% | 63 / 64 |
+| American Robin | 100.00% | 64 / 64 |
+| Northern Cardinal | 9.38% | 6 / 64 |
+| Song Sparrow | 9.38% | 6 / 64 |
 
-Temperature changes the class bias rather than improving all species uniformly. At 1.2, Cardinal agreement increased to 95.31%, but Robin fell to 50.00% and Sparrow to 81.25%. The newer CRNN classifier agreed with only 39.58% of temperature-1.0 samples and predicted Robin for 180 of 192 images. That cross-classifier disagreement is strong evidence that the samples remain outside the real-audio training distribution.
+The two retained CRNN-scored settings show the same severe Robin bias. The
+temperature-1.0 result is slightly stronger overall, but neither setting
+supports reliable three-species conditioning.
 
 ## Visual review
 
@@ -56,24 +59,14 @@ The generated preview contains broad horizontal energy bands and noisy texture b
 
 ## Recommended use
 
-- Use `temperature=1.0` as the best tested global sampling setting.
+- Use `temperature=1.0` as the stronger of the two retained CRNN-scored settings.
 - Use classifier target agreement only as one diagnostic alongside listening tests, real-versus-generated spectrogram review, and diversity checks.
 - Treat the checkpoint as a Stage 6 baseline for further generator work, not as a realism-ready synthesis model.
 - For the next model iteration, prioritize a finer or latent representation. The current 16 x 16 continuous patches with Gaussian likelihood encourage smooth averages; smaller patches, learned discrete/latent tokens, or a latent diffusion decoder should preserve sharper bird-note structure.
 
-## Later downstream evidence (2026-08-09)
-
-The first CRNN synthetic-augmentation evaluation later tested frozen VAE-v3
-and diffusion pools; it is recorded in
-[`reports/crnn_synthetic_augmentation_2026-08-09`](../../crnn_synthetic_augmentation_2026-08-09/README.md).
-It did not evaluate this Transformer and therefore does not revise the
-historical verdict above.
-
 ## Reproduce generation and scoring
 
-The command below reproduces the published historical temperature-1.0 score,
-which intentionally used the legacy residual checkpoint. Use
-`artifacts/models/classifier/selected_crnn/best.pt` for new generated-sample scoring.
+The command below reproduces the retained CRNN temperature-1.0 score.
 
 ```powershell
 python scripts/06_generate_transformer.py `
@@ -82,10 +75,10 @@ python scripts/06_generate_transformer.py `
   --samples-per-species 64 --temperature 1.0 --seed 2026 --device cuda --no-figure
 
 python scripts/07_evaluate_generated.py `
-  --checkpoint artifacts/models/classifier/Harvey_classifier/best.pt `
+  --checkpoint artifacts/models/classifier/selected_crnn/best.pt `
   --input outputs/autoregressive_transformer_eval_t10 `
   --labels-from-parent `
-  --output runs/transformer_generator/classifier_eval_residual_t10.csv `
+  --output runs/transformer_generator/classifier_eval_crnn_t10.csv `
   --batch-size 128 --workers 0 --device cuda
 ```
 
@@ -93,9 +86,7 @@ python scripts/07_evaluate_generated.py `
 
 - `history.csv`: all 60 training epochs.
 - `config.json`: portable training configuration.
-- `classifier_eval_real_cached_test.*`: `.npy` compatibility control.
-- `classifier_eval_residual_*`: published residual-classifier temperature sweep.
-- `classifier_eval_crnn_*`: secondary cross-classifier check.
+- `classifier_eval_crnn_*`: selected-CRNN generated-sample diagnostics.
 - `../../../outputs/autoregressive_transformer_eval*`: local generated manifests;
   reproducible sample arrays are ignored to keep the tree reviewable.
 - `figures/`: retained comparison figures; preview arrays and manifests remain

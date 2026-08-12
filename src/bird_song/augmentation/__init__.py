@@ -1,4 +1,4 @@
-"""Cache-backed CRNN augmentation evaluations."""
+"""Maintained low-resource CRNN augmentation evaluation."""
 
 from .data import GeneratedSpectrogramDataset
 from .experiment import select_ratio

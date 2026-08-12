@@ -1,0 +1,486 @@
+{
+  "format_version": 1,
+  "title": "Generator-safe validation boundary",
+  "source_validation_manifest": "manifests/content_safe_v2/full_dataset_validation.csv",
+  "output_validation_manifest": "manifests/content_safe_v2/full_dataset_validation_generator_safe.csv",
+  "exact_duplicate_protocol": "manifests/content_safe_v2/protocol.json",
+  "historical_manifest": "manifests/full_dataset_manifest.csv",
+  "rule": "Exclude each validation row identified by the content_safe_v2 exact-audio duplicate ledger as the retained counterpart of one or more rows from the historical training split.",
+  "validation_counts": {
+    "before": {
+      "rows": 519,
+      "species": {
+        "American Robin": 163,
+        "Northern Cardinal": 172,
+        "Song Sparrow": 184
+      }
+    },
+    "after": {
+      "rows": 510,
+      "species": {
+        "American Robin": 163,
+        "Northern Cardinal": 172,
+        "Song Sparrow": 175
+      }
+    }
+  },
+  "excluded_validation_row_count": 9,
+  "historical_train_counterpart_row_count": 17,
+  "excluded_validation_rows": [
+    {
+      "split": "validation",
+      "name": "Song Sparrow",
+      "species_slug": "song_sparrow",
+      "genus": "Melospiza",
+      "species": "melodia",
+      "id": 408810,
+      "filename": "408810-0.wav",
+      "relative_wav_path": "wavfiles/408810-0.wav",
+      "source_url": "//www.xeno-canto.org/408810",
+      "license": "//creativecommons.org/licenses/by-nc-nd/4.0/",
+      "recordist": "Frank Lambert",
+      "date": "2015-05-18",
+      "sound_type": "calling whilst foraging, song"
+    },
+    {
+      "split": "validation",
+      "name": "Song Sparrow",
+      "species_slug": "song_sparrow",
+      "genus": "Melospiza",
+      "species": "melodia",
+      "id": 408810,
+      "filename": "408810-1.wav",
+      "relative_wav_path": "wavfiles/408810-1.wav",
+      "source_url": "//www.xeno-canto.org/408810",
+      "license": "//creativecommons.org/licenses/by-nc-nd/4.0/",
+      "recordist": "Frank Lambert",
+      "date": "2015-05-18",
+      "sound_type": "calling whilst foraging, song"
+    },
+    {
+      "split": "validation",
+      "name": "Song Sparrow",
+      "species_slug": "song_sparrow",
+      "genus": "Melospiza",
+      "species": "melodia",
+      "id": 408810,
+      "filename": "408810-2.wav",
+      "relative_wav_path": "wavfiles/408810-2.wav",
+      "source_url": "//www.xeno-canto.org/408810",
+      "license": "//creativecommons.org/licenses/by-nc-nd/4.0/",
+      "recordist": "Frank Lambert",
+      "date": "2015-05-18",
+      "sound_type": "calling whilst foraging, song"
+    },
+    {
+      "split": "validation",
+      "name": "Song Sparrow",
+      "species_slug": "song_sparrow",
+      "genus": "Melospiza",
+      "species": "melodia",
+      "id": 408810,
+      "filename": "408810-3.wav",
+      "relative_wav_path": "wavfiles/408810-3.wav",
+      "source_url": "//www.xeno-canto.org/408810",
+      "license": "//creativecommons.org/licenses/by-nc-nd/4.0/",
+      "recordist": "Frank Lambert",
+      "date": "2015-05-18",
+      "sound_type": "calling whilst foraging, song"
+    },
+    {
+      "split": "validation",
+      "name": "Song Sparrow",
+      "species_slug": "song_sparrow",
+      "genus": "Melospiza",
+      "species": "melodia",
+      "id": 408810,
+      "filename": "408810-4.wav",
+      "relative_wav_path": "wavfiles/408810-4.wav",
+      "source_url": "//www.xeno-canto.org/408810",
+      "license": "//creativecommons.org/licenses/by-nc-nd/4.0/",
+      "recordist": "Frank Lambert",
+      "date": "2015-05-18",
+      "sound_type": "calling whilst foraging, song"
+    },
+    {
+      "split": "validation",
+      "name": "Song Sparrow",
+      "species_slug": "song_sparrow",
+      "genus": "Melospiza",
+      "species": "melodia",
+      "id": 408810,
+      "filename": "408810-5.wav",
+      "relative_wav_path": "wavfiles/408810-5.wav",
+      "source_url": "//www.xeno-canto.org/408810",
+      "license": "//creativecommons.org/licenses/by-nc-nd/4.0/",
+      "recordist": "Frank Lambert",
+      "date": "2015-05-18",
+      "sound_type": "calling whilst foraging, song"
+    },
+    {
+      "split": "validation",
+      "name": "Song Sparrow",
+      "species_slug": "song_sparrow",
+      "genus": "Melospiza",
+      "species": "melodia",
+      "id": 408810,
+      "filename": "408810-6.wav",
+      "relative_wav_path": "wavfiles/408810-6.wav",
+      "source_url": "//www.xeno-canto.org/408810",
+      "license": "//creativecommons.org/licenses/by-nc-nd/4.0/",
+      "recordist": "Frank Lambert",
+      "date": "2015-05-18",
+      "sound_type": "calling whilst foraging, song"
+    },
+    {
+      "split": "validation",
+      "name": "Song Sparrow",
+      "species_slug": "song_sparrow",
+      "genus": "Melospiza",
+      "species": "melodia",
+      "id": 408810,
+      "filename": "408810-8.wav",
+      "relative_wav_path": "wavfiles/408810-8.wav",
+      "source_url": "//www.xeno-canto.org/408810",
+      "license": "//creativecommons.org/licenses/by-nc-nd/4.0/",
+      "recordist": "Frank Lambert",
+      "date": "2015-05-18",
+      "sound_type": "calling whilst foraging, song"
+    },
+    {
+      "split": "validation",
+      "name": "Song Sparrow",
+      "species_slug": "song_sparrow",
+      "genus": "Melospiza",
+      "species": "melodia",
+      "id": 408810,
+      "filename": "408810-9.wav",
+      "relative_wav_path": "wavfiles/408810-9.wav",
+      "source_url": "//www.xeno-canto.org/408810",
+      "license": "//creativecommons.org/licenses/by-nc-nd/4.0/",
+      "recordist": "Frank Lambert",
+      "date": "2015-05-18",
+      "sound_type": "calling whilst foraging, song"
+    }
+  ],
+  "historical_train_counterpart_rows": [
+    {
+      "excluded_validation_relative_wav_path": "wavfiles/408810-0.wav",
+      "historical_train_row": {
+        "split": "train",
+        "name": "Song Sparrow",
+        "species_slug": "song_sparrow",
+        "genus": "Melospiza",
+        "species": "melodia",
+        "id": 408014,
+        "filename": "408014-0.wav",
+        "relative_wav_path": "wavfiles/408014-0.wav",
+        "source_url": "//www.xeno-canto.org/408014",
+        "license": "//creativecommons.org/licenses/by-nc-nd/4.0/",
+        "recordist": "Frank Lambert",
+        "date": "2015-05-18",
+        "sound_type": "song"
+      }
+    },
+    {
+      "excluded_validation_relative_wav_path": "wavfiles/408810-0.wav",
+      "historical_train_row": {
+        "split": "train",
+        "name": "Song Sparrow",
+        "species_slug": "song_sparrow",
+        "genus": "Melospiza",
+        "species": "melodia",
+        "id": 408018,
+        "filename": "408018-0.wav",
+        "relative_wav_path": "wavfiles/408018-0.wav",
+        "source_url": "//www.xeno-canto.org/408018",
+        "license": "//creativecommons.org/licenses/by-nc-nd/4.0/",
+        "recordist": "Frank Lambert",
+        "date": "2015-05-18",
+        "sound_type": "song"
+      }
+    },
+    {
+      "excluded_validation_relative_wav_path": "wavfiles/408810-1.wav",
+      "historical_train_row": {
+        "split": "train",
+        "name": "Song Sparrow",
+        "species_slug": "song_sparrow",
+        "genus": "Melospiza",
+        "species": "melodia",
+        "id": 408014,
+        "filename": "408014-1.wav",
+        "relative_wav_path": "wavfiles/408014-1.wav",
+        "source_url": "//www.xeno-canto.org/408014",
+        "license": "//creativecommons.org/licenses/by-nc-nd/4.0/",
+        "recordist": "Frank Lambert",
+        "date": "2015-05-18",
+        "sound_type": "song"
+      }
+    },
+    {
+      "excluded_validation_relative_wav_path": "wavfiles/408810-1.wav",
+      "historical_train_row": {
+        "split": "train",
+        "name": "Song Sparrow",
+        "species_slug": "song_sparrow",
+        "genus": "Melospiza",
+        "species": "melodia",
+        "id": 408018,
+        "filename": "408018-1.wav",
+        "relative_wav_path": "wavfiles/408018-1.wav",
+        "source_url": "//www.xeno-canto.org/408018",
+        "license": "//creativecommons.org/licenses/by-nc-nd/4.0/",
+        "recordist": "Frank Lambert",
+        "date": "2015-05-18",
+        "sound_type": "song"
+      }
+    },
+    {
+      "excluded_validation_relative_wav_path": "wavfiles/408810-2.wav",
+      "historical_train_row": {
+        "split": "train",
+        "name": "Song Sparrow",
+        "species_slug": "song_sparrow",
+        "genus": "Melospiza",
+        "species": "melodia",
+        "id": 408014,
+        "filename": "408014-2.wav",
+        "relative_wav_path": "wavfiles/408014-2.wav",
+        "source_url": "//www.xeno-canto.org/408014",
+        "license": "//creativecommons.org/licenses/by-nc-nd/4.0/",
+        "recordist": "Frank Lambert",
+        "date": "2015-05-18",
+        "sound_type": "song"
+      }
+    },
+    {
+      "excluded_validation_relative_wav_path": "wavfiles/408810-2.wav",
+      "historical_train_row": {
+        "split": "train",
+        "name": "Song Sparrow",
+        "species_slug": "song_sparrow",
+        "genus": "Melospiza",
+        "species": "melodia",
+        "id": 408018,
+        "filename": "408018-2.wav",
+        "relative_wav_path": "wavfiles/408018-2.wav",
+        "source_url": "//www.xeno-canto.org/408018",
+        "license": "//creativecommons.org/licenses/by-nc-nd/4.0/",
+        "recordist": "Frank Lambert",
+        "date": "2015-05-18",
+        "sound_type": "song"
+      }
+    },
+    {
+      "excluded_validation_relative_wav_path": "wavfiles/408810-3.wav",
+      "historical_train_row": {
+        "split": "train",
+        "name": "Song Sparrow",
+        "species_slug": "song_sparrow",
+        "genus": "Melospiza",
+        "species": "melodia",
+        "id": 408018,
+        "filename": "408018-3.wav",
+        "relative_wav_path": "wavfiles/408018-3.wav",
+        "source_url": "//www.xeno-canto.org/408018",
+        "license": "//creativecommons.org/licenses/by-nc-nd/4.0/",
+        "recordist": "Frank Lambert",
+        "date": "2015-05-18",
+        "sound_type": "song"
+      }
+    },
+    {
+      "excluded_validation_relative_wav_path": "wavfiles/408810-4.wav",
+      "historical_train_row": {
+        "split": "train",
+        "name": "Song Sparrow",
+        "species_slug": "song_sparrow",
+        "genus": "Melospiza",
+        "species": "melodia",
+        "id": 408014,
+        "filename": "408014-4.wav",
+        "relative_wav_path": "wavfiles/408014-4.wav",
+        "source_url": "//www.xeno-canto.org/408014",
+        "license": "//creativecommons.org/licenses/by-nc-nd/4.0/",
+        "recordist": "Frank Lambert",
+        "date": "2015-05-18",
+        "sound_type": "song"
+      }
+    },
+    {
+      "excluded_validation_relative_wav_path": "wavfiles/408810-4.wav",
+      "historical_train_row": {
+        "split": "train",
+        "name": "Song Sparrow",
+        "species_slug": "song_sparrow",
+        "genus": "Melospiza",
+        "species": "melodia",
+        "id": 408018,
+        "filename": "408018-4.wav",
+        "relative_wav_path": "wavfiles/408018-4.wav",
+        "source_url": "//www.xeno-canto.org/408018",
+        "license": "//creativecommons.org/licenses/by-nc-nd/4.0/",
+        "recordist": "Frank Lambert",
+        "date": "2015-05-18",
+        "sound_type": "song"
+      }
+    },
+    {
+      "excluded_validation_relative_wav_path": "wavfiles/408810-5.wav",
+      "historical_train_row": {
+        "split": "train",
+        "name": "Song Sparrow",
+        "species_slug": "song_sparrow",
+        "genus": "Melospiza",
+        "species": "melodia",
+        "id": 408014,
+        "filename": "408014-5.wav",
+        "relative_wav_path": "wavfiles/408014-5.wav",
+        "source_url": "//www.xeno-canto.org/408014",
+        "license": "//creativecommons.org/licenses/by-nc-nd/4.0/",
+        "recordist": "Frank Lambert",
+        "date": "2015-05-18",
+        "sound_type": "song"
+      }
+    },
+    {
+      "excluded_validation_relative_wav_path": "wavfiles/408810-5.wav",
+      "historical_train_row": {
+        "split": "train",
+        "name": "Song Sparrow",
+        "species_slug": "song_sparrow",
+        "genus": "Melospiza",
+        "species": "melodia",
+        "id": 408018,
+        "filename": "408018-5.wav",
+        "relative_wav_path": "wavfiles/408018-5.wav",
+        "source_url": "//www.xeno-canto.org/408018",
+        "license": "//creativecommons.org/licenses/by-nc-nd/4.0/",
+        "recordist": "Frank Lambert",
+        "date": "2015-05-18",
+        "sound_type": "song"
+      }
+    },
+    {
+      "excluded_validation_relative_wav_path": "wavfiles/408810-6.wav",
+      "historical_train_row": {
+        "split": "train",
+        "name": "Song Sparrow",
+        "species_slug": "song_sparrow",
+        "genus": "Melospiza",
+        "species": "melodia",
+        "id": 408014,
+        "filename": "408014-6.wav",
+        "relative_wav_path": "wavfiles/408014-6.wav",
+        "source_url": "//www.xeno-canto.org/408014",
+        "license": "//creativecommons.org/licenses/by-nc-nd/4.0/",
+        "recordist": "Frank Lambert",
+        "date": "2015-05-18",
+        "sound_type": "song"
+      }
+    },
+    {
+      "excluded_validation_relative_wav_path": "wavfiles/408810-6.wav",
+      "historical_train_row": {
+        "split": "train",
+        "name": "Song Sparrow",
+        "species_slug": "song_sparrow",
+        "genus": "Melospiza",
+        "species": "melodia",
+        "id": 408018,
+        "filename": "408018-6.wav",
+        "relative_wav_path": "wavfiles/408018-6.wav",
+        "source_url": "//www.xeno-canto.org/408018",
+        "license": "//creativecommons.org/licenses/by-nc-nd/4.0/",
+        "recordist": "Frank Lambert",
+        "date": "2015-05-18",
+        "sound_type": "song"
+      }
+    },
+    {
+      "excluded_validation_relative_wav_path": "wavfiles/408810-8.wav",
+      "historical_train_row": {
+        "split": "train",
+        "name": "Song Sparrow",
+        "species_slug": "song_sparrow",
+        "genus": "Melospiza",
+        "species": "melodia",
+        "id": 408014,
+        "filename": "408014-8.wav",
+        "relative_wav_path": "wavfiles/408014-8.wav",
+        "source_url": "//www.xeno-canto.org/408014",
+        "license": "//creativecommons.org/licenses/by-nc-nd/4.0/",
+        "recordist": "Frank Lambert",
+        "date": "2015-05-18",
+        "sound_type": "song"
+      }
+    },
+    {
+      "excluded_validation_relative_wav_path": "wavfiles/408810-8.wav",
+      "historical_train_row": {
+        "split": "train",
+        "name": "Song Sparrow",
+        "species_slug": "song_sparrow",
+        "genus": "Melospiza",
+        "species": "melodia",
+        "id": 408018,
+        "filename": "408018-8.wav",
+        "relative_wav_path": "wavfiles/408018-8.wav",
+        "source_url": "//www.xeno-canto.org/408018",
+        "license": "//creativecommons.org/licenses/by-nc-nd/4.0/",
+        "recordist": "Frank Lambert",
+        "date": "2015-05-18",
+        "sound_type": "song"
+      }
+    },
+    {
+      "excluded_validation_relative_wav_path": "wavfiles/408810-9.wav",
+      "historical_train_row": {
+        "split": "train",
+        "name": "Song Sparrow",
+        "species_slug": "song_sparrow",
+        "genus": "Melospiza",
+        "species": "melodia",
+        "id": 408014,
+        "filename": "408014-9.wav",
+        "relative_wav_path": "wavfiles/408014-9.wav",
+        "source_url": "//www.xeno-canto.org/408014",
+        "license": "//creativecommons.org/licenses/by-nc-nd/4.0/",
+        "recordist": "Frank Lambert",
+        "date": "2015-05-18",
+        "sound_type": "song"
+      }
+    },
+    {
+      "excluded_validation_relative_wav_path": "wavfiles/408810-9.wav",
+      "historical_train_row": {
+        "split": "train",
+        "name": "Song Sparrow",
+        "species_slug": "song_sparrow",
+        "genus": "Melospiza",
+        "species": "melodia",
+        "id": 408018,
+        "filename": "408018-9.wav",
+        "relative_wav_path": "wavfiles/408018-9.wav",
+        "source_url": "//www.xeno-canto.org/408018",
+        "license": "//creativecommons.org/licenses/by-nc-nd/4.0/",
+        "recordist": "Frank Lambert",
+        "date": "2015-05-18",
+        "sound_type": "song"
+      }
+    }
+  ],
+  "test_unchanged": {
+    "manifest": "manifests/content_safe_v2/full_dataset_test.csv",
+    "assertion": "The preparation is validation-only: the test manifest is read-only, no test rows are excluded or rewritten, and all 489 rows remain the held-out test set.",
+    "rows": 489,
+    "excluded_rows": 0,
+    "species": {
+      "American Robin": 145,
+      "Northern Cardinal": 162,
+      "Song Sparrow": 182
+    }
+  },
+  "caveat": "This boundary removes only the nine exact historical-train duplicate relationships already recorded in the content_safe_v2 ledger. It does not detect near-duplicates, perceptually similar recordings, or other semantic overlap, and validation results based on 510 rows are not directly interchangeable with earlier 519-row validation results."
+}

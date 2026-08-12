@@ -29,7 +29,26 @@ from bird_song.data import ManifestDataset, make_loader, resolve_spectrogram_cac
 from bird_song.generation.checkpoint_pool import (
     GENERATOR_CLASSES,
     _valid_classifier_array,
+    deterministic_sample_seed,
     species_slug,
+)
+from bird_song.generator_safe_validation import load_generator_safe_validation_identity
+from bird_song.generation.checkpoint_models import (
+    DIFFUSION_CLAMP,
+    DIFFUSION_CHECKPOINT_BEST_VALIDATION_LOSS,
+    DIFFUSION_CHECKPOINT_EPOCH,
+    DIFFUSION_DDIM_ETA,
+    DIFFUSION_DDIM_STEPS,
+    DIFFUSION_GUIDANCE,
+    DIFFUSION_TIMESTEPS,
+    DIFFUSION_STORED_SAMPLER,
+    VAE_REPARAMETERIZATION,
+    VAE_TEMPERATURE,
+)
+from bird_song.generation.posterior_bank_filter import (
+    POSTERIOR_BANK_CONTRACT,
+    POSTERIOR_BANK_EXPECTED_COUNTS,
+    POSTERIOR_BANK_SOURCE_MANIFEST,
 )
 from bird_song.runtime import choose_device, load_checkpoint
 from bird_song.spectrogram_cache import load_cache_array
@@ -42,7 +61,6 @@ RESAMPLES = 200
 PCA_COMPONENTS = 64
 COPY_RISK_QUANTILE = 0.05
 PRIMARY_CALIBRATION = {"accuracy": 0.8997955010224948, "macro_f1": 0.9016177383860278}
-RESIDUAL_CALIBRATION = {"accuracy": 0.9038854805725971, "macro_f1": 0.9044463009375291}
 
 
 def _json_default(value: Any) -> Any:
@@ -106,17 +124,16 @@ class PoolDataset(Dataset[tuple[torch.Tensor, int, str]]):
         return torch.from_numpy(np.array(array, copy=True)), label, str(path)
 
 
-def load_evaluator(path: Path, device: torch.device, expected_name: str) -> FrozenEvaluator:
+def load_evaluator(path: Path, device: torch.device) -> FrozenEvaluator:
     model, classes, config, checkpoint = load_checkpoint(path.resolve(), device)
     model.eval()
     model.requires_grad_(False)
     if tuple(classes) != CONTENT_SAFE_CLASSES:
-        raise ValueError(f"{expected_name} class order mismatch: {classes}")
-    if expected_name == "crnn" and checkpoint.get("architecture", checkpoint.get("model_config", {}).get("architecture")) != "crnn":
-        raise ValueError("primary evaluator is not a CRNN checkpoint")
-    if expected_name == "residual" and checkpoint.get("architecture", "residual_cnn") not in {None, "residual_cnn"}:
-        raise ValueError("sensitivity evaluator is not the legacy residual checkpoint")
-    return FrozenEvaluator(expected_name, path.resolve(), model, tuple(classes), config, dict(checkpoint))
+        raise ValueError(f"CRNN class order mismatch: {classes}")
+    architecture = checkpoint.get("architecture", checkpoint.get("model_config", {}).get("architecture"))
+    if architecture != "crnn":
+        raise ValueError("generator evaluator is not the selected CRNN checkpoint")
+    return FrozenEvaluator("crnn", path.resolve(), model, tuple(classes), config, dict(checkpoint))
 
 
 def _collect_outputs(
@@ -307,12 +324,51 @@ def _pool_rows(pool_root: Path, model: str, seed: int, expected_samples: int = 2
         raise FileNotFoundError(f"pool manifest missing: {manifest}")
     root = manifest.parent
     metadata_path = root / "generation.json"
-    if metadata_path.is_file():
-        metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
-        if int(metadata.get("seed", seed)) != int(seed) or int(metadata.get("samples_per_class", expected_samples)) != expected_samples:
-            raise ValueError(f"pool generation settings mismatch: {metadata_path}")
+    if not metadata_path.is_file():
+        raise FileNotFoundError(f"pool generation metadata missing: {metadata_path}")
+    metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+    if (
+        int(metadata.get("schema_version", -1)) != 3
+        or str(metadata.get("generator")) != model
+        or int(metadata.get("seed", -1)) != int(seed)
+        or int(metadata.get("samples_per_class", -1)) != expected_samples
+        or list(metadata.get("classes", [])) != list(GENERATOR_CLASSES)
+        or int(metadata.get("generation_batch_size", -1)) != 8
+    ):
+        raise ValueError(f"pool generation settings mismatch: {metadata_path}")
+    if model == "vae_v3":
+        if (
+            abs(float(metadata.get("temperature", -1.0)) - VAE_TEMPERATURE) > 1e-8
+            or str(metadata.get("reparameterization", "")) != VAE_REPARAMETERIZATION
+            or metadata.get("posterior_bank_contract") != POSTERIOR_BANK_CONTRACT
+            or metadata.get("posterior_bank_source_manifest")
+            != POSTERIOR_BANK_SOURCE_MANIFEST
+            or metadata.get("posterior_bank_derivation")
+            != "filtered_existing_posterior_bank"
+            or metadata.get("posterior_bank_counts") != POSTERIOR_BANK_EXPECTED_COUNTS
+            or metadata.get("vae_checkpoint_retrained") is not False
+        ):
+            raise ValueError(f"VAE sampling contract mismatch: {metadata_path}")
+    elif (
+        str(metadata.get("sampler", "")).lower() != "ddim"
+        or int(metadata.get("ddim_steps", -1)) != DIFFUSION_DDIM_STEPS
+        or abs(float(metadata.get("ddim_eta", -1.0)) - DIFFUSION_DDIM_ETA) > 1e-8
+        or abs(float(metadata.get("guidance_weight", -1.0)) - DIFFUSION_GUIDANCE) > 1e-8
+        or abs(float(metadata.get("clamp_samples", -1.0)) - DIFFUSION_CLAMP) > 1e-8
+        or metadata.get("ema_state_dict") is not True
+        or int(metadata.get("checkpoint_epoch", -1)) != DIFFUSION_CHECKPOINT_EPOCH
+        or not math.isclose(
+            float(metadata.get("checkpoint_best_validation_loss", float("nan"))),
+            DIFFUSION_CHECKPOINT_BEST_VALIDATION_LOSS,
+            rel_tol=0.0,
+            abs_tol=1e-12,
+        )
+        or metadata.get("checkpoint_selection") != "validation_best"
+        or metadata.get("stored_sampler_overridden") != DIFFUSION_STORED_SAMPLER
+    ):
+        raise ValueError(f"diffusion sampling contract mismatch: {metadata_path}")
     frame = pd.read_csv(manifest)
-    required = {"species", "relative_path", "generator", "pool_rank"}
+    required = {"species", "relative_path", "generator", "pool_rank", "sample_seed"}
     missing = required - set(frame.columns)
     if missing:
         raise ValueError(f"pool manifest missing columns: {sorted(missing)}")
@@ -321,6 +377,95 @@ def _pool_rows(pool_root: Path, model: str, seed: int, expected_samples: int = 2
     counts = frame["species"].value_counts().to_dict()
     if any(int(counts.get(species, 0)) != expected_samples for species in GENERATOR_CLASSES):
         raise ValueError(f"pool {manifest} is not balanced by species")
+    label_by_species = {species: label_id for label_id, species in enumerate(GENERATOR_CLASSES)}
+    for species, group in frame.groupby("species", sort=False):
+        if str(species) not in label_by_species:
+            raise ValueError(f"pool {manifest} contains an unknown species: {species}")
+        try:
+            ranks = pd.to_numeric(group["pool_rank"], errors="raise").to_numpy(dtype=float)
+            sample_seeds = pd.to_numeric(
+                group["sample_seed"], errors="raise"
+            ).to_numpy(dtype=float)
+        except (TypeError, ValueError) as error:
+            raise ValueError(f"pool {manifest} has non-numeric rank/seed fields") from error
+        if (
+            not np.isfinite(ranks).all()
+            or not np.equal(ranks, np.floor(ranks)).all()
+            or sorted(ranks.astype(np.int64).tolist()) != list(range(expected_samples))
+            or not np.isfinite(sample_seeds).all()
+            or not np.equal(sample_seeds, np.floor(sample_seeds)).all()
+        ):
+            raise ValueError(f"pool {manifest} has non-canonical ranks or sample seeds")
+        expected_seeds = np.asarray(
+            [
+                deterministic_sample_seed(seed, label_by_species[str(species)], int(rank))
+                for rank in ranks
+            ],
+            dtype=np.int64,
+        )
+        if not np.array_equal(sample_seeds.astype(np.int64), expected_seeds):
+            raise ValueError(f"pool {manifest} has non-canonical sample seeds")
+
+    posterior_inventory: dict[str, dict[str, Any]] = {}
+    if model == "vae_v3":
+        raw_inventory = metadata.get("posterior_bank_inventory")
+        if not isinstance(raw_inventory, dict):
+            raise ValueError(f"VAE posterior-bank inventory is missing: {metadata_path}")
+        for species in GENERATOR_CLASSES:
+            entry = raw_inventory.get(species)
+            if not isinstance(entry, dict):
+                raise ValueError(
+                    f"VAE posterior-bank inventory is missing {species}: {metadata_path}"
+                )
+            source_indices = entry.get("source_indices")
+            relative_wav_paths = entry.get("relative_wav_paths")
+            expected_count = POSTERIOR_BANK_EXPECTED_COUNTS[species]
+            try:
+                recorded_count = int(entry.get("count", -1))
+            except (TypeError, ValueError, OverflowError):
+                recorded_count = -1
+            if (
+                recorded_count != expected_count
+                or not isinstance(source_indices, list)
+                or not isinstance(relative_wav_paths, list)
+                or len(source_indices) != expected_count
+                or len(relative_wav_paths) != expected_count
+            ):
+                raise ValueError(
+                    f"VAE posterior-bank inventory count mismatch for {species}: {metadata_path}"
+                )
+            try:
+                numeric_indices = [float(value) for value in source_indices]
+            except (TypeError, ValueError, OverflowError) as error:
+                raise ValueError(
+                    f"VAE posterior-bank inventory indices are invalid for {species}: "
+                    f"{metadata_path}"
+                ) from error
+            if any(
+                not math.isfinite(value) or not value.is_integer()
+                for value in numeric_indices
+            ):
+                raise ValueError(
+                    f"VAE posterior-bank inventory indices are invalid for {species}: "
+                    f"{metadata_path}"
+                )
+            normalized_indices = [int(value) for value in numeric_indices]
+            normalized_paths = [str(value).replace("\\", "/") for value in relative_wav_paths]
+            if (
+                len(set(normalized_indices)) != expected_count
+                or any(index < 0 for index in normalized_indices)
+                or len(set(normalized_paths)) != expected_count
+                or any(not path.startswith("wavfiles/") for path in normalized_paths)
+            ):
+                raise ValueError(
+                    f"VAE posterior-bank inventory provenance mismatch for {species}: "
+                    f"{metadata_path}"
+                )
+            posterior_inventory[species] = {
+                "source_indices": normalized_indices,
+                "relative_wav_paths": normalized_paths,
+            }
+
     observed_arrays: list[bytes] = []
     for row in frame.to_dict(orient="records"):
         path = root / str(row["relative_path"])
@@ -329,6 +474,78 @@ def _pool_rows(pool_root: Path, model: str, seed: int, expected_samples: int = 2
             raise ValueError(f"invalid pool array: {path}")
         if str(row["generator"]) != model:
             raise ValueError(f"pool generator mismatch: {manifest}")
+        if model == "vae_v3":
+            species = str(row["species"])
+            try:
+                temperature = float(row.get("vae_temperature", float("nan")))
+                class_count = float(row.get("vae_bank_class_count", float("nan")))
+                anchor_index = float(row.get("vae_anchor_index", float("nan")))
+                source_index = float(row.get("vae_anchor_source_index", float("nan")))
+            except (TypeError, ValueError, OverflowError):
+                temperature = class_count = anchor_index = source_index = float("nan")
+            inventory = posterior_inventory[species]
+            anchor_index_valid = (
+                math.isfinite(anchor_index)
+                and anchor_index.is_integer()
+                and 0 <= int(anchor_index) < POSTERIOR_BANK_EXPECTED_COUNTS[species]
+            )
+            if (
+                not math.isclose(
+                    temperature,
+                    VAE_TEMPERATURE,
+                    rel_tol=0.0,
+                    abs_tol=1e-8,
+                )
+                or str(row.get("vae_reparameterization", "")) != VAE_REPARAMETERIZATION
+                or str(row.get("vae_posterior_bank_contract", ""))
+                != POSTERIOR_BANK_CONTRACT
+                or not math.isfinite(class_count)
+                or not class_count.is_integer()
+                or int(class_count) != POSTERIOR_BANK_EXPECTED_COUNTS[species]
+                or not anchor_index_valid
+                or not math.isfinite(source_index)
+                or not source_index.is_integer()
+                or source_index < 0
+                or not str(row.get("vae_anchor_relative_wav_path", "")).startswith(
+                    "wavfiles/"
+                )
+            ):
+                raise ValueError(f"VAE anchor provenance mismatch: {manifest}")
+            anchor_position = int(anchor_index)
+            if (
+                int(source_index) != inventory["source_indices"][anchor_position]
+                or str(row["vae_anchor_relative_wav_path"]).replace("\\", "/")
+                != inventory["relative_wav_paths"][anchor_position]
+            ):
+                raise ValueError(f"VAE anchor inventory mismatch: {manifest}")
+        else:
+            try:
+                diffusion_row_matches = (
+                    str(row.get("sampler", "")).lower() == "ddim"
+                    and int(row.get("ddim_steps", -1)) == DIFFUSION_DDIM_STEPS
+                    and math.isclose(
+                        float(row.get("ddim_eta", float("nan"))),
+                        DIFFUSION_DDIM_ETA,
+                        rel_tol=0.0,
+                        abs_tol=1e-8,
+                    )
+                    and math.isclose(
+                        float(row.get("guidance_weight", float("nan"))),
+                        DIFFUSION_GUIDANCE,
+                        rel_tol=0.0,
+                        abs_tol=1e-8,
+                    )
+                    and math.isclose(
+                        float(row.get("clamp_samples", float("nan"))),
+                        DIFFUSION_CLAMP,
+                        rel_tol=0.0,
+                        abs_tol=1e-8,
+                    )
+                )
+            except (TypeError, ValueError, OverflowError):
+                diffusion_row_matches = False
+            if not diffusion_row_matches:
+                raise ValueError(f"diffusion manifest sampling contract mismatch: {manifest}")
         observed_arrays.append(array.tobytes())
     if len(set(observed_arrays)) != len(observed_arrays):
         raise ValueError(f"pool contains duplicate arrays: {manifest}")
@@ -346,50 +563,11 @@ def audit_pools(
     for model in ("vae_v3", "diffusion"):
         model_result: dict[str, Any] = {"pools": []}
         for seed in seeds:
-            if seed == 42:
-                root = project_root / "artifacts/generated_spectrograms"
-                manifest = root / model / "manifest.csv"
-                if not manifest.is_file():
-                    raise FileNotFoundError(f"seed-42 pool manifest missing: {manifest}")
-                frame = pd.read_csv(manifest)
-                pool_dir = root
-                # The historic manifests reference paths below the model root.
-                frame = frame.copy()
-                frame["relative_path"] = frame["relative_path"].astype(str).str.replace("\\", "/", regex=False)
-                frame["relative_path"] = frame["relative_path"].str.replace(f"{model}/", "", regex=False)
-                frame["relative_path"] = frame["relative_path"].str.replace("classifier_input/", "classifier_input/", regex=False)
-                frame_root = root / model
-                if len(frame) != expected_samples * len(GENERATOR_CLASSES):
-                    raise ValueError(f"historic seed-42 pool is incomplete: {manifest}")
-                observed_arrays: list[bytes] = []
-                for row in frame.to_dict(orient="records"):
-                    path = frame_root / str(row["relative_path"])
-                    array = _valid_classifier_array(path)
-                    if array is None:
-                        raise ValueError(f"invalid historic seed-42 pool array: {path}")
-                    observed_arrays.append(array.tobytes())
-                if len(set(observed_arrays)) != len(observed_arrays):
-                    raise ValueError(f"historic seed-42 pool contains duplicate arrays: {manifest}")
-                count = len(frame)
-            else:
-                frame, frame_root = _pool_rows(pool_root, model, seed, expected_samples)
-                count = len(frame)
+            frame, _ = _pool_rows(pool_root, model, seed, expected_samples)
+            count = len(frame)
             model_result["pools"].append({"seed": int(seed), "sample_count": count})
         result["models"][model] = model_result
     return result
-
-
-def _load_historic_pool(project_root: Path, model: str, seed: int) -> tuple[pd.DataFrame, Path]:
-    if seed != 42:
-        raise ValueError("historic helper only handles seed 42")
-    root = project_root / "artifacts/generated_spectrograms" / model
-    frame = pd.read_csv(root / "manifest.csv")
-    frame = frame.copy()
-    frame["relative_path"] = frame["relative_path"].astype(str).str.replace("\\", "/", regex=False)
-    # Existing manifest paths include the model directory, while root is the
-    # model-specific directory used by PoolDataset.
-    frame["relative_path"] = frame["relative_path"].str.replace(f"{model}/", "", regex=False)
-    return frame, root
 
 
 def _train_array_bytes(dataset: ManifestDataset) -> set[bytes]:
@@ -440,7 +618,6 @@ def evaluate(
     pool_root: Path,
     report_dir: Path,
     crnn_checkpoint: Path,
-    residual_checkpoint: Path,
     test_manifest: Path,
     validation_manifest: Path,
     train_manifest: Path,
@@ -462,10 +639,11 @@ def evaluate(
     (report_dir / "confusion_matrices").mkdir(parents=True, exist_ok=True)
     audit = audit_pools(project_root, pool_root, seeds=seeds)
     config = SpectrogramConfig.from_json((project_root / "configs/spectrogram.json").resolve())
-    evaluators = [
-        load_evaluator(crnn_checkpoint, device, "crnn"),
-        load_evaluator(residual_checkpoint, device, "residual"),
-    ]
+    validation_protocol_identity = load_generator_safe_validation_identity(
+        validation_manifest,
+        project_root,
+    )
+    evaluators = [load_evaluator(crnn_checkpoint, device)]
     train_datasets = {
         evaluator.name: ManifestDataset(train_manifest, None, evaluator.classes, evaluator.config, spectrogram_cache_root=cache_root)
         for evaluator in evaluators
@@ -485,7 +663,7 @@ def evaluate(
         train_outputs = _collect_outputs(evaluator, train_datasets[evaluator.name], device, batch_size)
         validation_outputs = _collect_outputs(evaluator, validation_datasets[evaluator.name], device, batch_size)
         test_outputs = _collect_outputs(evaluator, test_datasets[evaluator.name], device, batch_size, include_arrays=True)
-        expected = PRIMARY_CALIBRATION if evaluator.name == "crnn" else RESIDUAL_CALIBRATION
+        expected = PRIMARY_CALIBRATION
         test_metrics = _classification_metrics(test_outputs, evaluator.classes)
         if abs(test_metrics["accuracy"] - expected["accuracy"]) > 1e-6 or abs(test_metrics["macro_f1"] - expected["macro_f1"]) > 1e-6:
             raise ValueError(f"{evaluator.name} calibration mismatch: {test_metrics['accuracy']:.8f}/{test_metrics['macro_f1']:.8f}")
@@ -512,10 +690,7 @@ def evaluate(
         test_z = _project(real["test"]["features"], scaler, pca)
         for model in ("vae_v3", "diffusion"):
             for seed in seeds:
-                if seed == 42:
-                    pool_rows, pool_dir = _load_historic_pool(project_root, model, seed)
-                else:
-                    pool_rows, pool_dir = _pool_rows(pool_root, model, seed)
+                pool_rows, pool_dir = _pool_rows(pool_root, model, seed)
                 pool_dataset = PoolDataset(pool_rows, pool_dir, evaluator.classes)
                 generated = _collect_outputs(evaluator, pool_dataset, device, batch_size, include_arrays=True)
                 generated_labels = generated["labels"]
@@ -579,7 +754,7 @@ def evaluate(
     _atomic_json(audit, report_dir / "pool_audit.json")
 
     protocol = {
-        "schema_version": 1,
+        "schema_version": 3,
         "title": "Three-seed checkpoint generator evaluation",
         "models": ["vae_v3", "diffusion"],
         "seeds": list(seeds),
@@ -587,38 +762,98 @@ def evaluate(
         "total_samples_per_model": 1800,
         "class_order_generator": list(GENERATOR_CLASSES),
         "class_order_classifier": list(CONTENT_SAFE_CLASSES),
-        "primary_classifier": "crnn",
-        "sensitivity_classifier": "residual",
+        "classifier": "crnn",
+        "generation_contracts": {
+            "vae_v3": {
+                "sampling_type": "per_species_posterior_anchor_mixture",
+                "temperature": VAE_TEMPERATURE,
+                "reparameterization": VAE_REPARAMETERIZATION,
+                "posterior_bank_contract": POSTERIOR_BANK_CONTRACT,
+                "posterior_bank_source_manifest": POSTERIOR_BANK_SOURCE_MANIFEST,
+                "posterior_bank_counts": POSTERIOR_BANK_EXPECTED_COUNTS,
+                "posterior_bank_derivation": "filtered_existing_posterior_bank",
+                "vae_checkpoint_retrained": False,
+                "pool_reused_after_vae_bank_filter": False,
+                "spectrograms_regenerated_after_vae_bank_filter": True,
+                "generation_batch_size": 8,
+            },
+            "diffusion": {
+                "sampler": "ddim",
+                "timesteps": DIFFUSION_TIMESTEPS,
+                "ddim_steps": DIFFUSION_DDIM_STEPS,
+                "ddim_eta": DIFFUSION_DDIM_ETA,
+                "guidance_weight": DIFFUSION_GUIDANCE,
+                "clamp_samples": DIFFUSION_CLAMP,
+                "ema_state_dict": True,
+                "checkpoint_epoch": DIFFUSION_CHECKPOINT_EPOCH,
+                "checkpoint_best_validation_loss": DIFFUSION_CHECKPOINT_BEST_VALIDATION_LOSS,
+                "checkpoint_selection": "validation_best",
+                "stored_sampler_overridden": DIFFUSION_STORED_SAMPLER,
+                "pool_reused_after_vae_bank_filter": True,
+                "spectrograms_regenerated_after_vae_bank_filter": False,
+                "generation_batch_size": 8,
+            },
+        },
         "test_manifest": _relative_or_absolute(test_manifest, project_root),
         "train_manifest": _relative_or_absolute(train_manifest, project_root),
         "validation_manifest": _relative_or_absolute(validation_manifest, project_root),
+        "validation_protocol": validation_protocol_identity,
         "cache": _relative_or_absolute(cache_root, project_root),
         "feature_projection": {"fit_split": "content_safe_v2 train", "standardization": "StandardScaler", "pca_components": PCA_COMPONENTS},
         "sample_sensitive_metrics": {"resamples": RESAMPLES, "sample_size_per_species": SAMPLE_SIZE},
-        "copy_risk": {"threshold_source": "content_safe_v2 validation nearest-train distances", "quantile": COPY_RISK_QUANTILE},
+        "copy_risk": {
+            "threshold_source": "generator-safe validation nearest-train distances",
+            "threshold_source_rows": validation_protocol_identity["validation_counts"]["after"]["rows"],
+            "excluded_exact_historical_train_counterparts": len(
+                validation_protocol_identity["excluded_validation_relative_wav_paths"]
+            ),
+            "quantile": COPY_RISK_QUANTILE,
+        },
         "claim_boundary": ["classifier compatibility", "conditioning", "classifier-feature distribution similarity", "diversity", "coverage", "copying risk", "generation-seed stability"],
         "unsupported_claims": ["waveform quality", "human-perceived realism", "native generator test loss", "training stability", "causal augmentation improvement"],
     }
     _atomic_json(protocol, report_dir / "protocol.json")
     provenance = {
-        "schema_version": 1,
+        "schema_version": 3,
         "checkpoints": {
-            "vae_v3": {"path": "artifacts/models/vae/conditional_vae_v3/conditional_vae_v3_best.pt", "parameter_count": 5_365_025},
-            "diffusion": {"path": str(diffusion_checkpoint) if diffusion_checkpoint else "external Desktop checkpoint supplied by user", "parameter_count": 18_443_841, "ema_state_dict": True, "note": "external Desktop checkpoint; not copied or tracked"},
+            "vae_v3": {
+                "path": "artifacts/models/vae/conditional_vae_v3/conditional_vae_v3_best.pt",
+                "parameter_count": 5_365_025,
+                "checkpoint_retrained_for_refresh": False,
+                "posterior_bank": "artifacts/models/vae/conditional_vae_v3/class_conditional_posterior_bank.pt",
+                "posterior_bank_contract": POSTERIOR_BANK_CONTRACT,
+                "posterior_bank_counts": POSTERIOR_BANK_EXPECTED_COUNTS,
+            },
+            "diffusion": {
+                "path": str(diffusion_checkpoint) if diffusion_checkpoint else "external Desktop checkpoint supplied by user",
+                "parameter_count": 18_443_841,
+                "ema_state_dict": True,
+                "checkpoint_epoch": DIFFUSION_CHECKPOINT_EPOCH,
+                "checkpoint_best_validation_loss": DIFFUSION_CHECKPOINT_BEST_VALIDATION_LOSS,
+                "checkpoint_selection": "validation_best",
+                "stored_sampler_overridden": DIFFUSION_STORED_SAMPLER,
+                "pool_reused_after_vae_bank_filter": True,
+                "spectrograms_regenerated_after_vae_bank_filter": False,
+                "note": "external Desktop checkpoint; not copied or tracked",
+            },
         },
         "evaluators": [{"classifier": item.name, "path": _relative_or_absolute(item.checkpoint_path, project_root), "classes": list(item.classes)} for item in evaluators],
+        "validation_protocol": validation_protocol_identity,
         "normalization": {"mean": -51.5400096102764, "std": 14.894513218933453, "conversion": "standardized to dB, per-sample max subtraction, [-80,0] clip, [-1,1]"},
     }
     _atomic_json(provenance, report_dir / "provenance.json")
     summary = {
-        "schema_version": 1,
+        "schema_version": 3,
         "title": "Three-seed checkpoint generator evaluation",
         "seed_count": len(seeds),
         "generated_arrays_total": len(seeds) * 2 * len(GENERATOR_CLASSES) * 200,
         "calibration": calibration,
-        "primary_classifier": "crnn",
-        "sensitivity_classifier": "residual",
-        "selection": "No composite score or winner; report encoder-dependent rankings and three-seed mean/std/range.",
+        "classifier": "crnn",
+        "refresh_actions": {
+            "vae_v3": "filtered posterior bank and regenerated all three pools",
+            "diffusion": "reused audited DDIM pools; no diffusion spectrogram regeneration",
+        },
+        "selection": "No composite score or winner; report three-seed mean, sample standard deviation, and range.",
         "metric_files": ["metrics_per_seed.csv", "metrics_aggregate.csv", "classifier_scores.csv", "nearest_neighbor_summary.csv"],
     }
     _atomic_json(summary, report_dir / "summary.json")
@@ -627,21 +862,24 @@ def evaluate(
 
 def build_report_charts(report_dir: Path) -> None:
     metrics = pd.read_csv(report_dir / "metrics_per_seed.csv")
+    classifiers = set(metrics["classifier"].astype(str))
+    if classifiers != {"crnn"}:
+        raise ValueError(f"Expected CRNN-only report metrics, found classifiers: {sorted(classifiers)}")
     chart_dir = report_dir / "figures"
     chart_dir.mkdir(parents=True, exist_ok=True)
-    grouped = metrics.groupby(["model", "classifier", "seed"], as_index=False)["target_label_accuracy"].mean()
+    grouped = metrics.groupby(["model", "seed"], as_index=False)["target_label_accuracy"].mean()
     figure, axis = plt.subplots(figsize=(8, 4.5))
-    for (model, classifier), group in grouped.groupby(["model", "classifier"]):
-        axis.plot(group["seed"].astype(str), group["target_label_accuracy"], marker="o", label=f"{model} / {classifier}")
+    for model, group in grouped.groupby("model"):
+        axis.plot(group["seed"].astype(str), group["target_label_accuracy"], marker="o", label=model)
     axis.set(xlabel="Generation seed", ylabel="Mean target-label accuracy", ylim=(0, 1), title="Classifier-view conditioning across generation seeds")
     axis.legend(fontsize=8)
     figure.tight_layout()
     figure.savefig(chart_dir / "conditioning_by_seed.png", dpi=160)
     plt.close(figure)
 
-    grouped = metrics.groupby(["model", "classifier"], as_index=False)["frechet_mean"].mean()
+    grouped = metrics.groupby("model", as_index=False)["frechet_mean"].mean()
     figure, axis = plt.subplots(figsize=(8, 4.5))
-    labels = [f"{row.model}\n{row.classifier}" for row in grouped.itertuples()]
+    labels = [row.model for row in grouped.itertuples()]
     axis.bar(labels, grouped["frechet_mean"])
     axis.set_ylabel("Class-conditional feature distance (mean over seeds)")
     axis.set_title("Feature-space distance; lower is closer to real test features")

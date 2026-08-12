@@ -1,5 +1,5 @@
 {
-  "checkpoint": "classifier_artifacts/architecture_comparison/crnn/seed_777/best.pt",
+  "checkpoint": "artifacts/models/classifier/selected_crnn/best.pt",
   "input": "outputs/autoregressive_transformer_eval_t10",
   "num_samples": 192,
   "mean_confidence": 0.7304358268156648,
