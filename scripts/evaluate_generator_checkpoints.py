@@ -27,11 +27,18 @@ def build_parser() -> argparse.ArgumentParser:
         command = subparsers.add_parser(name)
         command.add_argument("--project-root", type=Path, default=PROJECT_ROOT)
         command.add_argument("--pool-root", type=Path, default=PROJECT_ROOT / "runs/generator_checkpoint_evaluation/pools")
-        command.add_argument("--report-dir", type=Path, default=PROJECT_ROOT / "reports/generator_checkpoint_evaluation_2026-08-10")
+        command.add_argument("--report-dir", type=Path, default=PROJECT_ROOT / "reports/generator_checkpoint_evaluation_2026-08-12")
         command.add_argument("--vae-checkpoint", type=Path, default=DEFAULT_VAE_CHECKPOINT)
         command.add_argument("--diffusion-checkpoint", type=Path, default=DEFAULT_DIFFUSION_CHECKPOINT)
         command.add_argument("--train-manifest", type=Path, default=PROJECT_ROOT / "manifests/content_safe_v2/full_dataset_train.csv")
-        command.add_argument("--validation-manifest", type=Path, default=PROJECT_ROOT / "manifests/content_safe_v2/full_dataset_validation.csv")
+        command.add_argument(
+            "--validation-manifest",
+            type=Path,
+            default=(
+                PROJECT_ROOT
+                / "manifests/content_safe_v2/full_dataset_validation_generator_safe.csv"
+            ),
+        )
         command.add_argument("--test-manifest", type=Path, default=PROJECT_ROOT / "manifests/content_safe_v2/full_dataset_test.csv")
         command.add_argument("--cache-root", type=Path, default=PROJECT_ROOT / "artifacts/spectrograms")
         command.add_argument("--seeds", nargs="+", type=int, default=list(EVALUATION_SEEDS))
@@ -61,7 +68,6 @@ def main() -> None:
         pool_root=pool_root,
         report_dir=args.report_dir,
         crnn_checkpoint=project_root / "artifacts/models/classifier/selected_crnn/best.pt",
-        residual_checkpoint=project_root / "artifacts/models/classifier/Harvey_classifier/best.pt",
         vae_checkpoint=vae_checkpoint,
         diffusion_checkpoint=diffusion_checkpoint,
         test_manifest=args.test_manifest.resolve(),

@@ -4,13 +4,16 @@ The directory name `Harvey_classifier` is a historical artifact label, not an
 active Git branch. The repository's primary branch is now `main`.
 
 This is the original held-out-tested residual CNN checkpoint. It remains in
-the repository so earlier transformer and generator evaluations stay exactly
-reproducible. The validation-selected CRNN is now packaged separately under
-`../selected_crnn/`.
+the repository as historical real-audio classifier evidence and because VAE-v3
+training used it as a frozen teacher for feature and label-consistency losses.
+It is not used for maintained generated-sample evaluation. The
+validation-selected CRNN is packaged separately under `../selected_crnn/`.
 
 ## Intended use
 
-Classify real or generated three-second samples as American Robin, Northern Cardinal, or Song Sparrow. In Stage 7, use the output as one generated-audio evaluation signal, not as a standalone realism score.
+Reproduce the historical three-species real-audio classifier result or the
+recorded VAE-v3 training-teacher dependency. Use the selected CRNN for current
+generated-sample evaluation.
 
 ## Checkpoint
 
@@ -51,14 +54,4 @@ Confusion matrix, with rows as true labels and columns as predictions:
 ## Limitations
 
 - Roughly one in ten real held-out clips is misclassified.
-- Generated audio is out-of-distribution and may produce overconfident predictions.
 - The classifier cannot reject noise or unknown bird species.
-- Target-label rate should be reported alongside listening tests and spectrogram inspection.
-
-## Stage 7 command
-
-```powershell
-python scripts/07_evaluate_generated.py --checkpoint artifacts/models/classifier/Harvey_classifier/best.pt --input generated_samples --labels-from-parent
-```
-
-The command writes per-file probabilities to CSV and an aggregate JSON summary containing sample count, mean confidence, predicted-class counts, and target-label accuracy when generated samples are stored in species-named parent directories.

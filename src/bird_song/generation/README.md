@@ -11,18 +11,50 @@ The other retained baseline is the continuous autoregressive Transformer in
 `main`. Diffusion models live on the separate `Diffusion`, `Difussion`, and
 `diffusion_vincent` branches and are not part of this package.
 
-The first VAE-v3/diffusion CRNN augmentation result is documented separately in
-[`reports/crnn_synthetic_augmentation_2026-08-09`](../../../reports/crnn_synthetic_augmentation_2026-08-09/README.md).
-It evaluates whether frozen generated spectrogram pools help a downstream
-classifier; it does not add either model to this historical WGAN-GP/Transformer
-comparison or establish audio realism.
-
 The inference-only three-seed checkpoint study is documented in
-[`reports/generator_checkpoint_evaluation_2026-08-10`](../../../reports/generator_checkpoint_evaluation_2026-08-10/README.md).
-Use `scripts/generate_checkpoint_pool.py` to resume deterministic VAE-v3 or
-DDIM pools and `scripts/evaluate_generator_checkpoints.py` for `audit`,
+[`reports/generator_checkpoint_evaluation_2026-08-12`](../../../reports/generator_checkpoint_evaluation_2026-08-12/).
+Use `scripts/generate_checkpoint_pool.py` for deterministic checkpoint-pool
+operations and `scripts/evaluate_generator_checkpoints.py` for `audit`,
 `evaluate`, or `package`. The bulk pools remain ignored; only bounded report
-evidence is intended for version control.
+evidence is intended for version control. For the current refresh, all three
+VAE-v3 pools were regenerated, while the existing audited DDIM pools were
+reused and no diffusion spectrogram generation was run.
+
+Generated-sample classification uses the selected CRNN only. The report keeps
+target-label accuracy, macro F1, Fréchet distance, feature precision and
+recall, density, coverage, diversity, copy-risk diagnostics, and seed
+stability. These are classifier-view and feature-space diagnostics, not a
+claim of perceptual or waveform realism.
+
+Across generation seeds 42, 123, and 777, VAE-v3 recorded 96.67% target-label
+accuracy and 96.66% macro F1; Diffusion recorded 92.44% and 92.42%. The VAE
+checkpoint was not retrained. Its existing posterior bank was filtered to
+256 Northern Cardinal, 247 Song Sparrow, and 256 American Robin anchors before
+the VAE pools were regenerated. The comparison uses the 510-row generator-safe
+validation manifest for copy-risk thresholds and the unchanged 489-row test
+manifest for CRNN calibration.
+
+Use `scripts/generate_checkpoint_pool.py --benchmark` to benchmark fresh
+in-memory sampling and `scripts/package_generator_speed.py` to produce the
+matched VAE-v3/DDIM speed report. The timing boundary excludes model loading,
+warm-up, classifier-scale conversion, CPU transfer, array serialization,
+plotting, and audio decoding.
+
+The recorded FP32 CUDA benchmark generated 600 spectrograms per repeat at
+batch size 8. VAE-v3 averaged 0.3058 seconds and Diffusion's 100-step DDIM
+sampler averaged 412.3090 seconds, a 1348.09x Diffusion-to-VAE time ratio on
+the recorded RTX 4070 SUPER. The completed diffusion benchmark was retained,
+and VAE-v3 was remeasured with the filtered 759-anchor bank; no diffusion
+sampling was rerun. Runtime is separate from quality and downstream utility.
+
+Downstream utility is reported in
+[`reports/crnn_low_resource_augmentation_2026-08-12`](../../../reports/crnn_low_resource_augmentation_2026-08-12/).
+The preserved nine-block study selected +200/species for both generators. Mean
+held-out macro F1 was 84.75% for the newly initialized real-only CRNNs, 87.48%
+with VAE-v3 (+2.72 percentage points; 7/9 positive blocks; descriptive interval
++1.00 to +4.65), and 86.21% with Diffusion (+1.46 points; 6/9; +0.15 to
++2.89). This is a simulated low-resource result, not a comparison against the
+historical full-data CRNN.
 
 ## Train and sample
 

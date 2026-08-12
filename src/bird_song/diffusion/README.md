@@ -11,26 +11,44 @@ specific diffusion branch being reviewed. Before comparing a diffusion result
 with a `main` generator, verify that preprocessing, class order, dataset split,
 checkpoint format, and decoder path match.
 
-## Frozen pool used by the first augmentation evaluation
+## Maintained evaluation contract
 
-`main` keeps one local, ignored classifier-ready cache at
-`artifacts/generated_spectrograms/diffusion/` solely so the first CRNN
-augmentation pool can be reused by maintained experiments without generating
-duplicate arrays. It contains 200 `[1,128,128]` arrays per species from the
-recorded `diffusion_vincent` EMA checkpoint.
-The pool used deterministic 100-step DDIM sampling, eta 0, guidance weight 3.0,
-and clean-sample clamping at 4 standardized units. The checkpoint itself is
-external and is not packaged on `main`.
+The selected checkpoint remains external to `main` and is loaded from the
+separate diffusion workspace. Sampling must copy the selected notebook's
+inference settings exactly:
 
-Validation selected 200 generated samples per species. Across CRNN seeds 42,
-123, and 777, that arm reached 89.23% mean held-out accuracy and 89.28% mean
-macro F1, respectively 0.75 and 0.88 percentage points below the historical
-selected CRNN. This is no demonstrated mean gain, not evidence that diffusion
-data is harmful: the reference is one historical WAV-trained seed, not a
-matched three-seed cached-real-only arm, and seed variation was material.
+- sampler: DDIM, not DDPM
+- DDIM steps: 100
+- DDIM eta: 0
+- classifier-free guidance weight: 3.0
+- clean-sample clamp: 4 standardized units
+- EMA weights: enabled
 
-The complete result and its exact-content split audit are in
-[`reports/crnn_synthetic_augmentation_2026-08-09`](../../../reports/crnn_synthetic_augmentation_2026-08-09/README.md).
-Caching this frozen output pool and publishing its classifier-utility result do
-not make the diffusion implementation canonical on `main` and do not establish
-perceptual realism.
+The recorded pool contract uses the validation-best epoch-34 EMA checkpoint.
+The existing seed-42/123/777 pools contain 200 classifier-ready `[1,128,128]`
+arrays per species under
+`runs/generator_checkpoint_evaluation/pools/diffusion/`. Their metadata records
+the checkpoint provenance and complete sampling contract, and all three pools
+passed the current audit. They were reused for the 2026-08-12 refresh; **no
+diffusion spectrogram generation was run**. Incompatible pools would still be
+rejected rather than silently reused.
+
+CRNN-only quality evidence belongs in
+[`reports/generator_checkpoint_evaluation_2026-08-12`](../../../reports/generator_checkpoint_evaluation_2026-08-12/),
+where Diffusion records 92.44% three-seed target-label accuracy and 92.42%
+macro F1 under the selected CRNN. Copy-risk thresholds use the 510-row
+generator-safe validation manifest; calibration remains on the unchanged
+489-row held-out test manifest.
+
+The completed nine-block `50+0`, `50+50`, `50+100`, and `50+200` downstream
+study selected Diffusion +200/species. Mean held-out macro F1 for newly
+initialized CRNNs rose from 84.75% real-only to 86.21%; the mean paired change
+was +1.46 percentage points, positive in 6/9 blocks, with a descriptive
+block-bootstrap interval of +0.15 to +2.89. The result is packaged in
+[`reports/crnn_low_resource_augmentation_2026-08-12`](../../../reports/crnn_low_resource_augmentation_2026-08-12/)
+and does not compare against the historical full-data CRNN. The generator-only
+speed report is recorded in
+[`reports/generator_speed_comparison_2026-08-12`](../../../reports/generator_speed_comparison_2026-08-12/):
+100-step DDIM averaged 412.3090 seconds per 600 spectrograms in the retained
+benchmark. Keeping inference support on `main` does not make any diffusion
+implementation canonical or establish perceptual realism.

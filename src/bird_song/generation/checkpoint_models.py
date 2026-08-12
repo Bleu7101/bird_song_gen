@@ -26,11 +26,15 @@ GENERATOR_CLASSES = (
 VAE_PARAMETER_COUNT = 5_365_025
 DIFFUSION_PARAMETER_COUNT = 18_443_841
 VAE_TEMPERATURE = 0.35
+VAE_REPARAMETERIZATION = "mu + temperature * exp(0.5 * logvar) * epsilon"
 DIFFUSION_TIMESTEPS = 1_000
 DIFFUSION_DDIM_STEPS = 100
 DIFFUSION_DDIM_ETA = 0.0
 DIFFUSION_GUIDANCE = 3.0
 DIFFUSION_CLAMP = 4.0
+DIFFUSION_CHECKPOINT_EPOCH = 34
+DIFFUSION_CHECKPOINT_BEST_VALIDATION_LOSS = 0.14470337276743556
+DIFFUSION_STORED_SAMPLER = "ddpm"
 NORMALIZATION_MEAN = -51.5400096102764
 NORMALIZATION_STD = 14.894513218933453
 
@@ -159,10 +163,17 @@ class ConditionalVAE(nn.Module):
         return self.mu_head(h), self.logvar_head(h)
 
     @staticmethod
-    def reparameterize(mu: torch.Tensor, logvar: torch.Tensor, generator: torch.Generator | None = None) -> torch.Tensor:
+    def reparameterize(
+        mu: torch.Tensor,
+        logvar: torch.Tensor,
+        generator: torch.Generator | None = None,
+        temperature: float = VAE_TEMPERATURE,
+    ) -> torch.Tensor:
+        if not math.isfinite(temperature) or temperature < 0:
+            raise ValueError("VAE sampling temperature must be finite and non-negative")
         std = torch.exp(0.5 * logvar)
         epsilon = torch.randn(std.shape, generator=generator, device=std.device, dtype=std.dtype)
-        return mu + epsilon * std
+        return mu + float(temperature) * std * epsilon
 
     def decode(self, z: torch.Tensor, labels: torch.Tensor) -> torch.Tensor:
         condition = self.class_embedding(labels)
@@ -386,9 +397,9 @@ def ddim_sample(
 ) -> torch.Tensor:
     """Sample one or more examples with the recorded DDIM update.
 
-    The caller passes a per-sample generator when deterministic resume is
-    required.  The CLI intentionally calls this with a batch of one for every
-    sample, so outer chunking cannot change the random stream or output.
+    The caller may supply independently seeded initial noise for every sample.
+    The pool generator uses fixed internal batches of eight and eta=0, so
+    interrupted outer chunking cannot change the random stream or output.
     """
     model.eval()
     device = labels.device
@@ -455,6 +466,46 @@ def _state_mapping(checkpoint: Mapping[str, Any], key: str) -> Mapping[str, torc
     return state
 
 
+def diffusion_checkpoint_selection(checkpoint: Mapping[str, Any]) -> dict[str, Any]:
+    """Validate and describe the validation-best diffusion checkpoint."""
+    history = checkpoint.get("history")
+    if not isinstance(history, Mapping):
+        raise ValueError("diffusion checkpoint is missing training history")
+    epochs = list(history.get("epoch", []))
+    validation_losses = list(history.get("val_loss", []))
+    if not epochs or len(epochs) != len(validation_losses):
+        raise ValueError("diffusion checkpoint has invalid epoch/validation-loss history")
+    try:
+        losses = [float(value) for value in validation_losses]
+        best_index = min(range(len(losses)), key=losses.__getitem__)
+        best_epoch = int(epochs[best_index])
+        best_loss = losses[best_index]
+        recorded_epoch = int(checkpoint.get("epoch", -1))
+        recorded_loss = float(checkpoint.get("best_val_loss", float("nan")))
+    except (TypeError, ValueError, OverflowError) as error:
+        raise ValueError("diffusion checkpoint has non-numeric selection metadata") from error
+    if (
+        not math.isfinite(best_loss)
+        or recorded_epoch != best_epoch
+        or not math.isclose(recorded_loss, best_loss, rel_tol=0.0, abs_tol=1e-12)
+        or recorded_epoch != DIFFUSION_CHECKPOINT_EPOCH
+        or not math.isclose(
+            recorded_loss,
+            DIFFUSION_CHECKPOINT_BEST_VALIDATION_LOSS,
+            rel_tol=0.0,
+            abs_tol=1e-12,
+        )
+    ):
+        raise ValueError(
+            "diffusion checkpoint is not the canonical validation-best epoch recorded in its history"
+        )
+    return {
+        "checkpoint_epoch": recorded_epoch,
+        "checkpoint_best_validation_loss": recorded_loss,
+        "checkpoint_selection": "validation_best",
+    }
+
+
 def load_vae_model(path: Path, device: torch.device) -> tuple[ConditionalVAE, dict[str, Any]]:
     checkpoint = torch.load(path, map_location=device, weights_only=True)
     config = dict(checkpoint.get("config", {}))
@@ -479,6 +530,7 @@ def load_vae_model(path: Path, device: torch.device) -> tuple[ConditionalVAE, di
 
 def load_diffusion_model(path: Path, device: torch.device) -> tuple[ConditionalUNet, dict[str, Any]]:
     checkpoint = torch.load(path, map_location=device, weights_only=True)
+    diffusion_checkpoint_selection(checkpoint)
     config = dict(checkpoint.get("config", {}))
     model = ConditionalUNet(
         in_channels=int(config.get("INPUT_CHANNELS", 1)),
@@ -494,9 +546,7 @@ def load_diffusion_model(path: Path, device: torch.device) -> tuple[ConditionalU
     actual = checkpoint_parameter_count(model)
     if actual != expected or actual != DIFFUSION_PARAMETER_COUNT:
         raise ValueError(f"diffusion parameter count mismatch: checkpoint={expected}, model={actual}")
-    state = checkpoint.get("ema_state_dict") or checkpoint.get("model_state_dict")
-    if not isinstance(state, Mapping):
-        raise ValueError("diffusion checkpoint is missing ema_state_dict")
+    state = _state_mapping(checkpoint, "ema_state_dict")
     model.load_state_dict(state, strict=True)
     model.eval()
     return model, dict(checkpoint)

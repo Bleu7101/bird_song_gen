@@ -6,24 +6,49 @@ The shared representation is a normalized `1 x 128 x 128` log-mel tensor.
 
 ## Recorded results at a glance
 
-The selected CRNN reached **90.16% held-out macro F1** on real audio. In the
-full-data augmentation study, neither VAE-v3 nor diffusion demonstrated a mean
-gain over the historical CRNN reference. In the matched low-resource study,
-VAE-v3 improved mean held-out macro F1 from **84.75% to 87.69%** across nine
-blocks, while diffusion reached 85.17% and did not show a stable gain. These are
-classifier-utility results, not claims about perceptual audio realism.
+The selected CRNN reached **90.16% held-out macro F1** on real audio. Generator
+evaluation now uses that CRNN only and reports target-label accuracy, macro F1,
+Fréchet distance, feature precision, feature recall, density, coverage,
+diversity, copying-risk diagnostics, and generation-seed stability. The
+low-resource augmentation study retains exactly nine matched blocks and seven
+conditions per block: `50+0`, VAE-v3 `50+50/100/200`, and diffusion
+`50+50/100/200`. The completed study selected +200/species for both generators.
+Mean held-out macro F1 was **84.75%** for real-only, **87.48%** for VAE-v3,
+and **86.21%** for Diffusion. The paired changes were **+2.72 percentage
+points** for VAE-v3 (7/9 positive blocks; descriptive interval +1.00 to +4.65)
+and **+1.46 points** for Diffusion (6/9 positive blocks; +0.15 to +2.89).
+These results apply only to newly initialized low-resource CRNNs, not the
+historical full-data CRNN.
+
+Across the evaluated three-seed pools, VAE-v3 reached **96.67% target-label
+accuracy** and **96.66% macro F1**, while Diffusion reached **92.44%** and
+**92.42%**.
+These are selected-CRNN compatibility metrics, not realism scores. In the
+matched generator-only benchmark, VAE-v3 averaged **0.3058 s** and Diffusion
+**412.3090 s** per 600 spectrograms on the same RTX 4070 SUPER; Diffusion took
+**1348.09x** the VAE generator time. The timing excludes loading, transfers,
+disk I/O, and waveform decoding.
+
+The VAE checkpoint was **not retrained**. Its existing posterior bank was
+filtered to 256 Northern Cardinal, 247 Song Sparrow, and 256 American Robin
+anchors, then the three VAE pools were regenerated with
+`z = mu + 0.35 * std * epsilon`. The already-audited diffusion pools were
+reused and no diffusion spectrogram generation was run. Generator comparisons
+use the 510-row generator-safe validation manifest and the unchanged 489-row
+held-out test manifest.
 
 ## Main branch overview
 
 `main` is the primary review branch. It contains the shared data pipeline, the
 classifier study, VAE v1/v2/v3 artifacts, and two historical spectrogram
 generation baselines: the continuous Transformer and WGAN-GP. Decoder research
-and diffusion implementations are kept on separate branches so their different
-model and representation contracts are not mixed into the main workflow. The
-first CRNN augmentation evaluation on `main` uses one frozen, classifier-ready
-pool from VAE v3 and one from `diffusion_vincent`. A separate low-resource study
-reuses three existing pools per generator; neither study promotes a diffusion
-implementation onto `main`.
+and diffusion implementations remain isolated on separate branches so their
+different model and representation contracts are not mixed into the main
+workflow. The maintained evaluation uses three classifier-ready pools per
+model, scores them with the selected CRNN, compares generator-only sampling
+speed, and feeds those same pools into the matched low-resource study. The VAE
+pools were regenerated after the sampling correction; the audited diffusion
+pools were reused.
 
 ## Branch guide
 
@@ -39,15 +64,16 @@ contract, and diffusion code should be evaluated from its own branch.
 
 | Area | Implementation | Evidence/status |
 |---|---|---|
-| Dataset and splits | `scripts/01_create_splits.py` and `manifests/` | Historical v1: 2,339 train, 519 validation, 489 test clips with no recording-ID overlap; `manifests/content_safe_v2/` additionally removes exact-content duplicates for future work |
+| Dataset and splits | `scripts/01_create_splits.py` and `manifests/` | Historical v1: 2,339 train, 519 validation, 489 test; `content_safe_v2` has 2,315 train, while maintained generator comparisons use a 510-row generator-safe validation subset and the unchanged 489-row test set |
 | Shared preprocessing | `scripts/02_build_spectrograms.py` and `configs/spectrogram.json` | Manifest-backed normalized spectrogram cache under local `artifacts/spectrograms/` |
 | Classifier | `src/bird_song/classifier/` and `scripts/03_*.py` | Four architectures, three seeds each; CRNN selected from validation evidence |
-| CRNN synthetic augmentation v1 | `scripts/14_crnn_synthetic_augmentation.py` and `reports/crnn_synthetic_augmentation_2026-08-09/` | Full-real-data VAE-v3/diffusion ratio sweep; no mean held-out gain demonstrated |
-| Low-resource CRNN augmentation | `scripts/15_crnn_low_resource_augmentation.py` and `reports/crnn_low_resource_augmentation_2026-08-10/` | Matched 50-real/species study using existing three-seed pools; VAE-v3 improved classifier utility, while diffusion did not show a stable gain |
+| Low-resource CRNN augmentation | `scripts/15_crnn_low_resource_augmentation.py` and `reports/crnn_low_resource_augmentation_2026-08-12/` | Completed 63-run, nine-block matched study; +200/species selected for both generators, with mean macro-F1 changes of +2.72 points for VAE-v3 and +1.46 points for Diffusion versus matched real-only controls |
+| Generator checkpoint evaluation | `scripts/evaluate_generator_checkpoints.py` and `reports/generator_checkpoint_evaluation_2026-08-12/` | CRNN-only target compatibility, feature-distribution, diversity, copying-risk, and seed-stability diagnostics |
+| Generator-only speed | `scripts/generate_checkpoint_pool.py --benchmark` and `scripts/package_generator_speed.py` | Same-device VAE-v3 versus DDIM sampling time; excludes loading, disk I/O, plotting, and audio decoding |
 | Historical Transformer baseline | `src/bird_song/transformer/` and `scripts/06_*.py` | Fully trained working baseline with a documented caveated verdict; run files are archived under `reports/generator_baselines/transformer/` |
 | Historical WGAN-GP baseline | `src/bird_song/generation/wgan_gp.py` and `scripts/08_*.py` | Full-split 20-epoch run with recorded evidence and curated audio under `reports/generator_baselines/wgan_gp/`; bulk runs remain local |
-| VAE v1/v2/v3 | `notebooks/04_conditional_vae.ipynb`, `artifacts/models/vae/`, and `reports/vae/` | Three recorded VAE versions are preserved on `main`; the notebook is retained unchanged as the historical experiment record |
-| Diffusion models | Separate diffusion branches listed above | Implementations remain outside `main`; only the frozen classifier-ready pool used by the v1 augmentation report is cached locally on `main` |
+| VAE v1/v2/v3 | `notebooks/04_conditional_vae.ipynb`, `artifacts/models/vae/`, and `reports/vae/` | Three recorded VAE versions are preserved on `main`; the portable V3 pool sampler applies temperature in reparameterization and the checkpoint was not retrained |
+| Diffusion models | Separate diffusion branches listed above | Training implementations remain outside `main`; evaluation uses the external validation-best epoch-34 EMA checkpoint with the final DDIM notebook settings |
 
 ## Decoder roadmap
 
@@ -71,12 +97,11 @@ not extra generator families.
   notebooks are not a second classifier implementation.
 - `notebooks/03_classifier.ipynb` is the CRNN-focused classifier companion.
 - `notebooks/06_evaluation.ipynb` is the primary four-part evaluation report:
-  generator quality and seed stability, full-data augmentation, low-resource
-  augmentation, and the cross-study conclusion.
+  generator quality and seed stability, low-resource augmentation,
+  generator-only speed, and the evidence-bounded conclusion.
 - `notebooks/generator_checkpoint_evaluation.ipynb` and
   `notebooks/low_resource_crnn_augmentation.ipynb` remain focused report-only
-  companions for the corresponding Parts 1 and 3; neither requires ignored
-  generator checkpoints or pools.
+  companions; neither requires ignored generator checkpoints or pools.
 - `notebooks/autoregressive_transformer.ipynb` and `notebooks/wgan_gp.ipynb`
   are unnumbered extra/future-work companions for the historical generator
   baselines.
@@ -114,9 +139,9 @@ selected-run validation result: 92.10% accuracy and 92.06% macro F1 at epoch
 | Macro F1 | **90.16%** |
 
 The earlier residual CNN remains available as a legacy held-out baseline with
-90.39% accuracy and 90.44% macro F1. It is retained because the earlier
-transformer and generator reports explicitly used that checkpoint. These are
-real-audio held-out metrics; they are not generated-sample realism scores.
+90.39% accuracy and 90.44% macro F1. It is also retained as the frozen training
+teacher recorded by VAE-v3. These are real-audio held-out metrics; maintained
+generated-sample scoring uses the selected CRNN only.
 
 The selected model package is [`artifacts/models/classifier/selected_crnn`](artifacts/models/classifier/selected_crnn/README.md).
 The complete sweep is documented in
@@ -138,104 +163,59 @@ For architecture comparison, use the controlled sweep command in the
 architecture-comparison README. Do not select architectures by repeatedly
 checking the held-out test split.
 
-## First VAE/diffusion CRNN augmentation evaluation
-
-The first full-real-data sweep retained all 2,339 historical training rows and
-added 50, 100, or 200 generated spectrograms per species. Validation selected
-200 per species for both generators; only those selected ratios were evaluated
-on the 489-clip test split. All 18 retained run configs record `cuda`,
-confirming that the sweep trained on GPU.
-
-| Condition | Test runs | Mean accuracy | Mean macro F1 | Accuracy delta | Macro-F1 delta |
-|---|---:|---:|---:|---:|---:|
-| Historical selected CRNN, seed 777 | 1 | 89.98% | 90.16% | reference | reference |
-| VAE v3, 200 generated/species | 3 | 89.43% | 89.48% | -0.55 pp | -0.68 pp |
-| Diffusion, 200 generated/species | 3 | 89.23% | 89.28% | -0.75 pp | -0.88 pp |
-
-This first evaluation shows no demonstrated mean gain. It does **not** show
-that synthetic data is harmful: the reference is one historically selected
-seed trained from WAV with stochastic transforms, while the augmented values
-are three-seed means trained from fixed cached real spectrograms. There is no
-matched three-seed cached-real-only arm. The validation wins for 200/species
-were also small (0.50 pp for VAE v3 and 0.32 pp for diffusion over the
-runner-up ratio) relative to seed variation.
-
-An exact-content audit found nine validation clips whose audio bytes also
-occur in the historical v1 training split; no exact duplicate reaches test.
-The v1 results above are preserved as recorded. New experiments should use the
-versioned manifests in `manifests/content_safe_v2/`, which preserve all 519
-validation and 489 test rows while reducing training from 2,339 to 2,315 rows.
-The full protocol, per-seed metrics, provenance, and interpretation limits are
-in [`reports/crnn_synthetic_augmentation_2026-08-09`](reports/crnn_synthetic_augmentation_2026-08-09/README.md).
-
-The reusable local caches contain one 200-per-species pool per generator:
-
-- `artifacts/generated_spectrograms/vae_v3/`
-- `artifacts/generated_spectrograms/diffusion/`
-
-Audit the pools or run the maintained cache-backed sweep with:
-
-```powershell
-& $py scripts/14_crnn_synthetic_augmentation.py audit `
-  --train-manifest manifests/content_safe_v2/full_dataset_train.csv
-& $py scripts/14_crnn_synthetic_augmentation.py train-sweep `
-  --train-manifest manifests/content_safe_v2/full_dataset_train.csv `
-  --validation-manifest manifests/content_safe_v2/full_dataset_validation.csv `
-  --ratios 50 100 200 --seeds 42 123 777 --device cuda `
-  --run-root runs/crnn_synthetic_augmentation/cache_sweep_v2
-& $py scripts/14_crnn_synthetic_augmentation.py select-evaluate --device cuda `
-  --train-manifest manifests/content_safe_v2/full_dataset_train.csv `
-  --validation-manifest manifests/content_safe_v2/full_dataset_validation.csv `
-  --test-manifest manifests/content_safe_v2/full_dataset_test.csv `
-  --run-root runs/crnn_synthetic_augmentation/cache_sweep_v2
-```
-
-Bulk pools and checkpoints remain local and ignored; the tracked report is the
-portable evaluation record. Because the retained v1 outputs do not identify a
-committed run-code revision or optimizer specification, the maintained command
-is not claimed as an exact reconstruction of the already recorded run. Always
-train into a fresh run root. Training defaults to `cache_sweep_v2`, while
-`select-evaluate` defaults to the retained historical `cache_sweep` evidence;
-legacy checkpoints are protected from `--overwrite`.
-
 ## Low-resource CRNN augmentation experiment
 
-The matched low-resource study asks a narrower question: if only 50 labeled
-real spectrograms per species are visible to a newly initialized CRNN, can the
-existing generated pools improve classification of real held-out clips? Each
-real row comes from a distinct recording ID. Three deterministic real subsets
+The matched low-resource study asks a narrow question: if only 50 labeled real
+spectrograms per species are visible to a newly initialized CRNN, can the
+audited generated spectrogram pools improve classification of real held-out
+clips? Each real row comes from a distinct recording ID. Three deterministic
+real subsets
 are crossed with three CRNN initialization seeds, while generation-pool seeds
 42, 123, and 777 rotate across the resulting nine matched blocks. The sweep
 trains seven conditions per block: real-only and VAE-v3/diffusion additions of
 50, 100, or 200 per species, for 63 training runs overall.
 
-Validation selected 200 generated spectrograms per species for both generators.
-Only real-only and the two selected arms were then evaluated on test:
+The exact matched conditions are:
 
-| Condition | Mean test macro F1 | Sample SD | Paired delta | Positive blocks | Descriptive block-bootstrap interval |
-|---|---:|---:|---:|---:|---:|
-| Real-only, 50/species | 84.75% | 2.52 pp | reference | reference | reference |
-| VAE-v3 +200/species | **87.69%** | 1.37 pp | **+2.93 pp** | 8/9 | +1.43 to +4.54 pp |
-| Diffusion +200/species | 85.17% | 2.23 pp | +0.42 pp | 5/9 | -1.19 to +1.85 pp |
+- `50+0`: 50 real spectrograms per species and no generated data.
+- VAE-v3 `50+50`, `50+100`, and `50+200` per species.
+- Diffusion `50+50`, `50+100`, and `50+200` per species.
 
-Within this design, VAE-v3 provides repeatable evidence of classifier utility;
-diffusion does not demonstrate a stable held-out gain. These are classifier
-results, not perceptual-realism results. They simulate label scarcity for three
-common project species rather than genuinely rare or unseen species, and the
-pretrained generators had access to more source data than the CRNN. The three
-real subsets also overlap because the training split contains only 56 Robin,
-63 Cardinal, and 95 Sparrow recording IDs, so the nine blocks are not nine
-independent datasets. Finally, 200/species is the largest available ratio and
-therefore the best tested value, not an estimated optimum.
+The 510-row generator-safe validation split selects one ratio independently
+for each generator before the matched real-only and selected generator arms
+are evaluated on the unchanged 489-row test split. The final report contains
+all 63 validation runs and exactly 27 test rows: nine
+matched blocks for real-only plus each selected generator arm. Report accuracy,
+macro F1, paired deltas, positive-block counts, sample variation, and a
+descriptive block-bootstrap interval. These are classifier-utility results,
+not perceptual-realism results.
 
-The portable evidence and exact limitations are in
-[`reports/crnn_low_resource_augmentation_2026-08-10`](reports/crnn_low_resource_augmentation_2026-08-10/README.md),
+Validation selected +200 generated spectrograms per species for both models,
+the largest tested ratio. On held-out real clips, mean macro F1 increased from
+84.75% for real-only to 87.48% with VAE-v3 and 86.21% with Diffusion. The mean
+paired changes were +2.72 points (7/9 positive blocks; descriptive interval
++1.00 to +4.65) and +1.46 points (6/9; +0.15 to +2.89), respectively. Because
+the real subsets overlap and there are only nine matched blocks, these are
+descriptive matched-study intervals, not p-values or independent-replication
+confidence intervals.
+
+The design simulates label scarcity for three common project species rather
+than genuinely rare or unseen species, and the pretrained generators had
+access to more source data than the low-resource CRNN. The three real subsets
+also overlap because the training split contains only 56 Robin, 63 Cardinal,
+and 95 Sparrow recording IDs, so the nine blocks are not nine independent
+datasets. A selected ratio is the best tested value among `50/100/200`, not an
+estimated optimum.
+
+The portable evidence is packaged in
+[`reports/crnn_low_resource_augmentation_2026-08-12`](reports/crnn_low_resource_augmentation_2026-08-12/),
 with a visual companion in
 [`notebooks/low_resource_crnn_augmentation.ipynb`](notebooks/low_resource_crnn_augmentation.ipynb).
 Bulk checkpoints and histories stay under ignored
-`runs/crnn_low_resource_augmentation/`.
+`runs/crnn_low_resource_augmentation/v3/`.
 
-Audit the existing pools and subset design, or resume the full experiment, with:
+Audit the regenerated VAE pools, reused diffusion pools, and subset design, or
+resume the full experiment, with:
 
 ```powershell
 & $py scripts/15_crnn_low_resource_augmentation.py audit
@@ -251,29 +231,41 @@ signature matches the requested experiment.
 The repository retains exactly two generator baselines for historical
 comparison: the continuous autoregressive Transformer and WGAN-GP. Shared
 evaluation and Griffin-Lim decoding helpers support those models but are not
-additional generators. The VAE-v3/diffusion augmentation report is a separate
-classifier-utility experiment and is the current evaluation focus.
+additional generators. The corrected VAE-v3/diffusion checkpoint study and its
+matched low-resource classifier-utility experiment are the current evaluation
+focus.
 
 The inference-only three-seed checkpoint study is documented in
-[`reports/generator_checkpoint_evaluation_2026-08-10`](reports/generator_checkpoint_evaluation_2026-08-10/)
+[`reports/generator_checkpoint_evaluation_2026-08-12`](reports/generator_checkpoint_evaluation_2026-08-12/)
 and its report-only companion is
 [`notebooks/generator_checkpoint_evaluation.ipynb`](notebooks/generator_checkpoint_evaluation.ipynb).
-It preserves the seed-42 pools and adds deterministic seed-123/777 pools under
-ignored `runs/generator_checkpoint_evaluation/`. The selected CRNN is primary;
-the legacy residual CNN is a sensitivity check, and all conclusions remain
-classifier-view diagnostics.
+The seed-42/123/777 VAE pools were regenerated under ignored
+`runs/generator_checkpoint_evaluation/pools/vae_v3/`; the corresponding
+diffusion pools were audited and reused without new diffusion sampling. The
+selected CRNN is the sole generated-sample classifier. The report retains
+target-label accuracy, macro F1, Fréchet distance, feature precision and
+recall, density, coverage, diversity, nearest-neighbor copying-risk
+diagnostics, and seed stability. These remain classifier-view and
+feature-space diagnostics, not perceptual-realism scores.
+
+Generator-only sampling speed is packaged in
+[`reports/generator_speed_comparison_2026-08-12`](reports/generator_speed_comparison_2026-08-12/).
+Each recorded repeat generated 200 spectrograms per species with batch size 8
+on the same device. Timed repeats include only tensor sampling; model loading,
+warm-up, disk writes, plotting, and audio decoding are outside the timing
+boundary.
 
 The continuous autoregressive transformer is documented in
 [`reports/generator_baselines/transformer/README.md`](reports/generator_baselines/transformer/README.md).
-Its best tested temperature-1.0 run achieved 80.73% target-label agreement
-with the legacy residual classifier but only 39.58% with the independent CRNN.
+Its best tested temperature-1.0 run achieved 39.58% target-label agreement with
+the selected CRNN.
 Classifier agreement is a diagnostic for generated samples, not proof of
 acoustic realism; the model card records the visual and conditioning caveats.
 
 The full-split WGAN-GP run is summarized in
 [`reports/generator_baselines/wgan_gp/README.md`](reports/generator_baselines/wgan_gp/README.md).
-That report likewise separates residual-classifier agreement (84.90%) from
-CRNN agreement (40.63%), detail ratios, listening, and visual inspection.
+That report records selected-CRNN agreement (40.63%), detail ratios, listening,
+and visual inspection.
 
 The earlier VQGAN, token-Transformer, and latent-diffusion wiring pilots are
 not maintained on `main` because they were short integration checks, not

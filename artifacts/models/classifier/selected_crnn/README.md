@@ -64,17 +64,14 @@ $py = "..\bird_song_venv\Scripts\python.exe"
   --batch-size 128 --workers 0 --device auto
 ```
 
-The legacy residual package remains available for reproducing the earlier
-transformer and generator reports; its held-out result is not interchangeable
-with this CRNN evaluation.
+The legacy residual package remains available as historical real-audio
+classifier evidence; it is not used for maintained generated-sample scoring.
 
-## Role in the first augmentation evaluation
+## Role in generator evaluation
 
-The VAE-v3/diffusion augmentation report uses this 89.98%-accuracy, 90.16%-macro-F1
-checkpoint as a descriptive historical reference. It is not a matched control:
-this model is one validation-selected seed trained through the earlier
-on-the-fly WAV path with stochastic transforms, while each augmented condition
-is a three-seed mean trained from fixed cached real spectrograms. Therefore the
-reported negative mean deltas are no demonstrated augmentation gain, not proof
-that synthetic data is harmful. See
-[`reports/crnn_synthetic_augmentation_2026-08-09`](../../../../reports/crnn_synthetic_augmentation_2026-08-09/README.md).
+This checkpoint is the sole classifier used to score generated VAE-v3,
+diffusion, Transformer, and WGAN-GP samples. Target-label accuracy and macro F1
+measure compatibility with this closed-set classifier, not perceptual realism.
+The VAE-v3/diffusion checkpoint report also uses this model's frozen feature
+space for Fréchet distance, feature precision and recall, density, coverage,
+diversity, and nearest-neighbor copying-risk diagnostics.

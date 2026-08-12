@@ -1,3 +1,5 @@
+import json
+from copy import deepcopy
 from pathlib import Path
 
 import numpy as np
@@ -11,12 +13,17 @@ from bird_song.augmentation.low_resource import (
     ReplicateBlock,
     SharedSpectrogramMask,
     _bootstrap_mean_interval,
+    _checkpoint_evidence_contract,
+    _training_protocol,
     condition_run_dir,
     experiment_conditions,
     replicate_blocks,
     select_real_subset_rows,
 )
-from bird_song.augmentation.low_resource_report import _subset_overlap_table
+from bird_song.augmentation.low_resource_report import (
+    _subset_overlap_table,
+    _validated_pool_provenance,
+)
 from bird_song.config import DEFAULT_CLASSES
 
 
@@ -138,3 +145,127 @@ def test_subset_overlap_table_quantifies_shared_recordings() -> None:
     assert row["shared_recording_ids"] == 1
     assert row["union_recording_ids"] == 3
     assert row["jaccard_overlap"] == pytest.approx(1 / 3)
+
+
+def test_checkpoint_evidence_contract_rejects_protocol_drift(tmp_path: Path) -> None:
+    block = ReplicateBlock(real_subset_seed=101, train_seed=42, pool_seed=42)
+    identity = {"format_version": 1, "validation_counts": {"after": {"rows": 510}}}
+    for condition in experiment_conditions((50,)):
+        path = condition_run_dir(tmp_path, block, condition) / "best.pt"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        signature = {
+            "condition": condition.condition,
+            "generator": condition.generator,
+            "ratio_per_species": condition.ratio_per_species,
+            "real_subset_seed": block.real_subset_seed,
+            "train_seed": block.train_seed,
+            "pool_seed": block.pool_seed if condition.generator else None,
+            "protocol_version": 4,
+            "training_protocol": _training_protocol(),
+            "validation_manifest": "manifests/generator_safe.csv",
+            "validation_protocol": "manifests/generator_safe.protocol.json",
+            "validation_protocol_identity": identity,
+        }
+        torch.save(
+            {
+                "condition": condition.condition,
+                "generator": condition.generator,
+                "ratio": condition.ratio_per_species,
+                "real_subset_seed": block.real_subset_seed,
+                "train_seed": block.train_seed,
+                "pool_seed": block.pool_seed if condition.generator else None,
+                "run_signature": signature,
+            },
+            path,
+        )
+    contract = _checkpoint_evidence_contract(
+        run_root=tmp_path,
+        ratios=(50,),
+        real_subset_seeds=(101,),
+        train_seeds=(42,),
+        pool_seeds=(42,),
+    )
+    assert contract["protocol_version"] == 4
+    assert contract["checkpoint_count"] == 3
+
+    drift_path = condition_run_dir(
+        tmp_path, block, ExperimentCondition("real_only", None, 0)
+    ) / "best.pt"
+    drifted = torch.load(drift_path, map_location="cpu", weights_only=True)
+    drifted["run_signature"]["protocol_version"] = 3
+    torch.save(drifted, drift_path)
+    with pytest.raises(ValueError, match="run_signature.protocol_version"):
+        _checkpoint_evidence_contract(
+            run_root=tmp_path,
+            ratios=(50,),
+            real_subset_seeds=(101,),
+            train_seeds=(42,),
+            pool_seeds=(42,),
+        )
+
+
+def test_pool_provenance_is_quality_protocol_backed_and_rejects_action_drift() -> None:
+    project_root = Path(__file__).resolve().parents[1]
+    quality_path = (
+        project_root / "reports/generator_checkpoint_evaluation_2026-08-12/protocol.json"
+    )
+    quality = json.loads(quality_path.read_text(encoding="utf-8"))
+    details = []
+    action_fields = {
+        "pool_reused_after_vae_bank_filter",
+        "spectrograms_regenerated_after_vae_bank_filter",
+    }
+    for model in ("vae_v3", "diffusion"):
+        contract = quality["generation_contracts"][model]
+        for seed in (42, 123, 777):
+            generation = {
+                key: value for key, value in contract.items() if key not in action_fields
+            }
+            generation.update(
+                {
+                    "schema_version": 3,
+                    "generator": model,
+                    "seed": seed,
+                    "samples_per_class": 200,
+                }
+            )
+            details.append(
+                {
+                    "model": model,
+                    "seed": seed,
+                    "rows": 600,
+                    "generation_identity": {"generation": generation},
+                }
+            )
+    audit = {"pool_details": details}
+    provenance = _validated_pool_provenance(
+        input_audit=audit,
+        generator_evaluation_protocol=quality,
+        generator_evaluation_protocol_path=quality_path,
+        project_root=project_root,
+        pool_seeds=[42, 123, 777],
+    )
+    assert provenance["low_resource_pool_generation_performed"] is False
+    vae = provenance["models"]["vae_v3"]
+    assert vae["generation_contract"]["posterior_bank_counts"] == {
+        "Northern Cardinal": 256,
+        "Song Sparrow": 247,
+        "American Robin": 256,
+    }
+    assert vae["generation_contract"]["vae_checkpoint_retrained"] is False
+    assert vae["checkpoint_not_retrained"] is True
+    assert vae["spectrograms_regenerated_after_vae_bank_filter"] is True
+    assert provenance["models"]["diffusion"]["pool_reused_after_vae_bank_filter"] is True
+
+    drifted = deepcopy(quality)
+    drifted["generation_contracts"]["diffusion"][
+        "spectrograms_regenerated_after_vae_bank_filter"
+    ] = True
+    with pytest.raises(ValueError, match="refresh contract mismatch"):
+        _validated_pool_provenance(
+            input_audit=audit,
+            generator_evaluation_protocol=drifted,
+            generator_evaluation_protocol_path=quality_path,
+            project_root=project_root,
+            pool_seeds=[42, 123, 777],
+        )
