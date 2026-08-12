@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "git_revision": "097ff87a774fa41b5d6d98ce6a49b60430b73412",
+  "inputs": {
+    "generated_manifest": "C:\\Users\\sheng\\.codex\\worktrees\\18f3\\bird_song_gen\\runs\\generated_to_test_mse_v1\\vae_v3_notebook_seed42\\manifest.csv",
+    "generated_manifest_sha256": "36558ed4e200b3906b38d0697103735900e412be13a73840c93bbc9424e6fe2c",
+    "test_manifest": "C:\\Users\\sheng\\Documents\\1508_project\\bird_song_gen\\artifacts\\spectrograms\\manifests\\spectrogram_test.csv",
+    "test_manifest_sha256": "d481cbc59f1b12d1c49578b3ddc3a06072f021dbde3e114667d3f1076e8b619d",
+    "generated_root": "C:\\Users\\sheng\\.codex\\worktrees\\18f3\\bird_song_gen\\runs\\generated_to_test_mse_v1\\vae_v3_notebook_seed42",
+    "test_root": "C:\\Users\\sheng\\Documents\\1508_project\\bird_song_gen",
+    "generated_metadata": "C:\\Users\\sheng\\.codex\\worktrees\\18f3\\bird_song_gen\\runs\\generated_to_test_mse_v1\\vae_v3_notebook_seed42\\generation.json",
+    "generated_metadata_sha256": "7ca3455ca55c1eba6be424741a94218b5b66caad6f24cdcec43ad96af442214f",
+    "generated_normalization_stats": null,
+    "generated_normalization_stats_sha256": null,
+    "test_normalization_stats": null,
+    "test_normalization_stats_sha256": null
+  },
+  "input_contract": {
+    "shape_after_load": [
+      1,
+      128,
+      128
+    ],
+    "comparison_domain": "standardized_logmel",
+    "numeric_domain": "standardized_logmel_float32",
+    "generated_source_domain": "standardized_logmel",
+    "test_source_domain": "standardized_logmel",
+    "generated_conversion": null,
+    "test_conversion": null,
+    "accepted_project_cache_2d_arrays": "expanded to leading singleton channel"
+  },
+  "metric": {
+    "generated_to_test": "each generated sample to nearest same-species test spectrogram",
+    "real_to_real": "each test sample to nearest other same-species test spectrogram",
+    "same_species_only": true,
+    "copy_risk_warning": true,
+    "interpretation": "pixel-space proximity only; low MSE can reward copying and is not standalone perceptual realism"
+  },
+  "test_set_policy": "test is used only for this final frozen evaluation; no selection, tuning, posterior-bank fitting, or checkpoint choice"
+}
