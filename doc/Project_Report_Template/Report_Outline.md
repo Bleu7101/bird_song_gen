@@ -7,7 +7,7 @@
 - **Submission deadline:** August 14, 11:30 PM.
 - **Main-body limit:** At most 5 pages. Appendices and references are excluded.
 - **Target compiled length:** Approximately 4.7 pages, leaving about 0.3 pages of formatting margin.
-- **Current source of project facts:** `main` at commit `faa3464`, including the verified VAEv3 generated-to-test MSE evidence package.
+- **Current source of project facts:** the current `main` tree, including the completed protocol-4 low-resource study, CRNN-only generator-quality package, generator-only speed package, and the separate VAE-v3 generated-to-test MSE evidence package.
 - **Current writing scope:** Data preparation, Residual CNN, CRNN, and VAE.
 - **Deferred scope:** Do not use the implementation details from `diffusion_vincent` yet. Keep the corresponding Diffusion model headings empty for later completion, while defining the shared comparison and timing protocol now.
 
@@ -94,7 +94,7 @@ Keep the generated-to-test MSE out of the abstract unless space permits. It is a
 
 Correct the template heading from `Assentation` to `Attestation` and use the following concise paragraph:
 
-> Shenghao Jin contributed to data preparation and to the development and evaluation of the conditional VAE. Harvey Li contributed to data preparation, developed and evaluated the Residual CNN and CRNN classifiers, conducted the low-resource synthetic augmentation experiments, and is responsible for the matched VAE--Diffusion generation-time comparison. Vincent Wang developed and evaluated the conditional diffusion model. All members contributed to the preparation and revision of the final report.
+> Shenghao Jin contributed to data preparation and to the development and evaluation of the conditional VAE. Harvey Li contributed to data preparation, developed and evaluated the Residual CNN and CRNN classifiers, conducted the low-resource synthetic augmentation experiments, and conducted the matched VAE--Diffusion generator-only timing comparison. Vincent Wang developed and evaluated the conditional diffusion model. All members contributed to the preparation and revision of the final report.
 
 ---
 
@@ -511,7 +511,7 @@ The corrected VAE-v3 pools have higher selected-CRNN compatibility and stronger 
 - **Unpaired MSE limitation:** Generated-to-test nearest-neighbor MSE measures proximity and can reward copying; it must be interpreted with diversity and copy-risk diagnostics.
 - **Waveform boundary:** Spectrogram and classifier metrics do not replace listening or waveform-quality evaluation.
 - **Timing boundary:** Runtime depends on hardware, batch size, precision, sampler configuration, warm-up, synchronization, and whether loading, decoding, or file I/O is included; timing claims are valid only for the documented benchmark setting.
-- **Reproducibility gap:** The portable VAE pool generator now multiplies the sampled standard deviation by the recorded temperature `0.35`, matching the notebook. The previously generated three-seed pools are untracked and lack a generation-code hash, so their exact sampling formula remains unverified; regenerate a hash-recorded canonical pool before presenting those pools as a verified `0.35` experiment.
+- **Canonical VAE refresh:** The portable pool generator applies `z = mu + 0.35*std*epsilon`. The VAE checkpoint was not retrained; the existing posterior bank was filtered to 256 Northern Cardinal, 247 Song Sparrow, and 256 American Robin anchors, and all three canonical VAE pools were regenerated. Shenghao's separate notebook-pool MSE package remains an independent evidence stream and was not substituted for these pools.
 
 ---
 
@@ -567,7 +567,7 @@ The appendix can contain:
 | Feedback item | Required report response | Planned location | Status |
 |---|---|---|---|
 | VAE needs MSE on the test set | Report paired test reconstruction MSE (`0.028063`) | Section 6.2 | Recorded |
-| Compare generated samples with original real test data | Compute same-species generated-to-test nearest-neighbor MSE plus real-to-real baseline | Section 6.2 | Not yet computed |
+| Compare generated samples with original real test data | Compute same-species generated-to-test nearest-neighbor MSE plus real-to-real baseline | Section 6.2 | Completed for Shenghao's separate VAE-v3 notebook seed-42 pool |
 | Show generated results | Include compact three-species generated-spectrogram grid | Section 6.2 | Rebuild from the fresh corrected VAE pool |
 | Apply VAE temperature inside reparameterization | Use `z = mu + 0.35*std*epsilon`; do not retrain the checkpoint; filter the existing bank and regenerate VAE pools | Sections 4.3 and 6.2 | Recorded: bank 256/247/256; all three VAE pools regenerated |
 | Compare VAE and Diffusion time for the same number of spectrogram samples | Generate 600 samples/model/repeat for five synchronized repeats; report generator-only seconds, throughput, peak accelerator memory, absolute gap, and time ratio | Sections 5.4 and 6.4; presented by Harvey | Recorded; sequential measurement sequence disclosed |
@@ -631,12 +631,12 @@ The Data Preparation, Residual CNN architecture comparison, CRNN, VAE method, re
 | Priority | Required input or decision | Owner | What must be provided or recorded | Current status |
 |---:|---|---|---|---|
 | 1 | Final author block | Team | Final title; exact names; department/program; affiliation; submission email addresses | Completed |
-| 2 | Portable VAE temperature alignment | Harvey; integration by Shenghao | Match the notebook sampler with `z = mu + 0.35 * sigma * epsilon` and retain a regression test | Completed locally by Harvey; not yet pushed, and Shenghao will handle integration conflicts |
-| 3 | Corrected canonical VAE pools and downstream rerun | Harvey | Generate seeds 42, 123, and 777 into fresh directories; record hashes/provenance; rerun the affected low-resource CRNN experiment without resuming old checkpoints | In progress---Harvey; results pending |
+| 2 | Portable VAE temperature alignment | Harvey | Match the sampler with `z = mu + 0.35 * sigma * epsilon` and retain a regression test | Completed and integrated on `main` |
+| 3 | Corrected canonical VAE pools and downstream rerun | Harvey | Generate seeds 42, 123, and 777 from the filtered bank and rerun the affected low-resource CRNN experiment without resuming old checkpoints | Completed: three 600-sample VAE pools, 63 validation runs, 27 held-out evaluations, and protocol-4 evidence |
 | 4 | Generated-to-test MSE package | Shenghao | Implement same-species generated-to-test nearest-neighbor MSE, the test-to-test leave-one-out baseline, overall/per-species summaries, and distribution statistics | Completed and verified for the existing VAE-v3 notebook seed-42 pool; rerun only if the final report switches to Harvey's corrected pool |
-| 5 | Canonical Diffusion evidence package | Harvey, using Vincent's model evidence | Branch/commit; architecture; objective, conditioning, noise schedule and sampler; training and checkpoint-selection settings; checkpoint identity; quality results; comparable figures; limitations; citations | In progress---Harvey |
-| 6 | Equal-count timing package | Harvey | At least five matched 600-output repeats/model; generator-only, decoder-only, and end-to-end times; model order; seeds; GPU/CPU, software, batch, precision, warm-up/synchronization, peak memory, sampler settings, and checkpoint/code hashes | In progress---Harvey |
-| 7 | Remaining VAE feedback outputs | Shenghao / report integration | Per-species test reconstruction MSE and a compact shared-scale generated figure produced from the corrected canonical pool | Partially ready; final figure awaits the canonical pool |
+| 5 | Diffusion evaluation evidence package | Harvey, using Vincent's model evidence | Checkpoint and DDIM settings; reused-pool provenance; CRNN-only quality metrics and figures; limitations | Completed without regenerating Diffusion spectrograms |
+| 6 | Equal-count generator-only timing package | Harvey | Five 600-output repeats/model; measurement sequence; seeds; hardware/software; batch size; precision; warm-up/synchronization; peak memory; sampler settings | Completed and packaged with repeat-level evidence |
+| 7 | Remaining VAE feedback outputs | Shenghao / report integration | Per-species test reconstruction MSE and a compact shared-scale generated figure produced from the corrected canonical pool | Partially ready; the canonical pool is available, while these remaining outputs are pending |
 | 8 | Complete presentation feedback | Team | Confirm that the three recorded questions plus equal-count runtime are the complete feedback list, or provide the missing questions and requested additions | Awaiting team confirmation |
 | 9 | Final method references | Model owners | Sources for VAE/CVAE, FiLM, KL stabilization, feature-consistency loss, CRNN, the final Diffusion formulation, and any borrowed implementation or benchmark | In progress |
 
@@ -647,10 +647,9 @@ The professor-confirmed runtime scope is generator-only spectrogram sampling. Do
 ## Open items before finalizing the LaTeX
 
 - [x] Confirm final title, author affiliations, and email addresses.
-- [x] Align the portable VAE pool sampler with the notebook's temperature-`0.35` formula (completed locally by Harvey).
-- [ ] Push/integrate Harvey's sampler fix and resolve any conflicts (Shenghao).
-- [ ] Regenerate seeds 42, 123, and 777 in fresh canonical VAE pool directories with hashes and provenance (Harvey---in progress).
-- [ ] Rerun the affected low-resource CRNN experiment from a fresh run root using the corrected pools (Harvey---in progress).
+- [x] Align and integrate the portable VAE pool sampler with the temperature-`0.35` formula.
+- [x] Regenerate seeds 42, 123, and 777 in fresh canonical VAE pool directories using the filtered posterior bank.
+- [x] Rerun the affected low-resource CRNN experiment from a fresh run root using the corrected pools.
 - [ ] Compute per-species test reconstruction MSE.
 - [x] Implement generated-to-test and real-to-real baseline MSE metrics.
 - [x] Run and verify the metrics for the existing VAE-v3 notebook seed-42 pool; record overall and per-species distributions.
@@ -661,7 +660,7 @@ The professor-confirmed runtime scope is generator-only spectrogram sampling. Do
 - [x] Compute the 412.0032-second VAE--Diffusion generator-only time gap and 1348.09 x Diffusion/VAE time ratio; Harvey owns and presents this result.
 - [x] Complete and package the exact nine-block low-resource study: 63 validation runs, 27 held-out evaluations, and protocol-4 provenance.
 - [ ] Decide whether the VAE-v2 comparison remains in the five-page body or moves to the appendix.
-- [ ] Add Diffusion methodology and results without changing the common evaluation protocol (Harvey---in progress, based on Vincent's model evidence).
+- [ ] Add the canonical Diffusion model-method description and citations supplied by the model owner; retain the completed shared evaluation results and protocol unchanged.
 - [ ] Add all presentation feedback items and verify that each is addressed.
 - [ ] Build the PDF and iteratively reduce the compiled main body to at most five pages.
 - [ ] Verify every numerical claim against a tracked artifact or a documented fresh run.

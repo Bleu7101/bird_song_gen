@@ -419,13 +419,15 @@ using neural vocoders,'' in \emph{Speech and Computer}, pp. 64--74, 2022.
 VAE-v3 used AdamW with learning rate $2\times10^{-4}$, batch size 24, a
 20-epoch KL warm-up, and checkpoint selection by the complete validation
 objective. The portable pool generator now applies the notebook's sampling
-temperature 0.35 explicitly; however, previously generated untracked pools do
-not contain a generation-code hash, so their exact formula remains unverified.
+temperature 0.35 explicitly. The VAE checkpoint was not retrained. The
+existing posterior bank was filtered to 256 Northern Cardinal, 247 Song
+Sparrow, and 256 American Robin anchors, and the three canonical VAE pools
+were regenerated with the corrected sampler.
 The reported generated-to-test MSE instead uses a separate, hash-recorded
 seed-42 pool reconstructed with the original notebook, 16 samples per species,
-and the train-only posterior bank. It does not verify the historical three-seed
-augmentation pools; the low-resource experiment must still be rerun if the
-report claims that it used Harvey's corrected canonical sampler.
+and the train-only posterior bank. This MSE package remains separate from the
+three-seed augmentation pools and does not replace their quality or downstream
+CRNN evidence.
 
 For the equal-count timing study, each model generated 600 spectrograms
 (200 per species) in FP32 with batch size 8 on the same hardware. Five warm-up
