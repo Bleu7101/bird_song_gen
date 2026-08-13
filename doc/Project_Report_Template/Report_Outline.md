@@ -14,9 +14,9 @@
 ### Approved compression plan
 
 - Keep the main body at or below five pages; references and appendices may extend the compiled document beyond five pages.
-- Keep the pipeline and generated-sample figures, the primary low-resource result table, and compact quality/timing tables in the main body; move detailed diagnostics and protocols to the appendix or tracked evidence packages.
+- Keep the pipeline figure, the primary low-resource result table, and compact quality/timing tables in the main body; move the generated-sample figure, detailed diagnostics, and protocols to the appendix or tracked evidence packages.
 - Describe the V1--V3 evolution in compact prose rather than a separate table.
-- Retain one compact VAE objective equation; move architecture minutiae, complete loss derivations, training hyperparameters, leakage audit details, and the full timing procedure to the appendix. State the corrected sampling equation in the main method.
+- Retain one compact VAE objective equation and only concise VAE training/provenance notes in the appendix. Keep the full timing procedure and repeat-level data in the tracked evidence package. State the corrected sampling equation in the main method.
 - Merge repeated limitations across methodology, results, discussion, and conclusion.
 - Target approximately seven compiled pages including references and a short appendix.
 
@@ -424,17 +424,19 @@ The generated-to-test mean (`0.5120`) is higher than the real-to-real reference 
 
 #### Presentation feedback: generated-result images
 
-Use the existing `3 species x 4 samples` VAE-v3 notebook figure in the main body:
+Use the combined VAE figure in the appendix:
 
-- One row per species and four generated samples per row.
-- The existing panels are independently color-normalized; disclose this rather
-  than claiming a shared scale.
-- Caption must identify these as posterior-anchor generated samples, not test reconstructions.
-- Caption must state that spectrogram appearance alone does not establish waveform realism.
+- Panel (a) shows the same held-out example per species as Original/V1/V2/V3.
+  The historical PNGs are re-rendered to a common display scale within each
+  species row by aligning their matched Original panels.
+- State that V1 used posterior sampling while V2/V3 used posterior means; the
+  sequence is descriptive and is not a controlled ablation.
+- Panel (b) uses the first two displayed VAE-v3 posterior-anchor samples per
+  species from the existing seed-42 notebook pool at temperature `0.35`.
+- Generated panels retain the notebook's independent color normalization.
+  Spectrogram appearance alone does not establish waveform realism.
 
-Source: [`conditional_samples.png`](../../reports/vae/conditional_vae_v3/conditional_samples.png), with the 48-row notebook-pool inventory in [`generated_manifest.csv`](../../reports/vae/conditional_vae_v3/generated_manifest.csv). This figure uses the existing notebook pool at temperature `0.35`, not Harvey's corrected canonical pool.
-
-Put the full original/reconstruction/residual grid in the appendix: [`test_reconstructions.png`](../../reports/vae/conditional_vae_v3/test_reconstructions.png).
+Source: [`vae_evolution_and_generated_samples.png`](../../reports/vae/vae_evolution_and_generated_samples.png), reproducibly composed by [`build_vae_report_figure.py`](../../scripts/build_vae_report_figure.py) from the tracked V1--V3 reconstruction plots and the V3 [`conditional_samples.png`](../../reports/vae/conditional_vae_v3/conditional_samples.png). The 48-row source-pool inventory is [`generated_manifest.csv`](../../reports/vae/conditional_vae_v3/generated_manifest.csv). Panel (b) uses the existing notebook pool, not Harvey's corrected canonical pool.
 
 Keep the fresh VAE and Diffusion quality results source-driven and separate.
 Values below are three-generation-seed means; feature rows also average the
@@ -485,7 +487,7 @@ The matched generator-only benchmark uses FP32, batch size 8, five warm-up batch
 | Diffusion | 600 (200/species) | 100-step DDIM | 411.1814 [410.9396, 411.2319] | 687.182 | 1.455 | 0.333 GiB |
 | Diffusion minus VAE / ratio | Same count | Matched comparison | 412.0032 mean-second gap / 1348.09 x mean-time ratio |  |  |  |
 
-The sample means and sample standard deviations were 0.3058 +/- 0.0096 seconds for VAE-v3 and 412.3090 +/- 2.8120 seconds for Diffusion. Report every repeat-level value in the appendix. In the main text, state both the absolute difference and the slowdown factor, explain that iterative Diffusion sampling and a single VAE decoder pass have different computational structures, and disclose the sequential measurement sequence. The comparison is explicitly generator-only spectrogram sampling. **This result will be presented by Harvey Li.**
+The sample means and sample standard deviations were 0.3058 +/- 0.0096 seconds for VAE-v3 and 412.3090 +/- 2.8120 seconds for Diffusion. Retain every repeat-level value in the tracked speed package. In the main text, state both the absolute difference and the slowdown factor, explain that iterative Diffusion sampling and a single VAE decoder pass have different computational structures, and disclose the sequential measurement sequence. The comparison is explicitly generator-only spectrogram sampling. **This result will be presented by Harvey Li.**
 
 ---
 
@@ -567,8 +569,8 @@ The appendix can contain:
 | Feedback item | Required report response | Planned location | Status |
 |---|---|---|---|
 | VAE needs MSE on the test set | Report overall paired test reconstruction MSE (`0.028063`) | Section 6.2 | Recorded; per-species paired-reconstruction MSE is optional |
-| Compare generated samples with original real test data | Compute same-species generated-to-test nearest-neighbor MSE plus real-to-real baseline | Section 6.2 | Completed for Shenghao's separate VAE-v3 notebook seed-42 pool |
-| Show generated results | Include compact three-species generated-spectrogram grid | Section 6.2 | Completed using the existing VAE-v3 notebook figure; independent panel normalization is disclosed |
+| Compare generated samples with original real test data | Compute same-species generated-to-test nearest-neighbor MSE plus real-to-real baseline | Section 5; provenance in Appendix A | Completed for Shenghao's separate VAE-v3 notebook seed-42 pool |
+| Show generated results | Include compact three-species generated-spectrogram grid | Appendix A | Completed using the existing VAE-v3 notebook figure; independent panel normalization is disclosed |
 | Apply VAE temperature inside reparameterization | Use `z = mu + 0.35*std*epsilon`; do not retrain the checkpoint; filter the existing bank and regenerate VAE pools | Sections 4.3 and 6.2 | Recorded: bank 256/247/256; all three VAE pools regenerated |
 | Compare VAE and Diffusion time for the same number of spectrogram samples | Generate 600 samples/model/repeat for five synchronized repeats; report generator-only seconds, throughput, peak accelerator memory, absolute gap, and time ratio | Sections 5.4 and 6.4; presented by Harvey | Recorded; sequential measurement sequence disclosed |
 | Avoid new Diffusion generation | Reuse the three audited DDIM pools and retain the completed Diffusion benchmark | Sections 5.4 and 6.2 | Recorded; no Diffusion spectrogram generation rerun |
@@ -605,6 +607,7 @@ Add every additional question from the presentation to this table before submiss
 
 - [`04_conditional_vae.ipynb`](../../notebooks/04_conditional_vae.ipynb)
 - [`conditional_vae_v3/run_summary.json`](../../reports/vae/conditional_vae_v3/run_summary.json)
+- [`vae_evolution_and_generated_samples.png`](../../reports/vae/vae_evolution_and_generated_samples.png) and its reproducible composition script [`build_vae_report_figure.py`](../../scripts/build_vae_report_figure.py)
 - [`conditional_samples.png`](../../reports/vae/conditional_vae_v3/conditional_samples.png) and its [`generated_manifest.csv`](../../reports/vae/conditional_vae_v3/generated_manifest.csv)
 - [`test_reconstructions.png`](../../reports/vae/conditional_vae_v3/test_reconstructions.png)
 - [`Generated-to-test MSE reference`](../../docs/Generated_to_test_MSE_reference.md)
@@ -655,7 +658,7 @@ The professor-confirmed runtime scope is generator-only spectrogram sampling. Do
 - [x] Implement generated-to-test and real-to-real baseline MSE metrics.
 - [x] Run and verify the metrics for the existing VAE-v3 notebook seed-42 pool; record overall and per-species distributions.
 - [x] Keep the existing notebook-pool MSE evidence; no corrected-pool MSE rerun or raw-pool inclusion is required for the report.
-- [x] Insert the existing VAE-v3 `3 x 4` generated-sample figure and disclose its independently normalized panels and notebook-pool provenance.
+- [x] Add the combined V1--V3 reconstruction-evolution and VAE-v3 generation figure to Appendix A; disclose the unmatched latent-evaluation modes, row-wise reconstruction display alignment, independently normalized generated panels, and notebook-pool provenance.
 - [x] Use generator-only spectrogram sampling as the sole runtime boundary.
 - [x] Record five fresh in-memory 600-sample repeats per model with raw timings, measurement sequence, seeds, hardware/software metadata, peak memory, and exact sampler settings.
 - [x] Compute the 412.0032-second VAE--Diffusion generator-only time gap and 1348.09 x Diffusion/VAE time ratio; Harvey owns and presents this result.
