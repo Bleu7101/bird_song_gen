@@ -41,6 +41,17 @@ docs/
 *.ckpt
 *.pth
 
+# Latex build artifacts
+*.aux
+*.bbl
+*.blg
+*.log
+*.toc
+*.fdb_latexmk
+*.fls
+*.out
+*.synctex.gz
+
 # Versioned model packages are the only tracked checkpoint boundary.
 !artifacts/models/
 !artifacts/models/**
