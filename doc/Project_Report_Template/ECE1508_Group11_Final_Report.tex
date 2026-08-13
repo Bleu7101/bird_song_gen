@@ -82,78 +82,39 @@ All members contributed to the preparation and revision of the final report.
 
 \section{Introduction and Problem Formulation}
 
-Passive acoustic monitoring enables long-term observation of bird communities,
-and systems such as BirdNET show that deep learning can convert large audio
-collections into species-level detections \cite{kahl2021birdnet}. However,
-supervised classifiers require sufficiently large and accurately labeled
-training sets. Ecological audio collections are often imbalanced: common
-species may have many high-quality recordings, while rare, elusive, or
-sensitive species have few. Collecting and annotating additional recordings is
-time-consuming and expensive, and repeated fieldwork may be undesirable in
-fragile habitats. Limited labeled data therefore remains a major bottleneck for
-reliable recognition of under-represented species.
+Passive acoustic monitoring can scale species detection beyond manual surveys.
+BirdNET demonstrates this potential with a deep neural network trained on
+extensive annotated bird-sound data to identify hundreds of species
+\cite{kahl2021birdnet}. However, supervised systems depend on labeled examples,
+and ecological recordings are often imbalanced and expensive to label, leaving
+under-represented species with limited training data.
+Spectrogram augmentation offers one way to address this bottleneck. ECOGEN
+showed the potential of generated spectrograms for classification on real
+recordings, reporting a 12\% average accuracy improvement
+\cite{guei2024ecogen}.
 
-Synthetic data augmentation offers a possible way to reduce this bottleneck.
-ECOGEN represented bird vocalizations as spectrograms, generated additional
-training examples with a VQ-VAE-based model, and evaluated their value through
-classification on real recordings \cite{guei2024ecogen}. It reported a 12\%
-average improvement in classification accuracy and outperformed conventional
-augmentation methods in 80\% of the reported comparisons. Inspired by this
-downstream-oriented evaluation, \textsc{BirdGEN} asks whether controllable and
-computationally affordable class-conditional generators can supplement limited
-collections of labeled real recordings and improve recognition on unseen real audio. 
-We compare a conditional variational autoencoder (CVAE), which provides tractable 
-encoding and one-pass decoding \cite{kingma2014aevb,sohn2015cvae}, with a conditional
-denoising diffusion model. Both generate normalized log-mel spectrograms rather
-than raw waveforms.
-
-As a controlled proof of concept, we use three common Toronto-area
-species---American Robin, Northern Cardinal, and Song Sparrow---and
-artificially restrict the labeled real data available to the downstream
-classifier. The generators are pretrained on the full training split, whereas
-each low-resource classifier receives only 50 real spectrograms per species,
-with or without generated augmentation. Each condition trains a fresh CRNN
-under matched settings and evaluates it on the same fixed set of real,
-held-out recordings. Our primary endpoint is
+Motivated by this downstream evaluation, \textsc{BirdGEN} asks whether
+class-conditional VAE-v3 and Diffusion generators can improve classification
+when labeled data are scarce. To measure downstream classifier utility, we use
+the paired change in held-out macro-F1:
 \[
 \Delta F1 =
 F1_{\mathrm{real+generated}} - F1_{\mathrm{real-only}},
 \]
-where macro-F1 weights all three species equally. Our secondary question compares 
-VAE and Diffusion in terms of generated-sample quality and the generator-only time 
-required to produce the same number of spectrograms. Reconstruction quality, 
-generated-sample diagnostics, downstream utility, and sampling cost are reported 
-as separate outcomes. This design simulates classifier label scarcity with access 
-to pretrained generators; it does not directly evaluate genuinely rare or unseen species.
+where macro-F1 weights all three species equally.
 
 \section{Data Preparation}
 
-The raw recordings were obtained from Vinay Shanbhag's five-species Bird Song
-Data Set on Kaggle, which was compiled from Xeno-canto recordings
-\cite{shanbhagBirdSongDataset}. According to the dataset documentation, the
-release contains song-only, highest-quality Xeno-canto recordings converted to
-mono 22.05-kHz WAV files and segmented into three-second clips; its metadata
-retains the original recording ID, source URL, recordist, and
-recording-specific license.
+We use three-second, mono 22.05-kHz WAV clips from the Bird Song Data Set,
+compiled from Xeno-canto recordings \cite{shanbhagBirdSongDataset}. We select
+American Robin, Northern Cardinal, and Song Sparrow, giving 3,347 clips from
+310 source recordings. Splitting by recording ID prevents clips from the same
+recording from appearing across train, validation, and test sets.
 
-We selected American Robin, Northern Cardinal, and Song Sparrow as three target
-species commonly found in the Toronto area. Our dataset audit verified that all
-3,347 metadata-referenced WAV files were present. The resulting subset contains
-310 source recording IDs: 1,017 American Robin clips, 1,074 Northern Cardinal
-clips, and 1,256 Song Sparrow clips.
-Grouping by recording ID prevents clips from the same recording from crossing
-train, validation, and test. Historical VAE experiments used 2,339/519/489
-clips; the later \texttt{content\_safe\_v2} split removes 24 duplicate training
-rows and contains 2,315/519/489 clips. Maintained generator comparisons and the
-refreshed low-resource run use a 510-row generator-safe validation subset,
-which excludes nine validation rows identified as exact counterparts of
-historical-training rows. The held-out test set remains unchanged at 489 rows.
-
-Audio is mono at 22.05~kHz and converted to $128\times128$ log-mel
-spectrograms using a 1,024-point FFT and hop length 512. The VAE uses
-training-set global standardization, whereas the maintained classifier maps
-each clip's relative 80-dB range to $[-1,1]$; an adapter converts VAE outputs
-to the classifier scale.
+Each clip is converted to a $128\times128$ log-mel spectrogram using a
+1,024-point FFT and hop length 512. The VAE uses training-set global
+standardization, while the classifier maps each clip's relative 80-dB range
+to $[-1,1]$; an adapter converts VAE outputs to the classifier scale.
 
 \section{System Design and Models}
 
@@ -205,9 +166,7 @@ condition trains a fresh CRNN and uses the same real test set.
 \subsection{Classifiers}
 
 The 1.66-M-parameter Residual CNN uses six residual blocks and global
-average/max pooling. It is retained as an architecture-comparison reference,
-and its frozen features and logits guide VAE-v3 training. It does not score or
-compare VAE and Diffusion in the maintained independent evaluation. The
+average/max pooling; its frozen features and logits guide VAE-v3 training. The
 selected 404-k-parameter CRNN combines convolutional spectral features with a
 bidirectional GRU and mean/max temporal pooling \cite{cakir2017crnn}. The
 selected CRNN is frozen for generator-quality diagnostics, whereas freshly
@@ -311,45 +270,30 @@ does not modify the training objective.
 
 \section{Experimental Methodology}
 
-Classifier architecture selection used validation data only. We compared the
-Residual CNN, Plain CNN, Depthwise CNN, and CRNN across seeds 42, 123, and 777
-using the same recording-isolated training and validation splits. The CRNN
-architecture and seed-777 checkpoint were selected from validation results; for
-the architecture comparison, only that checkpoint was evaluated once on the
-489-clip held-out test set. VAE
-evidence was separated into paired deterministic reconstruction, unpaired
-generated-sample quality, and downstream classifier utility. For the auxiliary
-nearest-neighbor MSE diagnostic, each generated spectrogram was compared with
-its nearest same-species test spectrogram in standardized log-mel space using
-a leave-one-out real reference. This diagnostic is unpaired and does not
-measure perceptual realism.
+For the primary low-resource experiment, each newly initialized CRNN received
+50 real training spectrograms per species, selected from distinct recording
+IDs. We crossed three real-data subset choices with three CRNN initialization
+seeds, yielding nine matched settings. Validation compared real-only training
+with adding 50, 100, or 200 generated spectrograms per species. The CRNN
+architecture, masking policy, optimizer-step budget, and validation/test splits
+were held constant; no pretrained CRNN was augmented. The augmentation amount
+was selected using validation macro-F1, while the primary outcome was the
+paired change in macro-F1 on the fixed held-out test set. Only the shared
+real-only baseline and each generator's selected condition were evaluated on
+the test set.
 
-For the primary low-resource experiment, each newly initialized CRNN was
-trained with 50 real training spectrograms per species, selected from distinct
-recording IDs. Three real-data subset choices were crossed with three CRNN
-initialization seeds, yielding nine matched experimental settings. Validation
-compared real-only training with adding 50, 100, or 200 generated
-spectrograms per species from each generator. The CRNN architecture, masking
-policy, optimizer-step budget, and validation/test splits were held constant.
-No existing pretrained CRNN was augmented. Validation selected the augmentation
-amount; only the shared real-only baseline and the selected 200-generated
-condition for each generator were evaluated on the unchanged 489-clip test set.
-
-Separately, each generator was timed for five synchronized in-memory repeats of
-600 spectrograms (200 per species) after five warm-up batches, using FP32
-precision, batch size 8, and the same RTX 4070 SUPER. Timing covered generation
-through the final normalized spectrogram tensor and excluded model loading,
-warm-up, conversion, CPU transfer, file output, waveform decoding, and metric
-computation.
+We also measured generator speed using five synchronized in-memory repeats of
+600 spectrograms (200 per species) after warm-up, using FP32 precision, batch
+size 8, and the same RTX 4070 SUPER. Timing covered generation through the
+final normalized spectrogram tensor; loading, conversion, transfer, file
+output, waveform decoding, and metric computation were excluded.
 
 \section{Experimental Results}
 
 \paragraph{Classifier selection.}
-Among the four evaluated classifier architectures, the 404-k-parameter CRNN
-achieved the highest controlled three-seed validation macro-F1
-($90.45\%\pm1.45\%$). The validation-selected seed-777 checkpoint subsequently
-obtained 89.98\% accuracy and 90.16\% macro-F1 on the 489-clip held-out real
-test set.
+The selected 404-k-parameter CRNN achieved a controlled three-seed validation
+macro-F1 of $90.45\%\pm1.45\%$ and was used for the downstream augmentation
+experiments.
 
 \paragraph{VAE diagnostics.}
 The recorded test-set reconstruction MSE in the globally standardized log-mel domain was
@@ -386,12 +330,16 @@ both use standardized log-mels, 0.5120 and 0.0281 are not comparable because
 they summarize generated-to-nearest-test and input-to-own-reconstruction
 pairs, respectively. The Residual CNN remains a frozen VAE training teacher
 and supplies no independent VAE--Diffusion evaluation.
-Table~\ref{tab:quality} reports the current audited pools using the selected
-CRNN and its shared feature space. Values are three-generation-seed means; the
-feature rows additionally average the three species.
+
+\paragraph{Generator-quality diagnostics.}
+The selected CRNN was used as an evaluator of generated spectrograms, not as the
+downstream test model. Table~\ref{tab:quality} summarizes class compatibility,
+feature-space distribution, and exact-copy checks for the current pools.
+Values are means over the three generation seeds; feature rows additionally
+average the three species.
 
 \begin{table}[t]
-  \caption{Frozen selected-CRNN and feature-space diagnostics for generated spectrograms.}
+  \caption{Generator-quality diagnostics for the current three-seed generated pools.}
   \label{tab:quality}
   \centering
   \small
@@ -400,14 +348,24 @@ feature rows additionally average the three species.
     \toprule
     Metric & VAE-v3 & Diffusion \\
     \midrule
-    Frozen selected-CRNN target-label accuracy / macro-F1 & 96.67\% / 96.66\% & 92.44\% / 92.42\% \\
+    Selected-CRNN target-label accuracy / macro-F1 & 96.67\% / 96.66\% & 92.44\% / 92.42\% \\
     Classifier-feature Fr\'echet distance & 22.8950 & 41.2550 \\
     Feature precision / feature recall & 0.8528 / 0.8972 & 0.5654 / 0.8207 \\
     Feature density / coverage / diversity ratio & 0.6423 / 0.7419 / 0.8719 & 0.3114 / 0.4845 / 1.0083 \\
-    Pixel Wasserstein / near-train fraction / exact copies & 0.0787 / 36.67\% / 0 & 0.1916 / 2.50\% / 0 \\
+    Pixel Wasserstein / exact copies & 0.0787 / 0 & 0.1916 / 0 \\
     \bottomrule
   \end{tabular}}
 \end{table}
+
+Across the current generation seeds, Diffusion reached
+$92.44\%\pm0.86\%$ target-label accuracy and
+$92.42\%\pm0.84\%$ macro-F1, compared with $96.67\%\pm1.20\%$ and
+$96.66\%\pm1.21\%$ for VAE-v3. VAE-v3 had lower feature Fr\'echet distance, higher feature
+precision, recall, density, and coverage, and lower pixel Wasserstein distance;
+Diffusion had a diversity ratio closer to one ($1.0083$ versus $0.8719$). These current-pool,
+classifier-view diagnostics describe different quality dimensions and do not
+establish waveform realism, perceptual quality, or downstream augmentation
+utility.
 
 \paragraph{Low-resource augmentation.}
 \begin{table}[t]
@@ -431,25 +389,31 @@ feature rows additionally average the three species.
   \end{tabular}}
 \end{table}
 
-Each condition used 50 real spectrograms per species. Validation values are
+Table~\ref{tab:low-resource} summarizes the validation selection and held-out
+test results. Each condition used 50 real spectrograms per species. Validation values are
 means across the nine matched experimental settings and determined the selected
 augmentation amount. The shared real-only baseline and each generator's
 selected 200-generated condition were then evaluated on the fixed test set;
 dashes indicate conditions not evaluated on test. Diffusion had the higher
 validation macro-F1 at every nonzero augmentation amount,
 whereas VAE-v3 had the higher held-out test macro-F1. Mean held-out macro-F1 was
-84.75\% for real-only, 87.48\% for VAE-v3, and 86.21\% for Diffusion. The paired changes were
-$+2.72$ percentage points for VAE-v3 (7/9 positive blocks; descriptive
+84.75\% for real-only, 87.48\% for VAE-v3, and 86.21\% for Diffusion. The
+primary outcome, the paired change in held-out macro-F1, was
+$\Delta F1=+2.72$ percentage points for VAE-v3 (7/9 positive blocks; descriptive
 block-bootstrap interval $+1.00$ to $+4.65$) and $+1.46$ points for Diffusion
 (6/9; $+0.15$ to $+2.89$).
 
 \paragraph{Equal-count generator timing.}
-The recorded benchmark generated 600 fresh in-memory spectrograms (200 per
-species) per synchronized repeat after warm-up. The timing values below report
-the time for the complete 600-spectrogram request; the per-spectrogram column
-is the corresponding batch-average time, not an isolated single-spectrogram
-latency. Pre-existing arrays are not timing evidence.
-\begin{table}[t]
+The benchmark generated 600 fresh in-memory spectrograms (200 per species) per
+synchronized repeat after warm-up. Table~\ref{tab:timing} reports the complete
+request time, batch-average time per spectrogram, and throughput. The timing
+boundary ended at the final normalized spectrogram tensor and excluded model
+loading, conversion, transfer, file output, waveform decoding, and metric
+computation. Diffusion took $1348.09\times$ the VAE-v3 generator time for an
+equal-count request; measurements used FP32, batch size 8, five warm-up batches,
+five CUDA-synchronized repeats, and the same RTX 4070 SUPER.
+
+\begin{table}[!ht]
   \caption{Generator-only timing comparison for matched fresh outputs.}
   \label{tab:timing}
   \centering
@@ -465,13 +429,6 @@ latency. Pre-existing arrays are not timing evidence.
     \bottomrule
   \end{tabular}}
 \end{table}
-Diffusion took 412.0032 seconds longer per equal-count request, or
-$1348.09\times$ the VAE-v3 generator time. The median [Q1, Q3] time for 600
-spectrograms was 0.3046 [0.2983, 0.3076] seconds for VAE-v3 and 411.1814
-[410.9396, 411.2319] seconds for Diffusion. These measurements use FP32, batch
-size 8, five warm-up batches, five CUDA-synchronized repeats, and an RTX 4070
-SUPER. They exclude loading, conversion, transfer, file I/O, waveform decoding,
-and metric computation.
 
 \section{Discussion}
 
@@ -487,9 +444,9 @@ independent CRNN cannot reject unknown or noisy inputs. Spectrogram and
 classifier metrics also do not replace listening or waveform-level evaluation
 \cite{bhatia2022birdsong}. VAE-v3 has higher CRNN target
 compatibility, lower macro-species Fr\'echet distance, and higher feature
-precision/coverage in these pools, but it also has a much larger near-training
-feature fraction. Diffusion has a diversity ratio nearer one and lower
-copy-risk flags. Separately, Diffusion took $1348.09\times$ the VAE-v3
+precision/coverage in these pools. Diffusion has a diversity ratio nearer one.
+Separately,
+Diffusion took $1348.09\times$ the VAE-v3
 generator time under the recorded boundary.
 
 \section{Conclusion}
