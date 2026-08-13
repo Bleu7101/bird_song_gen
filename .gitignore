@@ -35,6 +35,8 @@ artifacts/generated_spectrograms/
 models/
 runs/
 outputs/
+docs/
+
 *.pt
 *.ckpt
 *.pth

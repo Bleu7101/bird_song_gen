@@ -1,443 +1,163 @@
 \documentclass{article}
-
-\PassOptionsToPackage{numbers,sort&compress}{natbib}
+% if you need to pass options to natbib, use, e.g.:
+%     \PassOptionsToPackage{numbers, compress}{natbib}
+% before loading neurips_2023
 \usepackage[final]{neurips}
+% to avoid loading the natbib package, add option nonatbib:
+%    \usepackage[nonatbib]{neurips}
 
-\usepackage[utf8]{inputenc}
-\usepackage[T1]{fontenc}
-\usepackage{amsmath,amsfonts}
-\usepackage{booktabs}
-\usepackage{graphicx}
-\usepackage{hyperref}
-\usepackage{microtype}
-\usepackage{nicefrac}
-\usepackage{tikz}
-\usepackage{url}
-\usepackage{xcolor}
-\usetikzlibrary{arrows.meta}
 
-\title{BirdGEN: Conditional Bird-Song Spectrogram Generation for Rare Species Classification}
+\usepackage[utf8]{inputenc} % allow utf-8 input
+\usepackage[T1]{fontenc}    % use 8-bit T1 fonts
+\usepackage{hyperref}       % hyperlinks
+\usepackage{url}            % simple URL typesetting
+\usepackage{booktabs}       % professional-quality tables
+\usepackage{amsfonts}       % blackboard math symbols
+\usepackage{nicefrac}       % compact symbols for 1/2, etc.
+\usepackage{microtype}      % microtypography
+\usepackage{xcolor}         % colors
+
+
+\title{Project Title}
+
+
+% The \author macro works with any number of authors. There are two commands
+% used to separate the names and addresses of multiple authors: \And and \AND.
+%
+% Using \And between authors leaves it to LaTeX to determine where to break the
+% lines. Using \AND forces a line break at that point. So, if LaTeX puts 3 of 4
+% authors names on the first line, and the last on the second line, try using
+% \AND instead of \And before the third author name.
+
 
 \author{%
-  Shenghao Jin \quad Harvey Li \quad Vincent Wang\\
-  Department of Electrical and Computer Engineering, University of Toronto\\
-  {\small\texttt{shenghao.jin@mail.utoronto.ca} \quad
-  \texttt{harv.li@mail.utoronto.ca}}\\
-  {\small\texttt{vz.wang@mail.utoronto.ca}}
+  Name\\
+  Department of ...\\
+  University of Toronto\\
+  \texttt{email} \\
+  % more authors
+  \And
+  Name\\
+  Department of ...\\
+  University of Toronto\\
+  \texttt{email} \\
+  % \AND
+  % Coauthor \\
+  % Affiliation \\
+  % Address \\
+  % \texttt{email} \\
+  % \And
+  % Coauthor \\
+  % Affiliation \\
+  % Address \\
+  % \texttt{email} \\
+  % \And
+  % Coauthor \\
+  % Affiliation \\
+  % Address \\
+  % \texttt{email} \\
 }
 
 \begin{document}
 
+
 \maketitle
 
+
 \begin{abstract}
-BirdGEN investigates whether class-conditional spectrogram generation can
-improve bird-species classification when labeled data are limited.  We use
-recording-isolated log-mel preprocessing, Residual CNN and CRNN classifiers,
-and a progressively refined conditional VAE.  The downstream study preserves
-nine matched blocks and the four per-species conditions $50+0$, $50+50$,
-$50+100$, and $50+200$. The regenerated VAE pools and reused audited Diffusion
-pools now support current three-seed CRNN-view quality results, and a recorded
-equal-count benchmark supports the runtime comparison. In the completed
-low-resource study, validation selected $+200$ generated samples per species
-for both models. Relative to the 84.75\% real-only macro-F1 mean, VAE-v3 reached
-87.48\% and Diffusion reached 86.21\%. Quality, classifier utility, and
-generator-only spectrogram-sampling time are reported as separate outcomes.
+An abstract of the report.
 \end{abstract}
 
-\section*{Attestation of Teamwork}
-Shenghao Jin contributed to data preparation and the conditional VAE. Harvey
-Li contributed to data preparation, the Residual CNN and CRNN classifiers,
-the low-resource augmentation experiment, and the VAE--Diffusion
-generator-only spectrogram-sampling comparison. Vincent Wang developed and evaluated the conditional Diffusion
-model. All members contributed to the preparation and revision of the final
-report.
+\section*{Assentation of Teamwork}
+Here, you explain how each member in the group has contributed to the project. 
 
-\section{Introduction and Problem Formulation}
 
-Field recordings are expensive to collect and annotate, so conditional
-generation may provide additional labeled training examples.  Given a species
-label $y$ and latent variable $z$, a generator produces a spectrogram
-$\hat{x}=G(z,y)$. VAEs provide tractable encoding and one-pass decoding
-\cite{kingma2014aevb}, while conditional VAEs incorporate the requested class
-\cite{sohn2015cvae}. Although rare-species recognition is the intended
-application, our experiment simulates \emph{label scarcity} for three project
-species using generators pretrained on the full training split; it is not an
-unseen-species experiment.
 
-Our primary question is whether generated samples improve a newly initialized
-classifier evaluated on fixed, real, held-out recordings. The endpoint is
-$\Delta F1=F1_{\mathrm{real+generated}}-F1_{\mathrm{real-only}}$, using
-macro-F1 to weight the three species equally. The secondary question compares
-VAE and Diffusion sample quality and equal-count generation time. Quality,
-downstream utility, and runtime are kept as separate outcomes.
+\section{Introduction}
+Here, you explain briefly the target problem and motivation to solve it via Deep Learning.
 
-\section{Data Preparation}
+\section{Preliminaries and Problem Formulation}
+Here, you formulate the problem. Specify the ultimate goal. If there are some new concepts that you had to learn to understand this project, you could briefly explain them. 
+	
+\section{Design}
+You explain the details of your design, plot diagrams if needed and name the key components. 
 
-The audited subset contains 3,347 three-second clips from 310 source recording
-IDs: 1,017 American Robin, 1,074 Northern Cardinal, and 1,256 Song Sparrow.
-Grouping by recording ID prevents clips from the same recording from crossing
-train, validation, and test. Historical VAE experiments used 2,339/519/489
-clips; the later \texttt{content\_safe\_v2} split removes 24 duplicate training
-rows and contains 2,315/519/489 clips. Maintained generator comparisons and the
-refreshed low-resource run use a 510-row generator-safe validation subset,
-which excludes nine validation rows identified as exact counterparts of
-historical-training rows. The held-out test set remains unchanged at 489 rows.
 
-Audio is mono at 22.05~kHz and converted to $128\times128$ log-mel
-spectrograms using a 1,024-point FFT and hop length 512. The VAE uses
-training-set global standardization, whereas the maintained classifier maps
-each clip's relative 80-dB range to $[-1,1]$; an adapter converts VAE outputs
-to the classifier scale.
 
-\section{System Design and Models}
 
-Figure~\ref{fig:pipeline} shows the matched evaluation path. Every downstream
-condition trains a fresh CRNN and uses the same real test set.
+\section{Methodology}
+You should explain the algorithms you have used in your design and include pseudo-code if necessary. If an algorithm is new, you should briefly explain it. You may also name the specific modules and/or libraries you have used for implementation.
 
-\begin{figure}[t]
+
+\section{Numerical Experiments}
+
+You explain the experiments you have conducted to check your implemented design. You must also specify all values and parameters you have considered in the simulation, plot the learning curves or show the test values in the form of tables. If you have a demo test, you could also present it here. Also, if you compare your implementation against a benchmark or a reference setting, you should explain what the benchmark is and specify how you got the results for the benchmark (it's all OK if you get the result for the benchmark from an already implemented code or copy it from a paper, you should just cite them).
+
+\subsection{Including Figures}
+
+
+\begin{figure}
   \centering
-  \resizebox{\linewidth}{!}{%
-  \begin{tikzpicture}[
-    block/.style={draw,rounded corners,align=center,inner sep=3pt,
-                  text width=2.15cm,font=\scriptsize},
-    data/.style={block,fill=blue!7},
-    model/.style={block,fill=orange!10},
-    generated/.style={block,fill=green!9},
-    arrow/.style={-{Latex[length=1.7mm]},thin}
-  ]
-    \node[data] (wav) at (-5.0,0) {WAV recordings};
-    \node[data] (split) at (-2.5,0) {Recording-safe split};
-    \node[data] (mel) at (0,0) {Log-mel spectrograms};
-    \node[model] (teacher) at (-4.7,-1.25) {Residual CNN teacher};
-    \node[model] (vae) at (-2.1,-1.25) {Conditional VAE-v3};
-    \node[model] (diff) at (2.1,-1.25) {Diffusion model};
-    \node[generated] (gvae) at (-2.1,-2.55) {Generated spectrograms (VAE)};
-    \node[generated] (gdiff) at (2.1,-2.55) {Generated spectrograms (Diffusion)};
-    \node[data,text width=3.1cm] (train) at (0,-3.85)
-      {Real-only or real-plus-generated training set};
-    \node[model] (crnn) at (3.25,-3.85) {Fresh CRNN};
-    \node[data] (test) at (5.75,-3.85) {Fixed real test set};
-    \draw[arrow] (wav) -- (split);
-    \draw[arrow] (split) -- (mel);
-    \draw[arrow] (mel) -- (teacher);
-    \draw[arrow] (mel) -- (vae);
-    \draw[arrow] (teacher) -- (vae);
-    \draw[arrow] (mel) -- (diff);
-    \draw[arrow] (vae) -- (gvae);
-    \draw[arrow] (diff) -- (gdiff);
-    \draw[arrow] (gvae) -- (train);
-    \draw[arrow] (gdiff) -- (train);
-    \draw[arrow] (mel) to[out=-75,in=100] (train);
-    \draw[arrow] (train) -- (crnn);
-    \draw[arrow] (crnn) -- (test);
-  \end{tikzpicture}}
-  \caption{BirdGEN pipeline. Both generated-spectrogram branches feed the same
-  downstream-classifier protocol.}
-  \label{fig:pipeline}
+  \fbox{\rule[-.5cm]{0cm}{4cm} \rule[-.5cm]{4cm}{0cm}}
+  \caption{Sample figure caption.}
 \end{figure}
 
-\subsection{Classifiers}
 
-The 1.66-M-parameter Residual CNN uses six residual blocks and global
-average/max pooling. It is retained as an architecture-comparison reference,
-and its frozen features and logits guide VAE-v3 training. It does not score or
-compare VAE and Diffusion in the maintained independent evaluation. The selected
-404-k-parameter CRNN combines
-convolutional spectral features with a bidirectional GRU and temporal pooling
-\cite{cakir2017crnn}. An independent frozen CRNN supplies generation-quality
-diagnostics, while freshly initialized CRNNs provide the downstream
-augmentation evidence.
 
-\subsection{Conditional VAE Evolution}
+\subsection{Including Tables}
 
-V1 established a CVAE baseline with a flat 128-value latent, label
-concatenation, and MSE+KL loss, but its samples blurred narrow calls. V2 used a
-$16\times8\times8$ spatial latent, residual FiLM conditioning
-\cite{perez2018film}, resize-convolution, detail-aware losses, and
-species-matched posterior statistics to preserve time--frequency location. V3
-increased the latent to $16\times16\times16$, added free bits and frozen
-classifier feature/label consistency, and sampled from a species-matched
-posterior-anchor bank. These changes targeted fine transients, species cues, and the
-mismatch between the standard-normal prior and the learned posterior. Because
-several components changed together, the versions are an engineering
-progression rather than a controlled ablation.
-
-VAE-v3 has 5.37~M parameters. Species embeddings modulate residual blocks with
-FiLM, and the objective combines event-weighted and multiscale reconstruction,
-time/frequency gradients, free-bits KL, and frozen-classifier consistency:
-\begin{equation}
-\mathcal{L}=\mathcal{L}_{\mathrm{event}}+0.25\mathcal{L}_{\mathrm{ms}}
-+0.60(\mathcal{L}_{\Delta t}+\mathcal{L}_{\Delta f})
-+\beta\mathcal{L}_{\mathrm{KL,free}}
-+s_{\mathrm{cls}}[0.08\mathcal{L}_{\mathrm{feat}}+0.03\mathcal{L}_{\mathrm{label}}].
-\label{eq:vae-loss}
-\end{equation}
-Multiscale and feature-space terms are motivated by
-\cite{mathieu2016multiscale,johnson2016perceptual}; free bits follow
-\cite{kingma2016iaf}. For generation, V3 perturbs a class-matched posterior
-anchor rather than drawing independently from a standard-normal prior, an idea
-related in motivation to mixture priors such as VampPrior
-\cite{tomczak2018vampprior}.
-
-The corrected reparameterization applies temperature to the stochastic term:
-\begin{equation}
-z=\mu+0.35\,\operatorname{std}\odot\epsilon,
-\qquad \epsilon\sim\mathcal{N}(0,I).
-\label{eq:vae-reparameterization}
-\end{equation}
-Equivalently, the implementation is exactly
-\texttt{z = mu + 0.35*std*epsilon}. The VAE checkpoint was not retrained. Its
-existing posterior bank was filtered to 256 Northern Cardinal, 247 Song
-Sparrow, and 256 American Robin anchors, and all three VAE pools were
-regenerated with this corrected equation. The three audited Diffusion pools
-were reused without new Diffusion spectrogram generation.
-
-\subsection{Diffusion Model}
-% Intentionally left blank for Vincent Wang's canonical Diffusion method and citations.
-
-\section{Experimental Methodology}
-
-Classifier architectures were selected on validation data across seeds 42,
-123, and 777, then evaluated on held-out test recordings. VAE evidence is
-separated into paired deterministic reconstruction, unpaired generated-sample
-quality, and downstream classifier utility. To address the presentation
-feedback, each frozen generated sample was compared with its nearest
-same-species test spectrogram in the standardized-logmel domain, with a
-leave-one-out real-test reference. The test set was used only for this final
-evaluation; low MSE can also indicate copying or limited diversity.
-
-For the primary experiment, each fresh CRNN sees 50 real examples per species.
-Three real-subset seeds crossed with three classifier seeds give nine matched
-blocks. Every block evaluates $50+0$, $50+50$, $50+100$, and $50+200$
-real-plus-generated samples per species, separately for VAE and Diffusion.
-Ratios are selected using the 510-row generator-safe validation subset; only
-the shared $50+0$ baseline and each generator's selected ratio reach the fixed
-489-row real test set. Architecture,
-augmentation, and optimizer-step budget are matched. No existing pretrained
-classifier is augmented, and the Residual CNN is not a generated-sample
-evaluator. The recorded runtime benchmark timed five fresh in-memory
-600-spectrogram repeats per model on the same GPU, precision, and batch size
-after warm-up. CUDA was synchronized around generator sampling through the
-final normalized tensor; model loading, existing arrays, file output,
-plotting, and metric computation were excluded. Models were measured
-sequentially: the completed Diffusion benchmark was retained and VAE-v3 was
-remeasured with the filtered bank, with no Diffusion sampling rerun.
-
-\section{Experimental Results}
-
-\paragraph{Classifier and VAE diagnostics.}
-The selected CRNN obtained 90.16\% macro-F1 on 489 held-out clips. Across VAE
-versions, deterministic test reconstruction MSE decreased from 0.1533 (V1) to
-0.0654 (V2) and 0.0281 (V3); V3 test MAE was 0.1261 and spectral convergence
-was 0.1794. These paired reconstruction values do not measure the distance
-between independently generated and real examples.
-
-\begin{figure}[t]
+\begin{table}
+  \caption{Sample table title}
+  \label{sample-table}
   \centering
-  \includegraphics[width=\linewidth]{../../reports/vae/conditional_vae_v3/conditional_samples.png}
-  \caption{Existing VAE-v3 notebook posterior-anchor samples at temperature
-  0.35: four examples per species (48 samples were saved in total). Panels are
-  independently color-normalized; spectrogram appearance alone does not
-  establish waveform realism.}
-  \label{fig:vae-samples}
-\end{figure}
-
-The 48 historical samples achieved 100\% target agreement under the Residual
-teacher (mean confidence 0.915), but that classifier also contributes to
-Eq.~\eqref{eq:vae-loss}; the result is not an independent realism score.
-For the separately verified seed-42 notebook pool (16 samples/species), the
-same-species generated-to-test nearest-neighbor MSE was 0.5120 on average
-(SD 0.1998; median 0.4501; IQR 0.3878--0.6231), versus 0.3350 for the
-leave-one-out real-to-real reference (SD 0.1419; median 0.3185; IQR
-0.2368--0.4154). Generated/real means were 0.4308/0.3237 for American Robin,
-0.5579/0.3650 for Northern Cardinal, and 0.5474/0.3175 for Song Sparrow.
-These are unpaired pixel-space summaries (48 versus 489 queries), not a
-perceptual-realism or waveform-quality score; nearest-neighbor MSE can reward
-copying. This hash-recorded diagnostic used the original notebook sampler at
-temperature 0.35 with a train-only posterior bank, not Harvey's corrected
-canonical pool.
-The Residual CNN remains a frozen VAE training teacher and supplies no
-independent VAE--Diffusion evaluation. Table~\ref{tab:quality} reports the current
-audited pools using the selected CRNN and its shared feature space. Values
-are three-generation-seed means; the feature rows additionally average the
-three species.
-
-\begin{table}[t]
-  \caption{Frozen selected-CRNN and feature-space generated-sample diagnostics.}
-  \label{tab:quality}
-  \centering
-  \small
-  \resizebox{\linewidth}{!}{%
-  \begin{tabular}{@{}lll@{}}
+  \begin{tabular}{lll}
     \toprule
-    Metric & VAE-v3 & Diffusion \\
+    \multicolumn{2}{c}{Part}                   \\
+    \cmidrule(r){1-2}
+    Architecture     & Result 1     & Result 2 \\
     \midrule
-    Target-label accuracy / CRNN macro-F1 & 96.67\% / 96.66\% & 92.44\% / 92.42\% \\
-    Classifier-feature Fr\'echet distance & 22.8950 & 41.2550 \\
-    Feature precision / feature recall & 0.8528 / 0.8972 & 0.5654 / 0.8207 \\
-    Feature density / coverage / diversity ratio & 0.6423 / 0.7419 / 0.8719 & 0.3114 / 0.4845 / 1.0083 \\
-    Pixel Wasserstein / near-train fraction / exact copies & 0.0787 / 36.67\% / 0 & 0.1916 / 2.50\% / 0 \\
-    \bottomrule
-  \end{tabular}}
-\end{table}
-
-\paragraph{Low-resource augmentation.}
-\begin{table}[t]
-  \caption{Completed low-resource CRNN study across nine matched blocks.}
-  \label{tab:low-resource}
-  \centering
-  \small
-  \begin{tabular}{@{}lll@{}}
-    \toprule
-    Per-species condition & Val. macro-F1 (VAE / Diff.) & Test status \\
-    \midrule
-    $50+0$ & Shared real-only reference & Evaluated baseline \\
-    $50+50$ & 84.53\% / 85.45\% & Not selected \\
-    $50+100$ & 85.88\% / 86.06\% & Not selected \\
-    $50+200$ & 86.47\% / 86.84\% & Selected for both \\
+    CNN & 1\%  &1\%   \\
+    ResNet     &1\% &1\%      \\
+    LSTM     &1\%       &   \\
     \bottomrule
   \end{tabular}
 \end{table}
 
-Test reporting is limited to the shared $50+0$ baseline and the independently
-selected $+200$ condition. Mean held-out macro-F1 was 84.75\% for real-only,
-87.48\% for VAE-v3, and 86.21\% for Diffusion. The paired changes were
-$+2.72$ percentage points for VAE-v3 (7/9 positive blocks; descriptive
-block-bootstrap interval $+1.00$ to $+4.65$) and $+1.46$ points for Diffusion
-(6/9; $+0.15$ to $+2.89$).
-
-\paragraph{Equal-count generator timing.}
-The recorded benchmark generated 600 fresh in-memory spectrograms (200 per
-species) per synchronized repeat after warm-up. The package retains every
-repeat's seconds, throughput, peak accelerator memory, hardware, precision,
-batch size, sampler settings, seed, measurement sequence, and timing boundary.
-Pre-existing arrays are not timing evidence.
-\begin{table}[t]
-  \caption{Generator-only timing comparison for matched fresh outputs.}
-  \label{tab:timing}
-  \centering
-  \small
-  \resizebox{\linewidth}{!}{%
-  \begin{tabular}{@{}lrrrr@{}}
-    \toprule
-    Model & Outputs/repeat & Repeat seconds & Samples/s & Peak accelerator memory \\
-    \midrule
-    VAE-v3 (corrected sampler) & 600 & $0.3058\pm0.0096$ & 1963.276 & 0.185 GiB \\
-    Diffusion (100-step DDIM) & 600 & $412.3090\pm2.8120$ & 1.455 & 0.333 GiB \\
-    Difference / Diffusion-to-VAE ratio & 600 & 412.0032 / $1348.09\times$ & -- & -- \\
-    \bottomrule
-  \end{tabular}}
-\end{table}
-The median [Q1, Q3] repeat time was 0.3046 [0.2983, 0.3076] seconds for VAE-v3
-and 411.1814 [410.9396, 411.2319] seconds for Diffusion. These measurements use
-FP32, batch size 8, five warm-up batches, five CUDA-synchronized repeats, and an
-RTX 4070 SUPER. They exclude loading, conversion, transfer, file I/O, and audio
-decoding. The completed Diffusion benchmark was retained; VAE-v3 was
-remeasured afterward using the filtered 759-anchor bank, and no Diffusion
-sampling was rerun.
-
 \section{Discussion}
+You may include answer to research questions here.
+	
 
-In the simulated low-resource setting, both validation-selected $+200$ arms
-improved mean held-out macro-F1 versus their matched real-only controls. The
-nine blocks reuse overlapping real subsets, so the intervals are descriptive
-and the largest tested ratio is not an estimated optimum. This result applies
-to newly initialized low-resource CRNNs, not the historical full-data CRNN.
-Reconstruction MSE rewards pixel proximity, the Residual CNN is coupled to
-V3 training and therefore restricted to its teacher role, and a closed-set
-independent CRNN cannot reject unknown or noisy inputs. Spectrogram and
-classifier metrics also do not replace listening or waveform-level evaluation
-\cite{bhatia2022birdsong}. VAE-v3 has higher CRNN target
-compatibility, lower macro-species Fr\'echet distance, and higher feature
-precision/coverage in these pools, but it also has a much larger near-training
-feature fraction. Diffusion has a diversity ratio nearer one and lower
-copy-risk flags. Separately, Diffusion took $1348.09\times$ the VAE-v3
-generator time under the recorded boundary.
+\section{Conclusions}
+You should shortly conclude what you learned during project. Also, if you have any idea for further improvement of the results or extension, you may mention it here.
+	
+	
 
-\section{Conclusion}
 
-BirdGEN now has corrected three-seed generator evidence, a completed matched
-low-resource CRNN study, and a matched timing comparison. Validation selected
-$+200$/species for both models; the mean paired macro-F1 changes were $+2.72$
-points for VAE-v3 and $+1.46$ points for Diffusion. Quality diagnostics remain
-metric-specific rather than a composite winner, and the efficiency result is
-limited to generator-only spectrogram sampling on the recorded hardware.
-
-\clearpage
-\begin{thebibliography}{99}
+\section*{References}
+Include all references here. It’s important to have your references cited.
+\medskip
+{
 \small
 
-\bibitem{kingma2014aevb}
-D. P. Kingma and M. Welling, ``Auto-Encoding Variational Bayes,'' in
-\emph{Proc. Int. Conf. Learn. Represent. (ICLR)}, 2014.
 
-\bibitem{sohn2015cvae}
-K. Sohn, H. Lee, and X. Yan, ``Learning structured output representation using
-deep conditional generative models,'' in \emph{Adv. Neural Inf. Process.
-Syst.}, vol. 28, pp. 3483--3491, 2015.
+[1] Alexander, J.A.\ \& Mozer, M.C.\ (1995) Template-based algorithms for
+connectionist rule extraction. In G.\ Tesauro, D.S.\ Touretzky and T.K.\ Leen
+(eds.), {\it Advances in Neural Information Processing Systems 7},
+pp.\ 609--616. Cambridge, MA: MIT Press.
 
-\bibitem{cakir2017crnn}
-E. Cakir, G. Parascandolo, T. Heittola, H. Huttunen, and T. Virtanen,
-``Convolutional recurrent neural networks for polyphonic sound event
-detection,'' \emph{IEEE/ACM Trans. Audio, Speech, Lang. Process.}, vol. 25,
-no. 6, pp. 1291--1303, 2017.
 
-\bibitem{perez2018film}
-E. Perez, F. Strub, H. de Vries, V. Dumoulin, and A. Courville, ``FiLM: Visual
-reasoning with a general conditioning layer,'' in \emph{Proc. AAAI Conf.
-Artif. Intell.}, vol. 32, no. 1, pp. 3942--3951, 2018.
+[2] Bower, J.M.\ \& Beeman, D.\ (1995) {\it The Book of GENESIS: Exploring
+  Realistic Neural Models with the GEneral NEural SImulation System.}  New York:
+TELOS/Springer--Verlag.
 
-\bibitem{mathieu2016multiscale}
-M. Mathieu, C. Couprie, and Y. LeCun, ``Deep multi-scale video prediction
-beyond mean square error,'' in \emph{Proc. ICLR}, 2016.
 
-\bibitem{kingma2016iaf}
-D. P. Kingma, T. Salimans, R. Jozefowicz, X. Chen, I. Sutskever, and M.
-Welling, ``Improved variational inference with inverse autoregressive flow,''
-in \emph{Adv. Neural Inf. Process. Syst.}, vol. 29, pp. 4743--4751, 2016.
+[3] Hasselmo, M.E., Schnell, E.\ \& Barkai, E.\ (1995) Dynamics of learning and
+recall at excitatory recurrent synapses and cholinergic modulation in rat
+hippocampal region CA3. {\it Journal of Neuroscience} {\bf 15}(7):5249-5262.
+}
 
-\bibitem{johnson2016perceptual}
-J. Johnson, A. Alahi, and L. Fei-Fei, ``Perceptual losses for real-time style
-transfer and super-resolution,'' in \emph{Computer Vision--ECCV}, pp.
-694--711, 2016.
+\section*{Appendix}
+Any descriptions about supplementary materials go here.
 
-\bibitem{tomczak2018vampprior}
-J. Tomczak and M. Welling, ``VAE with a VampPrior,'' in \emph{Proc. AISTATS},
-PMLR, vol. 84, pp. 1214--1223, 2018.
-
-\bibitem{bhatia2022birdsong}
-R. R. Bhatia and T. H. Kinnunen, ``An initial study on birdsong re-synthesis
-using neural vocoders,'' in \emph{Speech and Computer}, pp. 64--74, 2022.
-
-\end{thebibliography}
-
-\clearpage
-\appendix
-\section{Supplementary Reproducibility Notes}
-
-VAE-v3 used AdamW with learning rate $2\times10^{-4}$, batch size 24, a
-20-epoch KL warm-up, and checkpoint selection by the complete validation
-objective. The portable pool generator now applies the notebook's sampling
-temperature 0.35 explicitly. The VAE checkpoint was not retrained. The
-existing posterior bank was filtered to 256 Northern Cardinal, 247 Song
-Sparrow, and 256 American Robin anchors, and the three canonical VAE pools
-were regenerated with the corrected sampler.
-The reported generated-to-test MSE instead uses a separate, hash-recorded
-seed-42 pool reconstructed with the original notebook, 16 samples per species,
-and the train-only posterior bank. This MSE package remains separate from the
-three-seed augmentation pools and does not replace their quality or downstream
-CRNN evidence.
-
-For the equal-count timing study, each model generated 600 spectrograms
-(200 per species) in FP32 with batch size 8 on the same hardware. Five warm-up
-batches preceded five synchronized repeats. Models were measured sequentially,
-not interleaved: the completed Diffusion benchmark was retained and VAE-v3 was
-remeasured after the bank filter. The sole timing boundary is generator
-sampling through the final normalized spectrogram tensor; model loading,
-existing arrays, file output, plotting, and metric computation are excluded.
-The package preserves repeat seconds, throughput, peak accelerator memory,
-hardware, precision, batch size, seeds, sampler settings, and the
-timing-boundary description.
 
 \end{document}
