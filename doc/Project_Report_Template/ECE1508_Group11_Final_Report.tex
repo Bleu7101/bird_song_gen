@@ -24,7 +24,7 @@
 \usetikzlibrary{arrows.meta}
 
 
-\title{BirdGEN: Conditional Spectrogram Augmentation for Bird Species Classification under Simulated Label Scarcity}
+\title{BirdGEN: Generative Spectrogram Augmentation for Low-Resource Bird Classification}
 
 
 % The \author macro works with any number of authors. There are two commands
@@ -340,14 +340,16 @@ macro-F1 of $90.45\%\pm1.45\%$ and was used for the downstream augmentation
 experiments.
 
 \paragraph{VAE diagnostics.}
-Test reconstruction MSE in the globally standardized log-mel domain decreased
-from 0.1533 for V1 and 0.0654 for V2 to 0.0281 for V3, although the historical
-V1 evaluation sampled from its posterior and is not strictly matched. For a
-separate seed-42 diagnostic pool of 48 generated samples, mean same-species
-generated-to-test nearest-neighbor MSE was 0.5120, versus 0.3350 for the
-489-query real-to-real leave-one-out reference. These metrics use different
-pairings, and nearest-neighbor pixel MSE can reward copying; neither directly
-measures perceptual or waveform realism. Appendix
+During V3 training, reconstruction MSE was monitored on the validation split,
+while the best checkpoint was selected using the complete validation objective.
+Post-training held-out test MSE in the globally standardized log-mel domain
+decreased from 0.1533 for V1 and 0.0654 for V2 to 0.0281 for V3; because V1
+sampled from its posterior, this cross-version comparison is descriptive rather
+than strictly matched. For a separate seed-42 pool of 48 generated samples,
+mean same-species generated-to-test nearest-neighbor MSE was 0.5120, versus
+0.3350 for the 489-query real-to-real leave-one-out reference. Because these
+metrics use different pairings and nearest-neighbor MSE can reward copying,
+neither directly measures perceptual or waveform realism. Appendix
 Figure~\ref{fig:vae-evolution-samples} contrasts matched V1--V3
 reconstructions and shows representative V3 generations.
 
