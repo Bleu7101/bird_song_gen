@@ -42,8 +42,8 @@ classifier and the sole generated-sample evaluator. The Residual CNN is kept
 as the architecture-comparison reference and frozen VAE training teacher; it
 is not used to claim downstream augmentation improvement. The main research
 focus is conditional generation, two-classifier evaluation, generator quality,
-and low-resource augmentation. Diffusion training remains on its separate
-branches.
+and low-resource augmentation. Diffusion training remains on the
+`diffusion_vincent` branch.
 
 ## Main branch overview
 
@@ -53,8 +53,9 @@ WGAN-GP generator baselines. Current VAE-v3/Diffusion comparisons use the
 selected CRNN, three classifier-ready pools per model, generator-quality
 diagnostics, generator-only sampling speed, and the matched low-resource study.
 The VAE pools were regenerated after the sampling correction; the audited
-Diffusion pools were reused. Diffusion training code remains on separate
-branches, and decoder research remains isolated on `BigVGAN_decode`.
+Diffusion pools were reused. Diffusion training code remains on
+`diffusion_vincent`, and decoder research remains isolated on
+`BigVGAN_decode`.
 
 ## Branch guide
 
@@ -62,7 +63,7 @@ branches, and decoder research remains isolated on `BigVGAN_decode`.
 |---|---|
 | [`main`](https://github.com/Bleu7101/bird_song_gen/tree/main) | Primary pipeline, classifier evidence, VAE v1/v2/v3 experiments, and historical Transformer and WGAN-GP generator baselines |
 | [`BigVGAN_decode`](https://github.com/Bleu7101/bird_song_gen/tree/BigVGAN_decode) | Future work for testing alternative decoders/vocoders that convert generated spectrograms into audio waveforms; the current BigVGAN results are the first recorded decoder experiment |
-| [`Diffusion`](https://github.com/Bleu7101/bird_song_gen/tree/Diffusion), [`Difussion`](https://github.com/Bleu7101/bird_song_gen/tree/Difussion), and [`diffusion_vincent`](https://github.com/Bleu7101/bird_song_gen/tree/diffusion_vincent) | Separate branches containing diffusion-model work; use the documentation, configs, and artifacts on the relevant branch |
+| [`diffusion_vincent`](https://github.com/Bleu7101/bird_song_gen/tree/diffusion_vincent) | Diffusion-model training and branch-specific artifacts; `main` contains the report-backed evaluation and comparison summaries |
 
 Branch names identify isolated workstreams, not additional stages of the
 `main` pipeline. In particular, the decoder branch changes the mel and waveform
@@ -94,7 +95,7 @@ contract, and diffusion code should be evaluated from its own branch.
 | Historical Transformer baseline | `src/bird_song/transformer/` and `scripts/06_*.py` | Fully trained working baseline with a documented caveated verdict; run files are archived under `reports/generator_baselines/transformer/` |
 | Historical WGAN-GP baseline | `src/bird_song/generation/wgan_gp.py` and `scripts/08_*.py` | Full-split 20-epoch run with recorded evidence and curated audio under `reports/generator_baselines/wgan_gp/`; bulk runs remain local |
 | VAE v1/v2/v3 | `notebooks/04_conditional_vae.ipynb`, `artifacts/models/vae/`, and `reports/vae/` | Three recorded VAE versions are preserved on `main`; the portable V3 pool sampler applies temperature in reparameterization and the checkpoint was not retrained |
-| Diffusion models | Separate diffusion branches listed above | Training implementations remain outside `main`; evaluation uses the external validation-best epoch-34 EMA checkpoint with the final DDIM notebook settings |
+| Diffusion models | [`diffusion_vincent`](https://github.com/Bleu7101/bird_song_gen/tree/diffusion_vincent) | Training implementation remains outside `main`; evaluation uses the external validation-best epoch-34 EMA checkpoint with the final DDIM notebook settings |
 
 ## Decoder roadmap
 
@@ -293,7 +294,7 @@ and visual inspection.
 The earlier VQGAN, token-Transformer, and latent-diffusion wiring pilots are
 not maintained on `main` because they were short integration checks, not
 comparable generator experiments. They are distinct from the dedicated
-diffusion-model work on the separate diffusion branches. Existing ignored
+diffusion-model work on the separate `diffusion_vincent` branch. Existing ignored
 local checkpoints and outputs are left untouched, while the recorded VAE
 v1/v2/v3 artifacts remain on `main`.
 
@@ -342,7 +343,7 @@ to use another validated cache.
 ```
 
 The VAE v1/v2/v3 notebook, checkpoints, and recorded outputs are preserved on
-`main`. Diffusion models are maintained on the separate diffusion branches
-listed in the branch guide. Any cross-model comparison should first align the
+`main`. Diffusion models are maintained on the separate `diffusion_vincent`
+branch listed in the branch guide. Any cross-model comparison should first align the
 preprocessing contract, checkpoint format, evaluation split, and audio-decoder
 path.
