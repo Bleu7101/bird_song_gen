@@ -6,10 +6,10 @@
 - **Template:** [`Report_Template.tex`](Report_Template.tex).
 - **Submission deadline:** August 14, 11:30 PM.
 - **Main-body limit:** At most 5 pages. Appendices and references are excluded.
-- **Target compiled length:** Approximately 4.7 pages, leaving about 0.3 pages of formatting margin.
-- **Current source of project facts:** the current `main` tree, including the completed protocol-4 low-resource study, CRNN-only generator-quality package, generator-only speed package, and the separate VAE-v3 generated-to-test MSE evidence package.
-- **Current writing scope:** Data preparation, Residual CNN, CRNN, and VAE.
-- **Deferred scope:** Vincent Wang owns the canonical Diffusion method and citations. Keep the corresponding model headings empty until his material is supplied, while retaining the completed shared comparison and timing protocol.
+- **Current compiled length:** Five main-body pages, one reference page, and five appendix pages (11 pages total).
+- **Current source of project facts:** the current `main` tree supplies the completed protocol-4 low-resource study, CRNN-only generator-quality package, generator-only speed package, and VAE evidence; `diffusion_vincent` supplies the canonical Diffusion implementation, configuration, checkpoint, and qualitative outputs.
+- **Current writing scope:** Data preparation, Residual CNN, CRNN, VAE-v3, Diffusion, matched generator evaluation, and low-resource augmentation.
+- **Diffusion source boundary:** Vincent Wang owns the canonical Diffusion method and citations on `diffusion_vincent`; Harvey's independent quality, downstream, and timing packages remain tracked on `main`.
 
 ### Approved compression plan
 
@@ -18,7 +18,7 @@
 - Describe the V1--V3 evolution in compact prose rather than a separate table.
 - Retain one compact VAE objective equation and only concise VAE training/provenance notes in the appendix. Keep the full timing procedure and repeat-level data in the tracked evidence package. State the corrected sampling equation in the main method.
 - Merge repeated limitations across methodology, results, discussion, and conclusion.
-- Target approximately seven compiled pages including references and a short appendix.
+- The current compiled report has 11 pages: five pages of main text, one reference page, and five appendix pages. Only the five-page main body counts toward the course limit.
 
 ## Confirmed reporting strategy
 
@@ -67,11 +67,11 @@ References and appendices are outside this budget.
 
 ## Front matter
 
-### Working title
+### Final title
 
-**BirdGEN: Conditional Bird-Song Spectrogram Generation for Rare Species Classification**
+**BirdGEN: Generative Spectrogram Augmentation for Low-Resource Bird Classification**
 
-In the report text, clarify that rare-species recognition is the intended application, whereas the recorded experiment simulates labeled-data scarcity for three project species using pretrained generators. Do not convert the title into a claim that the generator was trained on truly rare or unseen species.
+The title reflects the demonstrated classifier-label-scarcity experiment rather than claiming performance on genuinely rare or unseen species.
 
 ### Confirmed author block
 
@@ -85,7 +85,7 @@ The abstract should contain four elements:
 
 1. **Motivation:** Real bird-song collection and annotation are costly, motivating conditional generation as a source of additional training data.
 2. **Task:** Generate three-second log-mel spectrograms for American Robin, Northern Cardinal, and Song Sparrow.
-3. **Methods:** Recording-safe data preparation, classifier selection, a class-conditional spatial VAE, a deferred conditional Diffusion model, and matched low-resource CRNN evaluation.
+3. **Methods:** Recording-safe data preparation, classifier selection, a class-conditional spatial VAE, a class-conditional Diffusion model, and matched low-resource CRNN evaluation.
 4. **Main conclusion:** In the completed nine-block study, validation selected +200/species for both generators. Mean held-out macro F1 was 84.75% for real-only, 87.48% for VAE-v3, and 86.21% for Diffusion. Keep this newly initialized low-resource CRNN result separate from classifier-view generator diagnostics and from perceptual realism.
 
 Keep the generated-to-test MSE out of the abstract unless space permits. It is a verified auxiliary pixel-space diagnostic for the existing seed-42 notebook pool, not evidence from Harvey's corrected canonical pool and not the primary downstream result.
@@ -111,8 +111,8 @@ Correct the template heading from `Assentation` to `Attestation` and use the fol
 
 - Target species: American Robin, Northern Cardinal, and Song Sparrow.
 - Shared high-level representation: three-second, single-channel, `128 x 128` log-mel spectrograms.
-- Models covered in the current draft: Residual CNN, CRNN, and VAE-v3.
-- The Diffusion section remains structurally present but empty.
+- Models covered in the current report: Residual CNN, CRNN, VAE-v3, and class-conditional Diffusion.
+- Diffusion implementation evidence is maintained on `diffusion_vincent`; shared evaluation evidence is maintained on `main`.
 
 ### 1.3 Contributions
 
@@ -120,8 +120,8 @@ Correct the template heading from `Assentation` to `Attestation` and use the fol
 2. Compared multiple classifier architectures and selected a compact CRNN using validation evidence.
 3. Developed a species-conditioned spatial VAE with detail-aware and classifier-consistency objectives.
 4. Evaluated whether synthetic samples improve a freshly trained CRNN under a matched low-resource protocol.
-5. Defined a common generated-sample quality protocol that can later compare VAE and Diffusion.
-6. Designed an equal-count benchmark for generator-only spectrogram sampling.
+5. Compared VAE-v3 and Diffusion using a common three-seed generated-sample quality protocol.
+6. Completed an equal-count benchmark for generator-only spectrogram sampling on matched hardware and settings.
 
 ---
 
@@ -302,7 +302,14 @@ The posterior-anchor method creates stochastic variants around encoded training 
 
 ### 4.5 Diffusion Model
 
-<!-- Intentionally left blank for Vincent Wang's canonical Diffusion method and citations. -->
+- Class-conditional DDPM trained on globally standardized `1 x 128 x 128` log-mel spectrograms.
+- Conditional U-Net with base width 64, channel multipliers `(1,2,4,4)`, two residual blocks per resolution, a `256 x 16 x 16` bottleneck, and single-head bottleneck self-attention.
+- Sinusoidal timestep and learned species embeddings condition the residual blocks through FiLM; the model has approximately 18.4 million trainable parameters.
+- Training uses a 1,000-step cosine noise schedule and the standard noise-prediction MSE objective.
+- Classifier-free guidance is trained with label-drop probability 0.1; sampling uses EMA weights with decay 0.999.
+- The selected generation configuration uses deterministic 100-step DDIM (`eta=0`, guidance weight 3); the implementation also supports full 1,000-step ancestral DDPM sampling.
+- Predicted clean spectrograms are clipped to +/-4 standardized units before reverse updates.
+- Canonical method, checkpoint, and qualitative-output evidence live on `diffusion_vincent`; Harvey's independent quality, downstream, and timing evaluations live on `main`.
 
 ---
 
@@ -629,7 +636,7 @@ Add every additional question from the presentation to this table before submiss
 
 ## Final-report completion status
 
-The Data Preparation, Residual CNN architecture comparison, CRNN, VAE method, recorded reconstruction, and low-resource outcome are supported by the current repository. The table distinguishes completed evidence from the remaining owner inputs and team decisions.
+The Data Preparation, classifier, VAE, recorded reconstruction, Diffusion method, shared generator evaluation, and low-resource outcome are supported by the current repository and the documented `diffusion_vincent` branch. The table distinguishes completed evidence from the remaining team decisions.
 
 | Item | Input or decision | Owner | What must be provided or recorded | Current status |
 |---:|---|---|---|---|
@@ -640,8 +647,8 @@ The Data Preparation, Residual CNN architecture comparison, CRNN, VAE method, re
 | 5 | Diffusion evaluation evidence package | Harvey, using Vincent's model evidence | Checkpoint and DDIM settings; reused-pool provenance; CRNN-only quality metrics and figures; limitations | Completed without regenerating Diffusion spectrograms |
 | 6 | Equal-count generator-only timing package | Harvey | Five 600-output repeats/model; measurement sequence; seeds; hardware/software; batch size; precision; warm-up/synchronization; peak memory; sampler settings | Completed and packaged with repeat-level evidence |
 | 7 | Complete presentation feedback | Team | Confirm that the three recorded questions plus equal-count runtime are the complete feedback list, or provide the missing questions and requested additions | Awaiting team confirmation |
-| 8 | Diffusion method and references | Vincent Wang | Canonical architecture, training objective, conditioning/sampling description, and supporting citations | Awaiting Vincent's material |
-| 9 | Final title scope | Team | Decide whether to retain “Rare Species Classification” or rename it to emphasize the simulated low-resource/label-scarcity setting | Pending |
+| 8 | Diffusion method and references | Vincent Wang | Canonical architecture, training objective, conditioning/sampling description, qualitative outputs, and supporting citations | Completed on `diffusion_vincent` and incorporated into the report |
+| 9 | Final title scope | Team | Use a title aligned with the simulated low-resource/label-scarcity evidence | Completed: “BirdGEN: Generative Spectrogram Augmentation for Low-Resource Bird Classification” |
 
 The professor-confirmed runtime scope is generator-only spectrogram sampling. Do not broaden the comparison beyond that boundary.
 
@@ -664,8 +671,8 @@ The professor-confirmed runtime scope is generator-only spectrogram sampling. Do
 - [x] Compute the 412.0032-second VAE--Diffusion generator-only time gap and 1348.09 x Diffusion/VAE time ratio; Harvey owns and presents this result.
 - [x] Complete and package the exact nine-block low-resource study: 63 validation runs, 27 held-out evaluations, and protocol-4 provenance.
 - [x] Keep the V1--V3 engineering progression as compact prose in the five-page body; omit the full comparison table.
-- [ ] Vincent: add the canonical Diffusion model-method description and citations; retain the completed shared evaluation results and protocol unchanged.
+- [x] Vincent: add the canonical Diffusion model-method description and citations; retain the completed shared evaluation results and protocol unchanged.
 - [ ] Add all presentation feedback items and verify that each is addressed.
-- [ ] Team: decide whether the final title retains “Rare Species Classification” or explicitly says “Low-Resource Classification.”
-- [x] Build and visually inspect the PDF: five main-body pages, one reference page, and one appendix page (seven pages total).
+- [x] Team: use the final title “BirdGEN: Generative Spectrogram Augmentation for Low-Resource Bird Classification.”
+- [x] Build and visually inspect the PDF: five main-body pages, one reference page, and five appendix pages (11 pages total).
 - [x] Verify the report's numerical claims against the tracked manifests, model summaries, evaluation CSV/JSON packages, and documented timing run.

@@ -114,9 +114,10 @@ American Robin, Northern Cardinal, and Song Sparrow, giving 3,347 clips from
 recording from appearing across train, validation, and test sets.
 
 Each clip is converted to a $128\times128$ log-mel spectrogram using a
-1,024-point FFT and hop length 512. The VAE uses training-set global
-standardization, while the classifier maps each clip's relative 80-dB range
-to $[-1,1]$; an adapter converts VAE outputs to the classifier scale.
+1,024-point FFT and hop length 512. Both generators use training-set
+global standardization, while the classifier maps each clip's relative 80-dB
+range to $[-1,1]$; an adapter converts either generator’s outputs to the
+classifier scale.
 
 \section{System Design and Models}
 
@@ -313,6 +314,12 @@ samplers, $\hat{x}_0$ is clipped to $\pm4$ standardized units to prevent
 extreme values and non-finite waveform inversions.
 
 \section{Experimental Methodology}
+
+Both generators were pretrained on the full content-safe training split; only
+downstream CRNN training was restricted to 50 labeled real spectrograms per
+species. The experiment therefore simulates classifier-label scarcity with
+access to pretrained generators, rather than end-to-end generator training
+from 150 clips.
 
 For the primary low-resource experiment, each newly initialized CRNN received
 50 real training spectrograms per species, selected from distinct recording
@@ -574,11 +581,6 @@ Computer-Assisted Intervention (MICCAI)}, pp. 234--241, 2015.
 \bibitem{vaswani2017attention}
 A. Vaswani \emph{et al.}, ``Attention is all you need,'' in \emph{Adv. Neural
 Inf. Process. Syst.}, vol. 30, pp. 5998--6008, 2017.
-
-\bibitem{griffin1984}
-D. Griffin and J. Lim, ``Signal estimation from modified short-time Fourier
-transform,'' \emph{IEEE Trans. Acoust., Speech, Signal Process.}, vol. 32,
-no. 2, pp. 236--243, 1984.
 
 \end{thebibliography}
 
