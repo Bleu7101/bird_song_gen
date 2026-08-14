@@ -351,11 +351,10 @@ path.
 ## Future work: diffusion evidence reconciliation
 
 Harvey will reconcile and resolve every potential conflict between Vincent's
-diffusion notebook and the reported outcomes before final submission. The
-executed notebook
-`C:\Users\Harvey\Desktop\conditional_diffusion\05_conditional_diffusion (1).ipynb`
-supports the model configuration and one held-out denoising-MSE result, but it
-does not by itself substantiate the following report claims:
+diffusion notebook on `diffusion_vincent` and the reported outcomes before
+final submission. The executed notebook supports the model configuration and
+one held-out denoising-MSE result, but it does not by itself substantiate the
+following report claims:
 
 - **Development MSE trajectory:** the reported `0.41674 -> 0.16647`
   improvement is not fully evidenced; `0.41674` does not appear in the
@@ -386,12 +385,9 @@ does not by itself substantiate the following report claims:
 - **Waveform-safety outcome:** the `+/-4` clamp and non-finite-value guard are
   implemented, but the notebook records no observed non-finite inversion or
   before/after safety result.
-- **Downstream outcomes:** the notebook does not produce the report's
-  three-seed quality values (`92.44%/92.42%`, `41.2550`,
-  `0.5654/0.8207`, `0.3114/0.4845/1.0083`, or `0.1916`), low-resource
-  selection and test outcomes (`86.84%` validation, `86.21%` test, `+1.46`
-  points, `6/9` positive blocks, and `+0.15` to `+2.89`), or speed outcomes
-  (`412.3090 +/- 2.8120` seconds per 600, `687.182` ms per spectrogram,
-  `1.455` spectrograms/s, and `1348.09x`). These claims must remain tied to
-  the separate tracked evaluation packages and checkpoint provenance rather
-  than being presented as notebook evidence.
+- **Evaluation ownership boundary:** Harvey's three-seed generator-quality
+  values, low-resource CRNN outcomes, and generator-speed measurements are
+  independent evaluation work recorded on `main`. They are not expected to
+  appear in Vincent's training notebook and are not missing notebook
+  evidence. Keep those outcomes tied to their separate tracked evaluation
+  packages and checkpoint provenance.
