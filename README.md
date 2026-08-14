@@ -37,18 +37,24 @@ reused and no diffusion spectrogram generation was run. Generator comparisons
 use the 510-row generator-safe validation manifest and the unchanged 489-row
 held-out test manifest.
 
+The project has two classifier roles. The CRNN is the primary downstream
+classifier and the sole generated-sample evaluator. The Residual CNN is kept
+as the architecture-comparison reference and frozen VAE training teacher; it
+is not used to claim downstream augmentation improvement. The main research
+focus is conditional generation, two-classifier evaluation, generator quality,
+and low-resource augmentation. Diffusion training remains on its separate
+branches.
+
 ## Main branch overview
 
 `main` is the primary review branch. It contains the shared data pipeline, the
-classifier study, VAE v1/v2/v3 artifacts, and two historical spectrogram
-generation baselines: the continuous Transformer and WGAN-GP. Decoder research
-and diffusion implementations remain isolated on separate branches so their
-different model and representation contracts are not mixed into the main
-workflow. The maintained evaluation uses three classifier-ready pools per
-model, scores them with the selected CRNN, compares generator-only sampling
-speed, and feeds those same pools into the matched low-resource study. The VAE
-pools were regenerated after the sampling correction; the audited diffusion
-pools were reused.
+two classifier roles, VAE v1/v2/v3 artifacts, and historical Transformer and
+WGAN-GP generator baselines. Current VAE-v3/Diffusion comparisons use the
+selected CRNN, three classifier-ready pools per model, generator-quality
+diagnostics, generator-only sampling speed, and the matched low-resource study.
+The VAE pools were regenerated after the sampling correction; the audited
+Diffusion pools were reused. Diffusion training code remains on separate
+branches, and decoder research remains isolated on `BigVGAN_decode`.
 
 ## Branch guide
 
@@ -61,6 +67,21 @@ pools were reused.
 Branch names identify isolated workstreams, not additional stages of the
 `main` pipeline. In particular, the decoder branch changes the mel and waveform
 contract, and diffusion code should be evaluated from its own branch.
+
+## Repository structure
+
+| Path | Role |
+|---|---|
+| `src/bird_song/` | Importable source for audio, preprocessing, classifiers, generation, and evaluation helpers |
+| `scripts/` | Reproducible command-line entry points for splits, training, generation, evaluation, and report packaging |
+| `notebooks/` | Gated visual companions: preprocessing, classifier selection, VAE work, the consolidated `06_evaluation.ipynb`, and historical Transformer/WGAN-GP studies |
+| `artifacts/models/` | Versioned classifier and VAE model packages plus reusable banks |
+| `manifests/` and `configs/` | Split identities, content-safety protocols, and spectrogram configuration |
+| `reports/` | Curated, source-backed evaluation packages and historical generator evidence |
+| `doc/Project_Report_Template/` | Report sources, numerical evidence map, and completion checklist |
+| `runs/` and `outputs/` | Ignored local workspaces for training, generated pools, and temporary outputs |
+
+## Current components and evidence
 
 | Area | Implementation | Evidence/status |
 |---|---|---|
@@ -96,12 +117,15 @@ not extra generator families.
 - `notebooks/` contains visual, gated companions that import the `src` code;
   notebooks are not a second classifier implementation.
 - `notebooks/03_classifier.ipynb` is the CRNN-focused classifier companion.
-- `notebooks/06_evaluation.ipynb` is the primary four-part evaluation report:
+- `notebooks/06_evaluation.ipynb` is the consolidated evaluation report:
   generator quality and seed stability, low-resource augmentation,
-  generator-only speed, and the evidence-bounded conclusion.
-- `notebooks/generator_checkpoint_evaluation.ipynb` and
-  `notebooks/low_resource_crnn_augmentation.ipynb` remain focused report-only
-  companions; neither requires ignored generator checkpoints or pools.
+  generator-only speed, and the evidence-bounded conclusion. It includes the
+  complete 63-row low-resource validation audit and reads the durable report
+  packages under `reports/`.
+- The former focused checkpoint-quality and low-resource report notebooks were
+  removed after their reader-facing checks were merged into `06_evaluation`.
+  The report packages and their reproducible scripts remain the authoritative
+  evidence.
 - `notebooks/autoregressive_transformer.ipynb` and `notebooks/wgan_gp.ipynb`
   are unnumbered extra/future-work companions for the historical generator
   baselines.
@@ -209,9 +233,8 @@ estimated optimum.
 
 The portable evidence is packaged in
 [`reports/crnn_low_resource_augmentation_2026-08-12`](reports/crnn_low_resource_augmentation_2026-08-12/),
-with a visual companion in
-[`notebooks/low_resource_crnn_augmentation.ipynb`](notebooks/low_resource_crnn_augmentation.ipynb).
-Bulk checkpoints and histories stay under ignored
+with the consolidated visual companion in
+[`notebooks/06_evaluation.ipynb`](notebooks/06_evaluation.ipynb). Bulk checkpoints and histories stay under ignored
 `runs/crnn_low_resource_augmentation/v3/`.
 
 Audit the regenerated VAE pools, reused diffusion pools, and subset design, or
@@ -237,8 +260,8 @@ focus.
 
 The inference-only three-seed checkpoint study is documented in
 [`reports/generator_checkpoint_evaluation_2026-08-12`](reports/generator_checkpoint_evaluation_2026-08-12/)
-and its report-only companion is
-[`notebooks/generator_checkpoint_evaluation.ipynb`](notebooks/generator_checkpoint_evaluation.ipynb).
+and presented in the consolidated
+[`notebooks/06_evaluation.ipynb`](notebooks/06_evaluation.ipynb).
 The seed-42/123/777 VAE pools were regenerated under ignored
 `runs/generator_checkpoint_evaluation/pools/vae_v3/`; the corresponding
 diffusion pools were audited and reused without new diffusion sampling. The
