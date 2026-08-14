@@ -352,51 +352,12 @@ Figure~\ref{fig:vae-evolution-samples} contrasts matched V1--V3
 reconstructions and shows representative V3 generations.
 
 \paragraph{Diffusion results.}
-Table~\ref{tab:diffusion-ablation} summarizes the development configurations
-for the Diffusion generator using test noise-prediction MSE, frozen Residual
-CNN confidence, and Merlin Bird ID \cite{merlin} on 24 Griffin--Lim
-reconstructions (8 per species). These are development comparisons, not
-controlled one-factor ablations, because some settings and training durations
-changed together.
-
-\begin{table}[H]
-  \caption{Diffusion development results; Merlin ID is the number of correctly
-  identified clips among 24 samples.}
-  \label{tab:diffusion-ablation}
-  \centering
-  \small
-  \resizebox{\linewidth}{!}{%
-  \begin{tabular}{@{}llrrr@{}}
-    \toprule
-    Stage & Configuration change & Test noise MSE $\downarrow$
-          & Mean CNN conf. & Merlin ID \\
-    \midrule
-    Baseline
-      & Batch 64, 200 epochs, unweighted
-      & 0.41674 & 52\% & 8/24 \\
-    Training development
-      & Batch 8, 60 epochs
-      & 0.16647 & 80\% & 8/24 \\
-    Training development
-      & Weighted sampler, 100 epochs
-      & 0.16667 & \textbf{86\%} & \textbf{20/24} \\
-    Sampling comparison
-      & DDIM $\rightarrow$ DDPM
-      & 0.16667 & 80\% & 15/24 \\
-    \bottomrule
-  \end{tabular}}
-\end{table}
-
-The batch-8/60-epoch run reduced test noise MSE from 0.41674 to 0.16647 and
-raised CNN confidence from 52\% to 80\%, while Merlin ID stayed at 8/24.
-Weighted sampling with 100 epochs produced the selected model (86\% confidence,
-20/24 Merlin ID), but batch, sampler, and training-duration effects are
-confounded. With the same checkpoint, DDIM and DDPM had identical denoising
-MSE (0.16667); DDIM yielded 86\% confidence and 20/24 Merlin IDs versus 80\%
-and 15/24 for DDPM. Finally, $w=0,3,5$ produced 70\%, 86\%, and 94\% CNN
-confidence but 0/24, 20/24, and 14/24 Merlin IDs, so $w=3$ was selected.
-These 24-sample results are preliminary; CNN confidence is complementary to,
-not interchangeable with, Merlin identification.
+Development runs were compared using test noise-prediction MSE. The batch-8,
+60-epoch run reduced this error from 0.41674 to 0.16647; the selected
+weighted-sampler, 100-epoch configuration had an MSE of 0.16667. With the
+same checkpoint, 100-step DDIM and 1000-step DDPM also had test noise MSE
+0.16667. These values assess denoising error only and do not establish
+waveform realism or downstream augmentation utility.
 
 \paragraph{Generator-quality diagnostics.}
 The selected CRNN was used as an evaluator of generated spectrograms, not as the
@@ -617,10 +578,6 @@ D. Griffin and J. Lim, ``Signal estimation from modified short-time Fourier
 transform,'' \emph{IEEE Trans. Acoust., Speech, Signal Process.}, vol. 32,
 no. 2, pp. 236--243, 1984.
 
-\bibitem{merlin}
-Cornell Lab of Ornithology, ``Merlin Bird ID,'' 2026. [Online]. Available:
-\url{https://merlin.allaboutbirds.org/}
-
 \end{thebibliography}
 
 \clearpage
@@ -664,30 +621,25 @@ bank; it is distinct from the three canonical augmentation pools.
 This appendix presents qualitative results for the DDIM--DDPM sampler
 comparison and the classifier-free guidance-weight comparison. Each sampling
 figure contains 12 representative generated spectrograms, with four examples
-per species, whereas the numerical CNN and Merlin evaluations reported in the
-main text use 24 generated clips. The trajectory figures show predicted clean
-spectrograms $\hat{x}_0$ at selected reverse schedule indices. The displayed
-columns are chosen snapshots and are not intended to represent every 100th
-reverse update. Their labels use the implementation's zero-based schedule
-indices (0--999), corresponding to the one-based mathematical timesteps
-(1--1000) used in the equations. Because the initial noise samples were not
-fully paired across all configurations, these figures should be interpreted
-as qualitative examples rather than controlled sample-by-sample comparisons.
+per species. The trajectory figures show predicted clean spectrograms
+$\hat{x}_0$ at selected reverse schedule indices. The displayed columns are
+chosen snapshots and are not intended to represent every 100th reverse update.
+Their labels use the implementation's zero-based schedule indices (0--999),
+corresponding to the one-based mathematical timesteps (1--1000) used in the
+equations. Because the initial noise samples were not fully paired across all
+configurations, these figures should be interpreted as qualitative examples
+rather than controlled sample-by-sample comparisons.
 
 \subsection{DDIM and DDPM Comparison}
 
-The DDIM results correspond to the selected generator in the third row of
-Table~\ref{tab:diffusion-ablation}. The DDPM results correspond to the fourth
-row and use the same trained checkpoint; only the reverse sampling procedure
-is changed.
+The DDIM results use the selected 100-step sampler. The DDPM results use the
+same trained checkpoint with only the reverse sampling procedure changed.
 
 \begin{figure*}[!htbp]
   \centering
   \includegraphics[width=0.72\textwidth]{DDIM_sampling.png}
   \caption{Representative spectrograms generated using 100-step deterministic
-  DDIM sampling. Four examples are shown for each target species. This
-  configuration corresponds to the selected generator in the third row of
-  Table~\ref{tab:diffusion-ablation}.}
+  DDIM sampling. Four examples are shown for each target species.}
   \label{fig:appendix-ddim-sampling}
 \end{figure*}
 
@@ -705,8 +657,8 @@ is changed.
   \includegraphics[width=0.72\textwidth]{DDPM_sampling.png}
   \caption{Representative spectrograms generated using full 1000-step
   ancestral DDPM sampling. Four examples are shown for each target species.
-  This configuration corresponds to the sampling comparison in the fourth
-  row of Table~\ref{tab:diffusion-ablation}.}
+  The trained checkpoint is unchanged from the DDIM configuration; only the
+  reverse sampling procedure differs.}
   \label{fig:appendix-ddpm-sampling}
 \end{figure*}
 
@@ -727,11 +679,8 @@ is changed.
 Figures~\ref{fig:appendix-cfg-w0}--\ref{fig:appendix-cfg-w5} show
 representative outputs generated from the same trained checkpoint using
 100-step DDIM sampling with classifier-free guidance weights $w=0$, $w=3$,
-and $w=5$. Increasing the guidance weight increased the frozen Residual CNN's
-mean top-1 confidence, but the highest confidence did not produce the highest
-Merlin identification rate. The results therefore illustrate the distinction
-between internal classifier confidence and downstream recognizability after
-waveform reconstruction. For direct cross-reference, the $w=3$ panel in
+and $w=5$. The panels illustrate how guidance strength changes the generated
+spectrograms. For direct cross-reference, the $w=3$ panel in
 Fig.~\ref{fig:appendix-cfg-w3} intentionally repeats the selected DDIM samples
 shown in Fig.~\ref{fig:appendix-ddim-sampling}; the two panels are therefore
 identical rather than independent sample sets.
@@ -741,12 +690,8 @@ identical rather than independent sample sets.
   \includegraphics[width=0.72\textwidth]{DDIM_weight_0.png}
   \caption{Representative spectrograms generated using 100-step DDIM sampling
   with classifier-free guidance weight $w=0$. Under the formulation in
-  Eq.~\eqref{eq:cfg}, this setting uses the unconditional noise prediction.
-  The frozen Residual CNN produced 70\% mean top-1 confidence, while Merlin
-  Bird ID matched the nominal requested species for 0/24 reconstructed clips.
-  Because $w=0$ ignores the requested label, this agreement count is a
-  negative-control diagnostic of conditional control rather than a measure of
-  unconditional sample realism.}
+  Eq.~\eqref{eq:cfg}, this setting uses the unconditional noise prediction and
+  serves as a qualitative negative control for conditional generation.}
   \label{fig:appendix-cfg-w0}
 \end{figure*}
 
@@ -754,9 +699,8 @@ identical rather than independent sample sets.
   \centering
   \includegraphics[width=0.72\textwidth]{DDIM_weight_3.png}
   \caption{Representative spectrograms generated using 100-step DDIM sampling
-  with classifier-free guidance weight $w=3$. This setting produced 86\%
-  mean Residual CNN confidence and 20/24 Merlin Bird ID matches and was
-  selected for the final generator. This panel intentionally repeats
+  with classifier-free guidance weight $w=3$. This setting was selected for
+  the final generator. The panel intentionally repeats
   Fig.~\ref{fig:appendix-ddim-sampling} for cross-reference.}
   \label{fig:appendix-cfg-w3}
 \end{figure*}
@@ -765,10 +709,9 @@ identical rather than independent sample sets.
   \centering
   \includegraphics[width=0.72\textwidth]{DDIM_weight_5.png}
   \caption{Representative spectrograms generated using 100-step DDIM sampling
-  with classifier-free guidance weight $w=5$. Mean Residual CNN confidence
-  increased to 94\%, while Merlin Bird ID matched the intended species for
-  only 14/24 reconstructed clips. Stronger internal classifier confidence
-  therefore did not translate into better downstream audio recognizability.}
+  with classifier-free guidance weight $w=5$. This setting uses stronger
+  classifier-free guidance than the selected $w=3$ configuration and provides
+  a qualitative comparison of the generated spectrograms.}
   \label{fig:appendix-cfg-w5}
 \end{figure*}
 
