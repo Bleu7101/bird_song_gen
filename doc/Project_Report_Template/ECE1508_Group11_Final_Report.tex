@@ -19,6 +19,7 @@
 \usepackage{microtype}      % microtypography
 \usepackage{xcolor}         % colors
 \usepackage{graphicx}
+\usepackage{float}          % precise placement for selected tables and figures
 \usepackage{tikz}
 \usetikzlibrary{arrows.meta}
 
@@ -325,9 +326,9 @@ differ in both training settings and, in some cases, training duration, these
 results are development comparisons rather than strictly controlled one-factor
 ablations.
 
-\begin{table}[t]
-  \caption{Diffusion development results. Merlin ID reports correctly
-  identified clips among 24 generated samples.}
+\begin{table}[H]
+  \caption{Diffusion development results; Merlin ID is the number of correctly
+  identified clips among 24 samples.}
   \label{tab:diffusion-ablation}
   \centering
   \small
