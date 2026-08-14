@@ -347,3 +347,51 @@ The VAE v1/v2/v3 notebook, checkpoints, and recorded outputs are preserved on
 branch listed in the branch guide. Any cross-model comparison should first align the
 preprocessing contract, checkpoint format, evaluation split, and audio-decoder
 path.
+
+## Future work: diffusion evidence reconciliation
+
+Harvey will reconcile and resolve every potential conflict between Vincent's
+diffusion notebook and the reported outcomes before final submission. The
+executed notebook
+`C:\Users\Harvey\Desktop\conditional_diffusion\05_conditional_diffusion (1).ipynb`
+supports the model configuration and one held-out denoising-MSE result, but it
+does not by itself substantiate the following report claims:
+
+- **Development MSE trajectory:** the reported `0.41674 -> 0.16647`
+  improvement is not fully evidenced; `0.41674` does not appear in the
+  notebook outputs.
+- **Training provenance:** the notebook has `RUN_TRAINING=False`, reports no
+  training history, and only loads an external checkpoint. It therefore does
+  not independently establish that the reported 60-epoch training run
+  produced the checkpoint.
+- **Selected weighted-sampler result:** the reported `0.16667` for the
+  selected weighted-sampler, 100-epoch configuration does not appear in the
+  notebook. The source sets `MAX_EPOCHS=60`, while the loaded `low_batch_100`
+  checkpoint records 34 completed epochs and a 100-epoch configuration; this
+  provenance conflict must be resolved.
+- **DDIM/DDPM MSE equivalence:** the claim that the same checkpoint achieved
+  `0.16667` with both 100-step DDIM and 1000-step DDPM is not an executed
+  comparison in this notebook. Its fixed noise-MSE function does not call
+  either sampler, and the stored result is `0.16647`.
+- **DDPM and guidance ablations:** the notebook defines DDPM and DDIM
+  samplers and executes DDIM with `w=3`, but it contains no executed evidence
+  for the appendix's full-DDPM figures, the claim that only the reverse
+  procedure changed while the checkpoint stayed fixed, the selection of 100
+  DDIM steps, `w=0` or `w=5` outputs, the claimed cross-configuration pairing,
+  or the claim that `w=3` was selected through an ablation.
+- **Architecture-effect wording:** the notebook supports the presence of
+  self-attention, FiLM conditioning, and classifier-free guidance, but it does
+  not empirically demonstrate that attention captures global structure or that
+  any particular guidance setting improves quality.
+- **Waveform-safety outcome:** the `+/-4` clamp and non-finite-value guard are
+  implemented, but the notebook records no observed non-finite inversion or
+  before/after safety result.
+- **Downstream outcomes:** the notebook does not produce the report's
+  three-seed quality values (`92.44%/92.42%`, `41.2550`,
+  `0.5654/0.8207`, `0.3114/0.4845/1.0083`, or `0.1916`), low-resource
+  selection and test outcomes (`86.84%` validation, `86.21%` test, `+1.46`
+  points, `6/9` positive blocks, and `+0.15` to `+2.89`), or speed outcomes
+  (`412.3090 +/- 2.8120` seconds per 600, `687.182` ms per spectrogram,
+  `1.455` spectrograms/s, and `1348.09x`). These claims must remain tied to
+  the separate tracked evaluation packages and checkpoint provenance rather
+  than being presented as notebook evidence.
