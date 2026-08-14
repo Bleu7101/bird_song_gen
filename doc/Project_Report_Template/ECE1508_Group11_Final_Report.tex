@@ -264,131 +264,18 @@ does not modify the training objective.
 \subsection{Diffusion Model}
 \paragraph{Architecture.}
 The diffusion branch is a class-conditional denoising diffusion probabilistic
-model (DDPM) \cite{ho2020ddpm} trained directly on the shared
-$128\times128$ standardized log-mel spectrograms described in Section~2.
-Its noise predictor, $\epsilon_\theta$, is a conditional U-Net
-\cite{ronneberger2015unet} with base width 64, channel multipliers
-$(1,2,4,4)$, and two residual blocks per resolution. The encoder progressively
-downsamples the input from $1\times128\times128$ to a
-$256\times16\times16$ feature map, while the decoder restores the original
-resolution using encoder skip connections to preserve fine-grained
-time-frequency information. Single-head self-attention
-\cite{vaswani2017attention} is applied at the $16\times16$ bottleneck to
-capture global time-frequency dependencies while keeping the quadratic
-attention cost manageable. A sinusoidal timestep embedding is combined with
-a learned species embedding, and the resulting vector modulates every
-residual block through feature-wise linear modulation (FiLM)
-\cite{perez2018film}. In each block, a learned projection converts the
-conditioning vector into channel-wise scale and shift parameters. The complete
-U-Net contains approximately $18.4$ million trainable parameters.
-
-\paragraph{Forward diffusion and training objective.}
-The forward process gradually adds Gaussian noise to a clean spectrogram
-$x_0$ over $T=1000$ steps using a cosine noise schedule
-\cite{nichol2021improved}. A noisy sample at any timestep can be obtained
-directly as
-\begin{equation}
-x_t
-=
-\sqrt{\bar{\alpha}_t}\,x_0
-+
-\sqrt{1-\bar{\alpha}_t}\,\epsilon,
-\qquad
-\epsilon\sim\mathcal{N}(0,I),
-\label{eq:diff-forward}
-\end{equation}
-where
-$\alpha_t=1-\beta_t$ and
-$\bar{\alpha}_t=\prod_{s=1}^{t}\alpha_s$.
-During training, a timestep is sampled uniformly,
-$t\sim\mathcal{U}\{1,\ldots,T\}$, and the U-Net predicts the noise added to
-$x_0$. Its prediction is therefore a function of the noisy spectrogram $x_t$,
-the current timestep $t$, and the species condition $y$:
-$\epsilon_\theta=\epsilon_\theta(x_t,t,y)$. The model is optimized using the
-noise-prediction objective
-\begin{equation}
-\mathcal{L}_{\mathrm{diff}}
-=
-\mathbb{E}_{x_0,y,t,\epsilon}
-\left[
-\left\|
-\epsilon-\epsilon_\theta(x_t,t,y)
-\right\|_2^2
-\right].
-\label{eq:diff-loss}
-\end{equation}
-
-\paragraph{Classifier-free guidance and sampling.}
-For classifier-free guidance (CFG), the species embedding table contains an
-additional null entry. During training, each species label is independently
-replaced by the null token with probability $0.1$, allowing the same U-Net to
-learn both conditional and unconditional noise prediction. At each reverse
-sampling step, the model evaluates the same $x_t$ and $t$ once with the target
-species and once with the null condition. The two predictions are combined as
-\cite{ho2022cfg}
-\begin{equation}
-\hat{\epsilon}
-=
-\epsilon_\theta(x_t,t,\varnothing)
-+
-w\left[
-\epsilon_\theta(x_t,t,y)
--
-\epsilon_\theta(x_t,t,\varnothing)
-\right],
-\label{eq:cfg}
-\end{equation}
-where the guidance weight $w$ controls the trade-off between class adherence
-and sample diversity. Both DDPM and DDIM sampling
-\cite{song2021ddim} reuse the same trained $\epsilon_\theta$ without
-retraining; sampling uses an exponential moving average of the model weights
-with decay 0.999. In ancestral DDPM sampling, the reverse transition is
-\begin{equation}
-x_{t-1}
-=
-\frac{1}{\sqrt{\alpha_t}}
-\left(
-x_t
--
-\frac{\beta_t}{\sqrt{1-\bar{\alpha}_t}}
-\hat{\epsilon}
-\right)
-+
-\sigma_t z,
-\qquad
-z\sim\mathcal{N}(0,I),
-\label{eq:ddpm-sampling}
-\end{equation}
-where $\sigma_t$ controls the stochastic noise introduced during the reverse
-step. DDPM traverses all $T=1000$ timesteps. DDIM first estimates the clean
-spectrogram as
-\begin{equation}
-\hat{x}_0
-=
-\frac{
-x_{t_i}-\sqrt{1-\bar{\alpha}_{t_i}}\,\hat{\epsilon}
-}{
-\sqrt{\bar{\alpha}_{t_i}}
-},
-\label{eq:pred-x0}
-\end{equation}
-and, for deterministic sampling with $\eta=0$, advances from timestep $t_i$
-to an earlier timestep $t_{i-1}$ according to
-\begin{equation}
-x_{t_{i-1}}
-=
-\sqrt{\bar{\alpha}_{t_{i-1}}}\,\hat{x}_0
-+
-\sqrt{1-\bar{\alpha}_{t_{i-1}}}\,\hat{\epsilon}.
-\label{eq:ddim-update}
-\end{equation}
-Unlike DDPM, DDIM can apply this update over a 100-step subsequence of the
-original diffusion trajectory. It is therefore approximately an order of
-magnitude less computationally expensive than full 1000-step DDPM sampling.
-In both samplers, the predicted $\hat{x}_0$ is clipped to $\pm4$ standardized
-units for numerical stability; without this constraint, guided ancestral DDPM
-sampling produced extreme values and occasionally caused non-finite values
-during waveform inversion.
+model (DDPM) \cite{ho2020ddpm} trained on the shared $128\times128$
+standardized log-mel spectrograms. Its conditional U-Net predicts the added
+noise and uses base width 64, channel multipliers $(1,2,4,4)$, two residual
+blocks per resolution, FiLM conditioning from sinusoidal timestep and learned
+species embeddings \cite{perez2018film}, and self-attention at the
+$16\times16$ bottleneck. The model has $18.4$ million trainable parameters.
+Training uses a cosine schedule with $T=1000$ and $0.1$ classifier-free label
+dropout \cite{nichol2021improved,ho2022cfg}; an EMA with decay 0.999 supplies
+the sampling weights. The reported inference setting uses deterministic
+100-step DDIM sampling \cite{song2021ddim} with guidance weight $w=3$ and
+$\hat{x}_0$ clipping to $\pm4$ standardized units; full 1000-step DDPM is used
+only for the sampler comparison.
 
 \section{Experimental Methodology}
 
@@ -429,14 +316,14 @@ measures perceptual or waveform realism. Appendix
 Figure~\ref{fig:vae-evolution-samples} contrasts matched V1--V3
 reconstructions and shows representative V3 generations.
 
-\paragraph{Diffusion development ablations.}
-Table~\ref{tab:diffusion-ablation} summarizes the successive configurations
-used to develop the final Diffusion generator. Evaluation uses test
-noise-prediction MSE, mean confidence from the frozen Residual CNN, and Merlin
-Bird ID \cite{merlin} on 24 Griffin--Lim reconstructions (8 per species).
-Because the configurations differ in both training settings and, in some
-cases, training duration, these results should be interpreted as development
-comparisons rather than strictly controlled one-factor ablations.
+\paragraph{Diffusion results.}
+Table~\ref{tab:diffusion-ablation} summarizes the development configurations
+for the Diffusion generator. Evaluation uses test noise-prediction MSE, mean
+confidence from the frozen Residual CNN, and Merlin Bird ID \cite{merlin} on
+24 Griffin--Lim reconstructions (8 per species). Because the configurations
+differ in both training settings and, in some cases, training duration, these
+results are development comparisons rather than strictly controlled one-factor
+ablations.
 
 \begin{table}[t]
   \caption{Diffusion development results. Merlin ID reports correctly
@@ -471,43 +358,19 @@ Reducing the batch size from 64 to 8 lowered test noise MSE from 0.41674 to
 identification remained at 8/24. The smaller batch also produced more optimizer
 updates per epoch, so the improvement cannot be attributed to batch size alone.
 The training set was mildly imbalanced, with 890 Song Sparrow, 740 Northern
-Cardinal, and 709 American Robin examples. Using inverse-frequency weighted
-sampling together with a 100-epoch budget produced the selected generator,
-reaching 86\% mean CNN confidence and 20/24 Merlin identifications. Because
-both the training sampler and epoch budget changed relative to the preceding
-configuration, their individual effects cannot be separated.
+Cardinal, and 709 American Robin examples. Inverse-frequency sampling with a
+100-epoch budget produced the selected generator, reaching 86\% mean CNN
+confidence and 20/24 Merlin identifications; the sampler and epoch-budget
+effects cannot be separated. Using the same checkpoint, DDIM and DDPM had the
+same test noise MSE (0.16667); DDIM achieved 86\% confidence and 20/24 Merlin
+matches versus 80\% and 15/24 for DDPM. These 24-sample results are preliminary,
+and CNN confidence is complementary to, not interchangeable with, Merlin ID.
 
-The sampler comparison uses the same trained checkpoint. Consequently, DDIM
-and DDPM have the same test noise MSE (0.16667), since
-Eq.~\eqref{eq:diff-loss} evaluates the denoiser rather than the reverse
-sampling procedure. In this pilot evaluation, DDIM achieved 86\% mean CNN
-confidence and 20/24 Merlin identifications, compared with 80\% and 15/24 for
-DDPM. Full DDPM sampling therefore showed no clear advantage over the more
-efficient DDIM sampler. Representative generated spectrograms and reverse
-denoising trajectories are shown in
-Figs.~\ref{fig:appendix-ddim-sampling}--\ref{fig:appendix-ddpm-denoise}
-of Appendix~\ref{app:diffusion-sampling-results}. Given the small 24-sample
-evaluation, these downstream results are treated as preliminary. CNN
-confidence and Merlin identification are reported as complementary rather
-than interchangeable measures.
-
-\paragraph{Guidance-weight selection.}
-We additionally compared classifier-free guidance weights
-$w\in\{0,3,5\}$ using the selected checkpoint and 100-step DDIM sampling.
-Mean top-1 confidence from the frozen Residual CNN increased from 70\% at
-$w=0$ to 86\% at $w=3$ and 94\% at $w=5$. However, Merlin Bird ID matched
-the intended species for 0/24 clips at $w=0$, 20/24 at $w=3$, and 14/24 at
-$w=5$. Because the Residual CNN and diffusion model were trained on the same
-underlying dataset, mean top-1 confidence was treated only as an internal
-measure of classifier decisiveness. It measures confidence in whichever class
-is predicted and is therefore neither target-label accuracy nor an independent
-measure of perceptual quality. We selected $w=3$ as a pilot operating point
-using this confidence together with intended-species Merlin recognizability.
-Representative
-outputs for the three guidance weights are shown in
-Figs.~\ref{fig:appendix-cfg-w0}--\ref{fig:appendix-cfg-w5}.
-Given the 24-sample evaluation, this guidance-weight selection is considered
-preliminary.
+Guidance-weight selection was also preliminary: with 100-step DDIM, $w=0,3,5$
+gave 70\%, 86\%, and 94\% mean Residual CNN confidence, but 0/24, 20/24, and
+14/24 intended-species Merlin matches. We therefore used $w=3$ as the pilot
+operating point because stronger internal confidence at $w=5$ did not improve
+downstream recognizability.
 
 \paragraph{Generator-quality diagnostics.}
 The selected CRNN was used as an evaluator of generated spectrograms, not as the
@@ -851,8 +714,8 @@ identical rather than independent sample sets.
   \centering
   \includegraphics[width=0.72\textwidth]{DDIM_weight_0.png}
   \caption{Representative spectrograms generated using 100-step DDIM sampling
-  with classifier-free guidance weight $w=0$. Under the formulation in
-  Eq.~\eqref{eq:cfg}, this setting uses the unconditional noise prediction.
+  with classifier-free guidance weight $w=0$. This setting uses the
+  unconditional noise prediction.
   The frozen Residual CNN produced 70\% mean top-1 confidence, while Merlin
   Bird ID matched the nominal requested species for 0/24 reconstructed clips.
   Because $w=0$ ignores the requested label, this agreement count is a
